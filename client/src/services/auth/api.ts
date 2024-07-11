@@ -1,7 +1,7 @@
 import { type IRegisterData, type ILoginData, type ITokens } from "./@types";
-import { axiosDefault, axiosWithRefresh } from "../axios";
+import { axiosDefault } from "../axios";
 import { setTokens } from "../cookie";
-import { removeTokens } from "../cookie";
+import { removeTokens, getRefreshToken } from "../cookie";
 
 const BASE_URL = "/auth";
 
@@ -30,22 +30,32 @@ export const authService = {
   },
 
   async refresh() {
-    const response = await axiosWithRefresh.get<ITokens>(
-      `${BASE_URL}/token/refresh`
-    );
+    const refreshToken = getRefreshToken();
 
-    if (response.data.token && response.data.refresh_token) {
-      setTokens(response.data.token, response.data.refresh_token);
+    if (refreshToken) {
+      const response = await axiosDefault.post<ITokens>(
+        `${BASE_URL}/token/refresh`,
+        { refresh_token: refreshToken }
+      );
+
+      if (response.data.token && response.data.refresh_token) {
+        setTokens(response.data.token, response.data.refresh_token);
+      }
+
+      return response;
     }
-
-    return response;
   },
 
   async logout() {
-    const response = await axiosWithRefresh.get(`${BASE_URL}/token/logout`);
+    const refreshToken = getRefreshToken();
 
-    if (response.status === 200) {
+    if (refreshToken) {
+      const response = await axiosDefault.post(`${BASE_URL}/token/logout`, {
+        refresh_token: refreshToken,
+      });
       removeTokens();
+
+      return response;
     }
   },
 };

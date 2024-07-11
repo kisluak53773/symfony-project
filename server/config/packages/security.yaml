@@ -11,23 +11,18 @@ security:
         property: phone
 
   firewalls:
-    login:
-      pattern: ^/api/auth/token/login
+    api:
+      pattern: ^/api
       stateless: true
+      entry_point: jwt
       json_login:
         username_path: phone
         check_path: /api/auth/token/login
         success_handler: lexik_jwt_authentication.handler.authentication_success
         failure_handler: lexik_jwt_authentication.handler.authentication_failure
-
-    refresh:
-      pattern: ^/api/token/refresh
-      stateless: true
-
-    api:
-      pattern: ^/api
-      stateless: true
       jwt: ~
+      refresh_jwt:
+        check_path: /api/auth/token/refresh
       logout:
         path: api_token_invalidate
 

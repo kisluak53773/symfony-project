@@ -1,6 +1,6 @@
 import axios, { type CreateAxiosDefaults } from "axios";
-import { getAccessToken, getRefreshToken, removeTokens } from "../cookie";
-import { errorCatch } from "./error";
+import { getAccessToken, removeTokens } from "../cookie";
+import { errorCatch, getErrorStatusCode } from "./error";
 import { authService } from "../auth";
 
 const options: CreateAxiosDefaults = {
@@ -12,7 +12,6 @@ const options: CreateAxiosDefaults = {
 
 export const axiosDefault = axios.create(options);
 export const axiosWithAuth = axios.create(options);
-export const axiosWithRefresh = axios.create(options);
 
 axiosWithAuth.interceptors.request.use((config) => {
   const accessToken = getAccessToken();
@@ -24,25 +23,12 @@ axiosWithAuth.interceptors.request.use((config) => {
   return config;
 });
 
-axiosWithRefresh.interceptors.request.use((config) => {
-  const refreshToken = getRefreshToken();
-
-  if (config.headers && refreshToken) {
-    config.headers.Authorization = `Bearer ${refreshToken}`;
-  }
-
-  return config;
-});
-
 axiosWithAuth.interceptors.response.use(
   (config) => config,
   async (error) => {
     const originalRequest = error.config;
     if (
-      (error?.response?.status === 401 ||
-        errorCatch(error) === "Given token not valid for any token type" ||
-        errorCatch(error) ===
-          "Authentication credentials were not provided.") &&
+      getErrorStatusCode(error) === 401 &&
       error.config &&
       !error.config.isRetry
     ) {
@@ -51,8 +37,7 @@ axiosWithAuth.interceptors.response.use(
         await authService.refresh();
         return axiosWithAuth.request(originalRequest);
       } catch (error) {
-        if (errorCatch(error) === "Given token not valid for any token type")
-          removeTokens();
+        if (getErrorStatusCode(error) === 401) removeTokens();
       }
     }
   }
