@@ -24,15 +24,16 @@ class AuthController extends AbstractController
         $password = $decoded->password;
         $address = $decoded->address;
         $fullName = $decoded->fullName;
+        $phone = $decoded->phone;
 
-        if (!$email || !$password || !$address || !$fullName) {
+        if (!$email || !$password || !$address || !$fullName || !$phone) {
             return $this->json(['message' => 'insufficient data provided'], 400);
         }
 
-        $userInDb = $entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
+        $userInDb = $entityManager->getRepository(User::class)->findOneBy(['phone' => $phone]);
 
         if (isset($userInDb)) {
-            return $this->json(['message' => 'email is already taken'], 400);
+            return $this->json(['message' => 'youy already have an account'], 400);
         }
 
         $user = new User();
@@ -41,6 +42,7 @@ class AuthController extends AbstractController
         $user->setPassword($hashedPassword);
         $user->setAddress($address);
         $user->setFullName($fullName);
+        $user->setPhone($phone);
 
         $entityManager->persist($user);
         $entityManager->flush();
