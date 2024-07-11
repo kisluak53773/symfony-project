@@ -20,13 +20,10 @@ class AuthController extends AbstractController
         $entityManager = $doctrine->getManager();
         $decoded = json_decode($request->getContent());
 
-        $email = $decoded->email;
-        $password = $decoded->password;
-        $address = $decoded->address;
-        $fullName = $decoded->fullName;
         $phone = $decoded->phone;
+        $password = $decoded->password;
 
-        if (!$email || !$password || !$address || !$fullName || !$phone) {
+        if (!$password || !$phone) {
             return $this->json(['message' => 'insufficient data provided'], 400);
         }
 
@@ -38,11 +35,20 @@ class AuthController extends AbstractController
 
         $user = new User();
         $hashedPassword = $passwordHasher->hashPassword($user, $password);
-        $user->setEmail($email);
         $user->setPassword($hashedPassword);
-        $user->setAddress($address);
-        $user->setFullName($fullName);
         $user->setPhone($phone);
+
+        if (isset($decoded->address)) {
+            $user->setAddress($decoded->address);
+        }
+
+        if (isset($decoded->email)) {
+            $user->setEmail($decoded->email);
+        }
+
+        if (isset($decoded->fullName)) {
+            $user->setFullName($decoded->fullName);
+        }
 
         $entityManager->persist($user);
         $entityManager->flush();
