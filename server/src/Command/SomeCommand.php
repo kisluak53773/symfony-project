@@ -9,7 +9,8 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputArgument;
-use App\Services\StrategyContainer;
+use App\Services\StrategyBuilder;
+use App\Services\CommandLineService;
 
 #[AsCommand(
     name: 'app:do-something',
@@ -19,12 +20,6 @@ use App\Services\StrategyContainer;
 )]
 class SomeCommand extends Command
 {
-    public function __construct(
-        private readonly StrategyContainer $strategyContainer,
-    ) {
-        parent::__construct();
-    }
-
     protected function configure(): void
     {
         $this->setHelp('This command allows you to do some cool stuff')
@@ -39,9 +34,7 @@ class SomeCommand extends Command
             '',
         ]);
 
-        $strategy = $this->strategyContainer->getStrategy('cli');
-
-        $strategy->setStrategy($input->getArgument('somedata'));
+        $strategy = StrategyBuilder::findStrategy(CommandLineService::class, $input->getArgument('somedata'));
 
         $output->writeln('Whoa!');
         $output->writeln('Username: ' . $strategy->resolve());

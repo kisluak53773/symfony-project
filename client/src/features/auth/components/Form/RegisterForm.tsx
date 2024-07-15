@@ -16,7 +16,7 @@ export const RegisterForm: FC = () => {
     mode: "onBlur",
   });
   const [error, setError] = useState("");
-  const isAuthorized = getAccessToken() ? true : false;
+  const isAuthorized = getAccessToken();
   const router = useRouter();
 
   useEffect(() => {
@@ -30,6 +30,7 @@ export const RegisterForm: FC = () => {
       reset();
       await authService.register(data);
       setError("");
+      router.push("/");
     } catch (error) {
       if (getErrorStatusCode(error) === 400) {
         setError("На этот номер телефона уже зарегестрирован аккаунт");
@@ -88,7 +89,7 @@ export const RegisterForm: FC = () => {
       <div className=" bg-gray-400 h-[1px] w-full mt-[20px] mb-[10px]" />
       <p className=" text-center">
         Уже есть аккаунт?{" "}
-        <Link href="/auth" className=" text-blue-400">
+        <Link href="/auth" className=" text-blue-400 hover:bg-blue-200">
           Войти в учетную запись
         </Link>
       </p>
