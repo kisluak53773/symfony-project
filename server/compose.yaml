@@ -21,6 +21,19 @@ services:
       # - ./docker/db/data:/var/lib/postgresql/data:rw
 ###< doctrine/doctrine-bundle ###
 
+# symfony:
+#   image: webdevops/php-nginx:8.2-alpine
+#   environment:
+#     - PHP_DISPLAY_ERRORS=1
+#     - PHP_MEMORY_LIMIT=512M
+#     - WEB_DOCUMENT_ROOT=/app/public
+#   volumes:
+#     - ./:/app
+#   ports:
+#     - "8080:80"
+#   depends_on:
+#     - database
+
 volumes:
   ###> doctrine/doctrine-bundle ###
   database_data:
