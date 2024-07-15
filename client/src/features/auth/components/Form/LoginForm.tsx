@@ -16,7 +16,7 @@ export const LoginForm: FC = () => {
     mode: "onBlur",
   });
   const [error, setError] = useState("");
-  const isAuthorized = getAccessToken() ? true : false;
+  const isAuthorized = getAccessToken();
   const router = useRouter();
 
   useEffect(() => {
@@ -30,6 +30,7 @@ export const LoginForm: FC = () => {
       reset();
       await authService.login(data);
       setError("");
+      router.push("/");
     } catch (error) {
       if (getErrorStatusCode(error) === 400) {
         setError("Неправильный пароль или номер телефона");
@@ -79,7 +80,10 @@ export const LoginForm: FC = () => {
       <div className=" bg-gray-400 h-[1px] w-full mt-[20px] mb-[10px]" />
       <p className=" text-center">
         Новый пользователь?{" "}
-        <Link href="/auth?type=register" className=" text-blue-400">
+        <Link
+          href="/auth?type=register"
+          className=" text-blue-400 hover:marker:bg-blue-200"
+        >
           Создать учетную запись
         </Link>
       </p>
