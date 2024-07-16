@@ -89,7 +89,7 @@ export const RegisterForm: FC = () => {
       <div className=" bg-gray-400 h-[1px] w-full mt-[20px] mb-[10px]" />
       <p className=" text-center">
         Уже есть аккаунт?{" "}
-        <Link href="/auth" className=" text-blue-400 hover:bg-blue-200">
+        <Link href="/auth" className=" text-blue-500 hover:bg-blue-300">
           Войти в учетную запись
         </Link>
       </p>

@@ -9,9 +9,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\User;
-use DateTime;
 
-#[Route('/api/auth', name: 'api_auth')]
+#[Route('/api/auth', name: 'api_auth_')]
 class AuthController extends AbstractController
 {
     #[Route('/register', name: 'register', methods: 'post')]
@@ -20,12 +19,12 @@ class AuthController extends AbstractController
         $entityManager = $doctrine->getManager();
         $decoded = json_decode($request->getContent());
 
-        $phone = $decoded->phone;
-        $password = $decoded->password;
-
-        if (!$password || !$phone) {
+        if (!isset($decoded->password) || !isset($decoded->phone)) {
             return $this->json(['message' => 'insufficient data provided'], 400);
         }
+
+        $phone = $decoded->phone;
+        $password = $decoded->password;
 
         $userInDb = $entityManager->getRepository(User::class)->findOneBy(['phone' => $phone]);
 
