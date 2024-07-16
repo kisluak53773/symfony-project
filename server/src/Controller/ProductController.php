@@ -84,8 +84,9 @@ class ProductController extends AbstractController
             'data' => $products,
         ];
 
-        return $this->json($response, 200, [], [
-            AbstractNormalizer::GROUPS => ['product_list']
-        ]);
+        return $this->json(
+            data: $response,
+            context: [AbstractNormalizer::GROUPS => ['product_list']]
+        );
     }
 }

@@ -82,7 +82,7 @@ export const LoginForm: FC = () => {
         Новый пользователь?{" "}
         <Link
           href="/auth?type=register"
-          className=" text-blue-400 hover:marker:bg-blue-200"
+          className=" text-blue-500 hover:marker:bg-blue-300"
         >
           Создать учетную запись
         </Link>

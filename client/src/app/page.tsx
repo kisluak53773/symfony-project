@@ -1,9 +1,6 @@
-import Image from "next/image";
+import { MainPage } from "@/features/MainPage";
+import { FC } from "react";
 
-export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <h1>Main page</h1>
-    </main>
-  );
-}
+const Home: FC = () => <MainPage />;
+
+export default Home;
