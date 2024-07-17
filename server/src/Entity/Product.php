@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\ProductRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -31,17 +33,9 @@ class Product
     #[Groups(['product_list'])]
     private ?string $storageConditions = null;
 
-    #[ORM\Column(length: 255)]
-    #[Groups(['product_list'])]
-    private ?string $type = null;
-
     #[ORM\Column(length: 40)]
     #[Groups(['product_list'])]
     private ?string $weight = null;
-
-    #[ORM\Column]
-    #[Groups(['product_list'])]
-    private ?int $price = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['product_list'])]
@@ -51,6 +45,21 @@ class Product
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['product_list'])]
     private ?Producer $producer = null;
+
+    /**
+     * @var Collection<int, VendorProduct>
+     */
+    #[ORM\OneToMany(targetEntity: VendorProduct::class, mappedBy: 'product', orphanRemoval: true)]
+    private Collection $vendorProducts;
+
+    #[ORM\ManyToOne(inversedBy: 'products')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Type $type = null;
+
+    public function __construct()
+    {
+        $this->vendorProducts = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -105,18 +114,6 @@ class Product
         return $this;
     }
 
-    public function getType(): ?string
-    {
-        return $this->type;
-    }
-
-    public function setType(string $type): static
-    {
-        $this->type = $type;
-
-        return $this;
-    }
-
     public function getWeight(): ?string
     {
         return $this->weight;
@@ -125,18 +122,6 @@ class Product
     public function setWeight(string $weight): static
     {
         $this->weight = $weight;
-
-        return $this;
-    }
-
-    public function getPrice(): ?int
-    {
-        return $this->price;
-    }
-
-    public function setPrice(int $price): static
-    {
-        $this->price = $price;
 
         return $this;
     }
@@ -161,6 +146,48 @@ class Product
     public function setProducer(?Producer $producer): static
     {
         $this->producer = $producer;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, VendorProduct>
+     */
+    public function getVendorProducts(): Collection
+    {
+        return $this->vendorProducts;
+    }
+
+    public function addVendorProduct(VendorProduct $vendorProduct): static
+    {
+        if (!$this->vendorProducts->contains($vendorProduct)) {
+            $this->vendorProducts->add($vendorProduct);
+            $vendorProduct->setProduct($this);
+        }
+
+        return $this;
+    }
+
+    public function removeVendorProduct(VendorProduct $vendorProduct): static
+    {
+        if ($this->vendorProducts->removeElement($vendorProduct)) {
+            // set the owning side to null (unless already changed)
+            if ($vendorProduct->getProduct() === $this) {
+                $vendorProduct->setProduct(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getType(): ?Type
+    {
+        return $this->type;
+    }
+
+    public function setType(?Type $type): static
+    {
+        $this->type = $type;
 
         return $this;
     }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Product;
+namespace App\Services;
 
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;

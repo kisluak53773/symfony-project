@@ -8,19 +8,19 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Product;
-use App\Services\Product\FileUploader;
 use App\Services\Product\ProductValidator;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use App\Entity\Producer;
 use App\Repository\ProductRepository;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use App\Services\Product\ProductImageUploader;
 
 #[Route('/api/product', name: 'api_product_')]
 class ProductController extends AbstractController
 {
     #[Route(name: 'add', methods: 'post')]
-    public function add(Request $request, ManagerRegistry $registry, FileUploader $uploader, ProductValidator $validator): JsonResponse
+    public function add(Request $request, ManagerRegistry $registry, ProductImageUploader $uploader, ProductValidator $validator): JsonResponse
     {
         $entityManager = $registry->getManager();
 
@@ -50,7 +50,6 @@ class ProductController extends AbstractController
         $product->setStorageConditions($request->request->get('storageConditions'));
         $product->setType($request->request->get('type'));
         $product->setWeight($request->request->get('weight'));
-        $product->setPrice($request->request->get('price'));
         $product->setProducer($producer);
         $product->setImage($imagePath);
 
