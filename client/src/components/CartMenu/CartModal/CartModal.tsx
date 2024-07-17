@@ -17,7 +17,7 @@ export const CartModal: FC = () => {
   const dispatch = useAppDispatch();
 
   return (
-    <article className=" flex flex-col bg-white h-[100vh] w-[26vw] ml-auto">
+    <article className=" flex flex-col bg-white h-[100vh] w-[26vw] ml-auto animate-trans-right">
       <div className=" flex justify-between border-b-[1px] border-b-gray-300 p-[20px] border-solid">
         <h1 className=" font-semibold text-[25px]">Корзина</h1>
         {productsInCart.length > 0 && (

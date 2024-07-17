@@ -16,7 +16,7 @@ const config: Config = {
         },
       },
       animation: {
-        "trans-right": "trans-right 0.5s linear",
+        "trans-right": "trans-right 0.2s linear",
       },
     },
   },
