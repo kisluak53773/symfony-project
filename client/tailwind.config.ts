@@ -9,6 +9,15 @@ const config: Config = {
         "gradient-conic":
           "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
       },
+      keyframes: {
+        "trans-right": {
+          "0%": { opacity: "0", transform: "translateX(200px)" },
+          "100%": { opacity: "1", transform: "translateX(0)" },
+        },
+      },
+      animation: {
+        "trans-right": "trans-right 0.2s linear",
+      },
     },
   },
   plugins: [],
