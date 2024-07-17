@@ -30,6 +30,9 @@ export const cartSlice = createSlice({
       );
       state.producst = filteredItems;
     },
+    removeAllFromCart: (state) => {
+      state.producst = initialState.producst;
+    },
     incrementQuantity: (state, action: PayloadAction<IProduct>) => {
       const itemInCart = state.producst.find(
         (product) => product.id === action.payload.id
@@ -63,4 +66,5 @@ export const {
   removeFromCart,
   incrementQuantity,
   decrementQuantity,
+  removeAllFromCart,
 } = cartSlice.actions;
