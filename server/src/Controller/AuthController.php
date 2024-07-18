@@ -10,14 +10,20 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\User;
 use App\Constants\RoleConstants;
-use App\Services\User\UserValidator;
+use App\Entity\Vendor;
+use DateTimeImmutable;
+use App\Services\Validator\UserValidator;
+use App\Services\Validator\VendorValidator;
 
 #[Route('/api/auth', name: 'api_auth_')]
 class AuthController extends AbstractController
 {
     #[Route('/register', name: 'register', methods: 'post')]
-    public function register(ManagerRegistry $doctrine, Request $request, UserPasswordHasherInterface $passwordHasher): JsonResponse
-    {
+    public function register(
+        ManagerRegistry $doctrine,
+        Request $request,
+        UserPasswordHasherInterface $passwordHasher
+    ): JsonResponse {
         $entityManager = $doctrine->getManager();
         $decoded = json_decode($request->getContent());
 
@@ -58,13 +64,23 @@ class AuthController extends AbstractController
         return $this->json(['message' => 'registered succsessfully'], 201);
     }
 
-    public function registerVendor(ManagerRegistry $doctrine, Request $request, UserPasswordHasherInterface $passwordHasher, UserValidator $validator): JsonResponse
-    {
+    #[Route('/register/vendor', name: 'register_vendor', methods: 'post')]
+    public function registerVendor(
+        ManagerRegistry $doctrine,
+        Request $request,
+        UserPasswordHasherInterface $passwordHasher,
+        UserValidator $userValidator,
+        VendorValidator $vendorValidator,
+    ): JsonResponse {
         $entityManager = $doctrine->getManager();
         $decoded = json_decode($request->getContent());
 
-        if (!$validator->isVendorValid($decoded)) {
-            return $this->json(['message' => 'insufficient data provided'], 400);
+        if (!$userValidator->isUserVendorValid($decoded)) {
+            return $this->json(['message' => 'insufficient user data provided'], 400);
+        }
+
+        if (!$vendorValidator->isVendorValid($decoded)) {
+            return $this->json(['message' => 'insufficient vendor data provided'], 400);
         }
 
         $phone = $decoded->phone;
@@ -79,6 +95,9 @@ class AuthController extends AbstractController
             return $this->json(['message' => 'youy already have an account'], 400);
         }
 
+        $registraionDate = DateTimeImmutable::createFromFormat('Y-m-d', $decoded->registrationDate);
+        $registrationCertificateDate = DateTimeImmutable::createFromFormat('Y-m-d', $decoded->registrationCertificateDate);
+
         $user = new User();
         $hashedPassword = $passwordHasher->hashPassword($user, $password);
         $user->setPassword($hashedPassword);
@@ -87,8 +106,18 @@ class AuthController extends AbstractController
         $user->setEmail($email);
         $user->setFullName($fullName);
         $user->setRoles([RoleConstants::ROLE_VENDOR]);
-
         $entityManager->persist($user);
+
+        $vendor = new Vendor();
+        $vendor->setTitle($decoded->title);
+        $vendor->setAddress($decoded->vendorAddress);
+        $vendor->setInn($decoded->inn);
+        $vendor->setRegistrationAuthority($decoded->registrationAuthority);
+        $vendor->setRegistrationDate($registraionDate);
+        $vendor->setRegistrationCertificateDate($registrationCertificateDate);
+        $vendor->setUser($user);
+        $entityManager->persist($vendor);
+
         $entityManager->flush();
 
         return $this->json(['message' => 'Vendor created'], 201);

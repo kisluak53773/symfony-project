@@ -34,8 +34,9 @@ class Vendor
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     private ?\DateTimeInterface $registrationCertificateDate = null;
 
-    #[ORM\OneToOne(mappedBy: 'vendor', cascade: ['persist', 'remove'])]
-    private ?User $vendor = null;
+    #[ORM\OneToOne(inversedBy: 'vendor', cascade: ['persist', 'remove'])]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $user = null;
 
     /**
      * @var Collection<int, VendorProduct>
@@ -125,14 +126,14 @@ class Vendor
         return $this;
     }
 
-    public function getVendor(): ?User
+    public function getUser(): ?User
     {
-        return $this->vendor;
+        return $this->user;
     }
 
-    public function setVendor(User $vendor): static
+    public function setUser(User $user): static
     {
-        $this->vendor = $vendor;
+        $this->user = $user;
 
         return $this;
     }

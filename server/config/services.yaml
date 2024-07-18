@@ -22,11 +22,11 @@ services:
       - "../src/Entity/"
       - "../src/Kernel.php"
 
-  App\Services\Product\ProductImageUploader:
+  App\Services\Uploader\ProductImageUploader:
     arguments:
       $targetDirectory: "%products_directory%"
 
-  App\Services\Types\TypesImageUploader:
+  App\Services\Uploader\TypesImageUploader:
     arguments:
       $targetDirectory: "%types_directory%"
 # config/services.yaml

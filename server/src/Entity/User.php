@@ -49,8 +49,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180, name: 'updated_at')]
     private DateTime $updatedAt;
 
-    #[ORM\OneToOne(inversedBy: 'vendor', cascade: ['persist', 'remove'])]
-    #[ORM\JoinColumn(nullable: true)]
+
+    #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'])]
     private ?Vendor $vendor = null;
 
     public function getId(): ?int
@@ -199,8 +199,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setVendor(Vendor $vendor): static
     {
         // set the owning side of the relation if necessary
-        if ($vendor->getVendor() !== $this) {
-            $vendor->setVendor($this);
+        if ($vendor->getUser() !== $this) {
+            $vendor->setUser($this);
         }
 
         $this->vendor = $vendor;

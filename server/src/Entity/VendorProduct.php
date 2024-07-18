@@ -7,6 +7,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: VendorProductRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class VendorProduct
 {
     #[ORM\Id]
@@ -16,6 +17,12 @@ class VendorProduct
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
     private ?string $price = null;
+
+    #[ORM\Column(
+        nullable: false,
+        options: ["default" => 0]
+    )]
+    private ?int $quantity = null;
 
     #[ORM\ManyToOne(inversedBy: 'vendorProducts')]
     #[ORM\JoinColumn(nullable: false)]
@@ -42,6 +49,18 @@ class VendorProduct
         return $this;
     }
 
+    public function getQuantity(): ?int
+    {
+        return $this->quantity;
+    }
+
+    public function setQuantity(int $quantity): static
+    {
+        $this->quantity = $quantity;
+
+        return $this;
+    }
+
     public function getVendor(): ?Vendor
     {
         return $this->vendor;
@@ -64,5 +83,13 @@ class VendorProduct
         $this->product = $product;
 
         return $this;
+    }
+
+    #[ORM\PrePersist]
+    public function setDefaultQuantity(): void
+    {
+        if (!isset($this->quantity)) {
+            $this->quantity = 0;
+        }
     }
 }

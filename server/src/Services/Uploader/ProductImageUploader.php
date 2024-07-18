@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Product;
-
-use App\Services\FileUploader;
+namespace App\Services\Uploader;
 
 class ProductImageUploader extends FileUploader
 {
