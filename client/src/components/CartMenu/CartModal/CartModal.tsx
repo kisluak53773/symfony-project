@@ -12,7 +12,10 @@ import { IoReloadOutline } from "react-icons/io5";
 export const CartModal: FC = () => {
   const productsInCart = useSelector(getCartProducts);
   const totalPrice = productsInCart
-    ? productsInCart.reduce((acc, item) => acc + item.price * item.quantity, 0)
+    ? productsInCart.reduce(
+        (acc, item) => acc + parseFloat(item.price) * item.quantity,
+        0
+      )
     : 0;
   const dispatch = useAppDispatch();
 

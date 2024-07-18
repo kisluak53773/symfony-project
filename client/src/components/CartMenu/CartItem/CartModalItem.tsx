@@ -2,7 +2,6 @@
 
 import React, { FC } from "react";
 import { type ICartItemProps } from "./@types";
-import Image from "next/image";
 import { productImagePathConverter } from "@/services";
 import { useAppDispatch } from "@/store";
 import { FiPlus } from "react-icons/fi";
@@ -14,7 +13,7 @@ export const CartModalItem: FC<ICartItemProps> = ({ product }) => {
 
   return (
     <section className="flex gap-[20px]">
-      <Image
+      <img
         src={productImagePathConverter(product.image)}
         alt="Картиинка продукта"
         width={56}
@@ -25,7 +24,7 @@ export const CartModalItem: FC<ICartItemProps> = ({ product }) => {
         <p>{product.title}</p>
         <div className=" flex justify-between mt-[10px] w-full items-center">
           <span className="font-semibold text-red-500">
-            {product.price * product.quantity} р.
+            {parseFloat(product.price) * product.quantity} р.
           </span>
           <div className=" flex w-[140px] justify-between items-center h-[34px] border-[1px] border-gray-300 border-solid rounded-lg">
             <button

@@ -1,7 +1,9 @@
 import { type IProduct } from "@/services/product";
 
-export interface ICartProduct extends IProduct {
+export interface ICartProduct extends Omit<IProduct, "vendorProducts"> {
   quantity: number;
+  price: string;
+  vendorId: number;
 }
 
 export interface ICart {
