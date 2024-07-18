@@ -36,4 +36,21 @@ class ProducerController extends AbstractController
 
         return $this->json(['message' => 'producer created'], 201);
     }
+
+    #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
+    public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
+    {
+        $entityManager = $managerRegistry->getManager();
+
+        $producer = $entityManager->getRepository(Producer::class)->find($id);
+
+        if (!isset($producer)) {
+            return $this->json(['message' => 'no such producer exist'], 404);
+        }
+
+        $entityManager->remove($producer);
+        $entityManager->flush();
+
+        return $this->json(['message' => 'deleted sucseffully'], 204);
+    }
 }

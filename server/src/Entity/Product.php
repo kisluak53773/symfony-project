@@ -43,13 +43,13 @@ class Product
 
     #[ORM\ManyToOne(inversedBy: 'products')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['product_list'])]
     private ?Producer $producer = null;
 
     /**
      * @var Collection<int, VendorProduct>
      */
     #[ORM\OneToMany(targetEntity: VendorProduct::class, mappedBy: 'product', orphanRemoval: true)]
+    #[Groups(['product_list'])]
     private Collection $vendorProducts;
 
     #[ORM\ManyToOne(inversedBy: 'products')]
@@ -190,5 +190,17 @@ class Product
         $this->type = $type;
 
         return $this;
+    }
+
+    #[Groups(['product_list'])]
+    public function getTypeId(): ?int
+    {
+        return $this->type->getId();
+    }
+
+    #[Groups(['product_list'])]
+    public function getProducerId(): ?int
+    {
+        return $this->producer->getId();
     }
 }

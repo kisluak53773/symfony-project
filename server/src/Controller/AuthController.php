@@ -122,4 +122,22 @@ class AuthController extends AbstractController
 
         return $this->json(['message' => 'Vendor created'], 201);
     }
+
+    #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
+    public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
+    {
+        $entityManager = $managerRegistry->getManager();
+
+        $user = $entityManager->getRepository(User::class)->find($id);
+
+        if (!isset($user)) {
+            return $this->json(['message' => 'no such user exist'], 404);
+        }
+        $user->setRoles([RoleConstants::ROLE_DELETED]);
+
+        $entityManager->persist($user);
+        $entityManager->flush();
+
+        return $this->json(['message' => 'deleted sucseffully'], 204);
+    }
 }

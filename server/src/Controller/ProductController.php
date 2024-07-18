@@ -38,21 +38,21 @@ class ProductController extends AbstractController
         $producerId = $request->request->get('producerId');
         $producer = $entityManager->getRepository(Producer::class)->find($producerId);
 
-        if (!$producer) {
+        if (!isset($producer)) {
             return $this->json(['message' => 'such producer does not exist'], 400);
         }
 
         $vendorId = $request->request->get('vendorId');
         $vendor = $entityManager->getRepository(Vendor::class)->find($vendorId);
 
-        if (!$vendor) {
+        if (!isset($vendor)) {
             return $this->json(['message' => 'such vendor does not exist'], 400);
         }
 
         $typeId = $request->request->get('typeId');
         $type = $entityManager->getRepository(Type::class)->find($typeId);
 
-        if (!$type) {
+        if (!isset($type)) {
             return $this->json(['message' => 'such type does not exist'], 400);
         }
 
@@ -114,5 +114,22 @@ class ProductController extends AbstractController
             data: $response,
             context: [AbstractNormalizer::GROUPS => ['product_list']]
         );
+    }
+
+    #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
+    public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
+    {
+        $entityManager = $managerRegistry->getManager();
+
+        $product = $entityManager->getRepository(Product::class)->find($id);
+
+        if (!isset($product)) {
+            return $this->json(['message' => 'no such product exist'], 404);
+        }
+
+        $entityManager->remove($product);
+        $entityManager->flush();
+
+        return $this->json(['message' => 'deleted sucseffully'], 204);
     }
 }

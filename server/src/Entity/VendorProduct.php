@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\VendorProductRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: VendorProductRepository::class)]
 #[ORM\HasLifecycleCallbacks]
@@ -16,12 +17,14 @@ class VendorProduct
     private ?int $id = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
+    #[Groups(['product_list'])]
     private ?string $price = null;
 
     #[ORM\Column(
         nullable: false,
         options: ["default" => 0]
     )]
+    #[Groups(['product_list'])]
     private ?int $quantity = null;
 
     #[ORM\ManyToOne(inversedBy: 'vendorProducts')]
@@ -91,5 +94,11 @@ class VendorProduct
         if (!isset($this->quantity)) {
             $this->quantity = 0;
         }
+    }
+
+    #[Groups(['product_list'])]
+    public function getVendorId(): ?int
+    {
+        return $this->vendor->getId();
     }
 }

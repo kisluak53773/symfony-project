@@ -40,4 +40,21 @@ class TypeController extends AbstractController
 
         return $this->json(['message' => 'type created'], 201);
     }
+
+    #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
+    public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
+    {
+        $entityManager = $managerRegistry->getManager();
+
+        $type = $entityManager->getRepository(Type::class)->find($id);
+
+        if (!isset($type)) {
+            return $this->json(['message' => 'no such type exist'], 404);
+        }
+
+        $entityManager->remove($type);
+        $entityManager->flush();
+
+        return $this->json(['message' => 'deleted sucseffully'], 204);
+    }
 }
