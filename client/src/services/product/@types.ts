@@ -1,5 +1,3 @@
-import { type IProducer } from "../producer";
-
 export interface IPaginatedProducts {
   total_items: number;
   current_page: number;
@@ -7,7 +5,11 @@ export interface IPaginatedProducts {
   data: IProduct[];
 }
 
-interface IProductProducer extends Omit<IProducer, "products"> {}
+interface IListProductVendorProduct {
+  price: string;
+  quantity: number;
+  vendorId: number;
+}
 
 export interface IProduct {
   id: number;
@@ -15,9 +17,9 @@ export interface IProduct {
   description: string;
   compound: string;
   storageConditions: string;
-  type: string;
   weight: string;
-  price: number;
   image: string;
-  producer: IProductProducer;
+  vendorProducts: IListProductVendorProduct[];
+  typeId: number;
+  producerId: number;
 }

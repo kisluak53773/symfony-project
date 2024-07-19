@@ -8,24 +8,52 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Product;
-use App\Services\Product\FileUploader;
-use App\Services\Product\ProductValidator;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use App\Entity\Producer;
 use App\Repository\ProductRepository;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use App\Entity\Vendor;
+use App\Entity\Type;
+use App\Entity\VendorProduct;
+use App\Services\Uploader\ProductImageUploader;
+use App\Services\Validator\ProductValidator;
 
 #[Route('/api/product', name: 'api_product_')]
 class ProductController extends AbstractController
 {
-    #[Route(name: 'add', methods: 'post')]
-    public function add(Request $request, ManagerRegistry $registry, FileUploader $uploader, ProductValidator $validator): JsonResponse
-    {
+    #[Route('/vendor', name: 'add', methods: 'post')]
+    public function addWithVendor(
+        Request $request,
+        ManagerRegistry $registry,
+        ProductImageUploader $uploader,
+        ProductValidator $validator
+    ): JsonResponse {
         $entityManager = $registry->getManager();
 
-        if (!$validator->validateForCreation($request)) {
+        if (!$validator->isProductWithVendorValid($request)) {
             return $this->json(['message' => 'insufficient data'], 400);
+        }
+
+        $producerId = $request->request->get('producerId');
+        $producer = $entityManager->getRepository(Producer::class)->find($producerId);
+
+        if (!isset($producer)) {
+            return $this->json(['message' => 'such producer does not exist'], 400);
+        }
+
+        $vendorId = $request->request->get('vendorId');
+        $vendor = $entityManager->getRepository(Vendor::class)->find($vendorId);
+
+        if (!isset($vendor)) {
+            return $this->json(['message' => 'such vendor does not exist'], 400);
+        }
+
+        $typeId = $request->request->get('typeId');
+        $type = $entityManager->getRepository(Type::class)->find($typeId);
+
+        if (!isset($type)) {
+            return $this->json(['message' => 'such type does not exist'], 400);
         }
 
         $image = $request->files->get('image');
@@ -36,25 +64,23 @@ class ProductController extends AbstractController
             return $this->json(['message' => $e->getMessage()], 500);
         }
 
-        $producerId = $request->request->get('producerId');
-        $producer = $entityManager->getRepository(Producer::class)->find($producerId);
-
-        if (!$producer) {
-            return $this->json(['message' => 'such producer does not exist'], 400);
-        }
-
         $product = new Product();
         $product->setTitle($request->request->get('title'));
         $product->setDescription($request->request->get('description'));
         $product->setCompound($request->request->get('compound'));
         $product->setStorageConditions($request->request->get('storageConditions'));
-        $product->setType($request->request->get('type'));
         $product->setWeight($request->request->get('weight'));
-        $product->setPrice($request->request->get('price'));
-        $product->setProducer($producer);
         $product->setImage($imagePath);
-
+        $product->setType($type);
+        $product->setProducer($producer);
         $entityManager->persist($product);
+
+        $vendorProduct = new VendorProduct();
+        $vendorProduct->setPrice($request->request->get('price'));
+        $vendorProduct->setProduct($product);
+        $vendorProduct->setVendor($vendor);
+        $entityManager->persist($vendorProduct);
+
         $entityManager->flush();
 
         return $this->json(['message' => 'new produt craeted'], 201);
@@ -88,5 +114,22 @@ class ProductController extends AbstractController
             data: $response,
             context: [AbstractNormalizer::GROUPS => ['product_list']]
         );
+    }
+
+    #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
+    public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
+    {
+        $entityManager = $managerRegistry->getManager();
+
+        $product = $entityManager->getRepository(Product::class)->find($id);
+
+        if (!isset($product)) {
+            return $this->json(['message' => 'no such product exist'], 404);
+        }
+
+        $entityManager->remove($product);
+        $entityManager->flush();
+
+        return $this->json(['message' => 'deleted sucseffully'], 204);
     }
 }

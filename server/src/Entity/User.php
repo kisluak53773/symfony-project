@@ -49,6 +49,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180, name: 'updated_at')]
     private DateTime $updatedAt;
 
+
+    #[ORM\OneToOne(mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private ?Vendor $vendor = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -185,5 +189,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setUpdatedAtValue(): void
     {
         $this->updatedAt = new DateTime('now');
+    }
+
+    public function getVendor(): ?Vendor
+    {
+        return $this->vendor;
+    }
+
+    public function setVendor(Vendor $vendor): static
+    {
+        // set the owning side of the relation if necessary
+        if ($vendor->getUser() !== $this) {
+            $vendor->setUser($this);
+        }
+
+        $this->vendor = $vendor;
+
+        return $this;
     }
 }
