@@ -39,7 +39,8 @@ security:
     - { path: ^/api/auth/token/refresh, roles: PUBLIC_ACCESS }
     - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
     - { path: ^/api, roles: PUBLIC_ACCESS }
-    - { path: ^/api/dashboard, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/api/user, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^'/api/product/create', roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
   security:

@@ -6,6 +6,7 @@ use App\Repository\TypeRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: TypeRepository::class)]
 class Type
@@ -13,9 +14,11 @@ class Type
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['vendor_type'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 40)]
+    #[Groups(['vendor_type'])]
     private ?string $title = null;
 
     /**
@@ -25,6 +28,7 @@ class Type
     private Collection $products;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['vendor_type'])]
     private ?string $image = null;
 
     public function __construct()

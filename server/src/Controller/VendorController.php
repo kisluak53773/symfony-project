@@ -58,7 +58,7 @@ class VendorController extends AbstractController
 
         $entityManager->flush();
 
-        return $this->json(['message' => 'vendor created'], 201);
+        return $this->json(['message' => 'vendor created', 'id' => $vendor->getId()], 201);
     }
 
     #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]

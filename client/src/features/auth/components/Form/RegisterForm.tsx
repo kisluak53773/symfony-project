@@ -10,6 +10,8 @@ import Link from "next/link";
 import { getAccessToken } from "@/services";
 import { useRouter } from "next/navigation";
 import { getErrorStatusCode } from "@/services/axios";
+import { useAppDispatch } from "@/store";
+import { fetchUser } from "@/store/slices/user";
 
 export const RegisterForm: FC = () => {
   const { control, handleSubmit, reset } = useForm<IRegisterData>({
@@ -18,6 +20,7 @@ export const RegisterForm: FC = () => {
   const [error, setError] = useState("");
   const isAuthorized = getAccessToken();
   const router = useRouter();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (isAuthorized) {
@@ -29,6 +32,7 @@ export const RegisterForm: FC = () => {
     try {
       reset();
       await authService.register(data);
+      await dispatch(fetchUser());
       setError("");
       router.push("/");
     } catch (error) {

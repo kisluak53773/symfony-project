@@ -1,0 +1,1 @@
+export { ProductCreatePage } from "./components";

@@ -13,23 +13,27 @@ use App\Entity\Producer;
 use App\Repository\ProductRepository;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use App\Entity\Vendor;
 use App\Entity\Type;
 use App\Entity\VendorProduct;
 use App\Services\Uploader\ProductImageUploader;
 use App\Services\Validator\ProductValidator;
+use Symfony\Bundle\SecurityBundle\Security;
+use App\Constants\RoleConstants;
+use App\Entity\User;
 
 #[Route('/api/product', name: 'api_product_')]
 class ProductController extends AbstractController
 {
-    #[Route('/vendor', name: 'add', methods: 'post')]
+    #[Route('/create', name: 'add', methods: 'post')]
     public function addWithVendor(
         Request $request,
         ManagerRegistry $registry,
         ProductImageUploader $uploader,
-        ProductValidator $validator
+        ProductValidator $validator,
+        Security $security
     ): JsonResponse {
         $entityManager = $registry->getManager();
+        $user = $security->getUser();
 
         if (!$validator->isProductWithVendorValid($request)) {
             return $this->json(['message' => 'insufficient data'], 400);
@@ -40,13 +44,6 @@ class ProductController extends AbstractController
 
         if (!isset($producer)) {
             return $this->json(['message' => 'such producer does not exist'], 400);
-        }
-
-        $vendorId = $request->request->get('vendorId');
-        $vendor = $entityManager->getRepository(Vendor::class)->find($vendorId);
-
-        if (!isset($vendor)) {
-            return $this->json(['message' => 'such vendor does not exist'], 400);
         }
 
         $typeId = $request->request->get('typeId');
@@ -75,15 +72,25 @@ class ProductController extends AbstractController
         $product->setProducer($producer);
         $entityManager->persist($product);
 
-        $vendorProduct = new VendorProduct();
-        $vendorProduct->setPrice($request->request->get('price'));
-        $vendorProduct->setProduct($product);
-        $vendorProduct->setVendor($vendor);
-        $entityManager->persist($vendorProduct);
+        if (isset($user) && in_array(RoleConstants::ROLE_VENDOR, $user->getRoles())) {
+            $userPhone = $user->getUserIdentifier();
+            $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+
+            $vendorProduct = new VendorProduct();
+            $vendorProduct->setVendor($user->getVendor());
+            $vendorProduct->setProduct($product);
+            $vendorProduct->setPrice($request->request->get('price'));
+
+            if ($request->request->has('quantity')) {
+                $vendorProduct->setQuantity($request->request->get('quantity'));
+            }
+
+            $entityManager->persist($vendorProduct);
+        }
 
         $entityManager->flush();
 
-        return $this->json(['message' => 'new produt craeted'], 201);
+        return $this->json(['message' => 'new produt craeted', 'id' => $product->getId()], 201);
     }
 
     #[Route(name: 'list', methods: ['GET'])]

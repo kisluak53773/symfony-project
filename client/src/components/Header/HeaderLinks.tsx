@@ -1,22 +1,36 @@
+"use client";
+
 import React, { FC } from "react";
 import { HEADER_LINKS } from "@/constants/headerLinks";
-import Link from "next/link";
-import { HeaderImage } from "./HeaderImage";
+import { HeaderLink } from "./HeaderLink";
+import { useSelector } from "react-redux";
+import { getUser } from "@/store/slices/user";
+import { ROLES } from "@/constants/projectConstants";
 
 export const HeaderLinks: FC = () => {
+  const user = useSelector(getUser);
+
+  console.log(!!user);
+
   return (
     <nav>
       <ul className=" flex gap-[10px] text-[12px]">
+        {user && user.roles.includes(ROLES.ROLE_VENDOR) ? (
+          <HeaderLink
+            href="/vendor/product"
+            title="Панель продавца"
+            img="vendor"
+          />
+        ) : (
+          <HeaderLink href="/auth" title="Войти" img="person" />
+        )}
         {HEADER_LINKS.map((item) => (
-          <li key={item.id}>
-            <Link
-              href={item.href}
-              className=" flex flex-col items-center justify-center"
-            >
-              <HeaderImage type={item.img} />
-              <p>{item.title}</p>
-            </Link>
-          </li>
+          <HeaderLink
+            key={item.id}
+            href={item.href}
+            img={item.img}
+            title={item.title}
+          />
         ))}
       </ul>
     </nav>

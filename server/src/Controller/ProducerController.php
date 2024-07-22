@@ -8,6 +8,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\Producer;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
 #[Route('/api/producer', name: 'api_producer_')]
 class ProducerController extends AbstractController
@@ -37,6 +38,18 @@ class ProducerController extends AbstractController
         return $this->json(['message' => 'producer created'], 201);
     }
 
+    #[Route('/vendor', name: 'get_vendor', methods: 'get')]
+    public function getForVendor(ManagerRegistry $registry): JsonResponse
+    {
+        $entityManager = $registry->getManager();
+        $producers = $entityManager->getRepository(Producer::class)->findAll();
+
+        return $this->json(
+            data: $producers,
+            context: [AbstractNormalizer::GROUPS => ['vendor_producer']]
+        );
+    }
+
     #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
     public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
     {
@@ -51,6 +64,6 @@ class ProducerController extends AbstractController
         $entityManager->remove($producer);
         $entityManager->flush();
 
-        return $this->json(['message' => 'deleted sucseffully'], 204);
+        return $this->json(['message' => 'deleted sucseffully', 'id' => $producer->getId()], 204);
     }
 }

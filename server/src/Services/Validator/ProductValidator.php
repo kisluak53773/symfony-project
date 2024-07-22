@@ -18,8 +18,6 @@ class ProductValidator
             !$request->request->has('weight') ||
             !$request->request->has('producerId') ||
             !$request->request->has('typeId') ||
-            !$request->request->has('price') ||
-            !$request->request->has('vendorId') ||
             !$request->files->has('image')
         ) {
             return false;
