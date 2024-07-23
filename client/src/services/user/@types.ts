@@ -10,3 +10,10 @@ export interface IUser {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface IProfileUpdate {
+  phone: string;
+  email?: string;
+  address?: string;
+  fullName?: string;
+}

@@ -20,6 +20,7 @@ use App\Services\Validator\ProductValidator;
 use Symfony\Bundle\SecurityBundle\Security;
 use App\Constants\RoleConstants;
 use App\Entity\User;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/product', name: 'api_product_')]
 class ProductController extends AbstractController
@@ -94,8 +95,11 @@ class ProductController extends AbstractController
     }
 
     #[Route(name: 'list', methods: ['GET'])]
-    public function list(Request $request, PaginatorInterface $paginator, ProductRepository $productRepository): JsonResponse
-    {
+    public function list(
+        Request $request,
+        PaginatorInterface $paginator,
+        ProductRepository $productRepository
+    ): JsonResponse {
         $querryBuilder = $productRepository->createQueryBuilderForPagination();
 
         $pagination = $paginator->paginate(
@@ -120,6 +124,48 @@ class ProductController extends AbstractController
         return $this->json(
             data: $response,
             context: [AbstractNormalizer::GROUPS => ['product_list']]
+        );
+    }
+
+    #[Route('/vendor', name: 'get_products_vendor_does_not_sell', methods: 'get')]
+    #[IsGranted('ROLE_VENDOR', message: 'You are not allowed to access this route.')]
+    public function getProductsVendorDoesNotSell(
+        Request $request,
+        PaginatorInterface $paginator,
+        ProductRepository $productRepository,
+        Security $security,
+        ManagerRegistry $registry
+    ): JsonResponse {
+        $entityMnager = $registry->getManager();
+
+        $userPhone = $security->getUser()->getUserIdentifier();
+        $user = $entityMnager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+
+        $vendor = $user->getVendor();
+        $querryBuilder = $productRepository->findAllProductsExcludingVendor($vendor);
+
+        $pagination = $paginator->paginate(
+            $querryBuilder,
+            $request->query->getInt('page', 1),
+            $request->query->get('limit', 5)
+        );
+
+        $products = $pagination->getItems();
+        $totalItems = $pagination->getTotalItemCount();
+        $itemsPerPage = $pagination->getItemNumberPerPage();
+        $currentPage = $pagination->getCurrentPageNumber();
+        $totalPages = ceil($totalItems / $itemsPerPage);
+
+        $response = [
+            'total_items' => $totalItems,
+            'current_page' => $currentPage,
+            'total_pages' => $totalPages,
+            'data' => $products,
+        ];
+
+        return $this->json(
+            data: $response,
+            context: [AbstractNormalizer::GROUPS => ['vendor_does_not_sell']]
         );
     }
 

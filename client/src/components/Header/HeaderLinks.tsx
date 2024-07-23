@@ -10,8 +10,6 @@ import { ROLES } from "@/constants/projectConstants";
 export const HeaderLinks: FC = () => {
   const user = useSelector(getUser);
 
-  console.log(!!user);
-
   return (
     <nav>
       <ul className=" flex gap-[10px] text-[12px]">

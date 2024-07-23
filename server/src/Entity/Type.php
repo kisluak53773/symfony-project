@@ -14,11 +14,11 @@ class Type
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['vendor_type'])]
+    #[Groups(['vendor_type', 'vendor_does_not_sell'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 40)]
-    #[Groups(['vendor_type'])]
+    #[Groups(['vendor_type', 'vendor_does_not_sell'])]
     private ?string $title = null;
 
     /**
@@ -28,7 +28,7 @@ class Type
     private Collection $products;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['vendor_type'])]
+    #[Groups(['vendor_type', 'vendor_does_not_sell'])]
     private ?string $image = null;
 
     public function __construct()

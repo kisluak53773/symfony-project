@@ -1,7 +1,8 @@
-export interface IPaginatedProducts {
-  total_items: number;
-  current_page: number;
-  total_pages: number;
+import { type IPagination } from "@/types";
+import { type IProducer } from "../producer";
+import { type IType } from "../type";
+
+export interface IPaginatedProducts extends IPagination {
   data: IProduct[];
 }
 
@@ -22,4 +23,34 @@ export interface IProduct {
   vendorProducts: IListProductVendorProduct[];
   typeId: number;
   producerId: number;
+}
+
+export interface IProductOfVendor {
+  id: number;
+  price: string;
+  quantity: number;
+  product: Omit<IProduct, "vendorProducts">;
+}
+
+export interface IPaginatedProductsOfVendor extends IPagination {
+  data: IProductOfVendor[];
+}
+
+export interface IVendorProductUpdate {
+  quantity: number;
+  price: string;
+}
+
+export interface IProductVendorDoesNotSell
+  extends Omit<IProduct, "typeId" | "producerId" | "vendorProducts"> {
+  producer: IProducer;
+  type: IType;
+}
+
+export interface IPgainatedProductVendorDoesNotSell extends IPagination {
+  data: IProductVendorDoesNotSell[];
+}
+
+export interface IVendorProductCreate extends IVendorProductUpdate {
+  productId: number;
 }

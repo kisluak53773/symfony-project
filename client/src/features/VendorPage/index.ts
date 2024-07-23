@@ -1,1 +1,0 @@
-export { VendorPage } from "./components";

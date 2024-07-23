@@ -1,7 +1,7 @@
 export enum ROLES {
-  ROLE_USER = "user",
-  ROLE_ADMIN = "admin",
-  ROLE_VENDOR = "vendor",
+  ROLE_USER = "ROLE_USER",
+  ROLE_ADMIN = "ROLE_ADMIN",
+  ROLE_VENDOR = "ROLE_VENDOR",
 }
 
 export const COLORS = {

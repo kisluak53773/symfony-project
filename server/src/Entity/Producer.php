@@ -14,19 +14,19 @@ class Producer
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['product_list', 'vendor_producer'])]
+    #[Groups(['product_list', 'vendor_producer', 'vendor_does_not_sell'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 40)]
-    #[Groups(['product_list', 'vendor_producer'])]
+    #[Groups(['product_list', 'vendor_producer', 'vendor_does_not_sell'])]
     private ?string $title = null;
 
     #[ORM\Column(length: 40)]
-    #[Groups(['product_list', 'vendor_producer'])]
+    #[Groups(['product_list', 'vendor_producer', 'vendor_does_not_sell'])]
     private ?string $country = null;
 
     #[ORM\Column(length: 100)]
-    #[Groups(['product_list', 'vendor_producer'])]
+    #[Groups(['product_list', 'vendor_producer', 'vendor_does_not_sell'])]
     private ?string $address = null;
 
     /**

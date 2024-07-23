@@ -8,11 +8,17 @@ export interface IProductItemProps {
 export interface IJwtPayload {
   iat: number;
   exp: number;
-  roles: ROLES;
+  roles: ROLES[];
   username: string;
 }
 
 export interface IOption {
   value: string;
   label: string;
+}
+
+export interface IPagination {
+  total_items: number;
+  current_page: number;
+  total_pages: number;
 }

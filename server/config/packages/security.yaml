@@ -10,6 +10,11 @@ security:
         class: App\Entity\User
         property: phone
 
+  role_hierarchy:
+    ROLE_USER: []
+    ROLE_VENDOR: [ROLE_USER]
+    ROLE_ADMIN: [ROLE_USER, ROLE_VENDOR]
+
   firewalls:
     api:
       pattern: ^/api
