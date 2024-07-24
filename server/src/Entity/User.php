@@ -6,6 +6,7 @@ use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 use DateTime;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -17,24 +18,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['current_user'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, nullable: true)]
+    #[Groups(['current_user'])]
     private ?string $email = null;
 
     #[ORM\Column(length: 30)]
+    #[Groups(['current_user'])]
     private ?string $phone = null;
 
     #[ORM\Column(length: 180, name: 'full_name', nullable: true)]
+    #[Groups(['current_user'])]
     private ?string $fullName = null;
 
     #[ORM\Column(length: 180, nullable: true)]
+    #[Groups(['current_user'])]
     private ?string $address = null;
 
     /**
      * @var list<string> The user roles
      */
     #[ORM\Column]
+    #[Groups(['current_user'])]
     private array $roles = [];
 
     /**
@@ -44,9 +51,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 180, name: 'created_at')]
+    #[Groups(['current_user'])]
     private DateTime $createdAt;
 
     #[ORM\Column(length: 180, name: 'updated_at')]
+    #[Groups(['current_user'])]
     private DateTime $updatedAt;
 
 
@@ -118,8 +127,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getRoles(): array
     {
         $roles = $this->roles;
-        // guarantee every user at least has ROLE_USER
-        $roles[] = 'ROLE_USER';
 
         return array_unique($roles);
     }

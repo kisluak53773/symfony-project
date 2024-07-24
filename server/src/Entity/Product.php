@@ -14,35 +14,36 @@ class Product
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['product_list'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 40)]
-    #[Groups(['product_list'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
     private ?string $title = null;
 
     #[ORM\Column(length: 1000)]
-    #[Groups(['product_list'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
     private ?string $description = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['product_list'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
     private ?string $compound = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['product_list'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
     private ?string $storageConditions = null;
 
     #[ORM\Column(length: 40)]
-    #[Groups(['product_list'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
     private ?string $weight = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['product_list'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
     private ?string $image = null;
 
     #[ORM\ManyToOne(inversedBy: 'products')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['vendor_does_not_sell'])]
     private ?Producer $producer = null;
 
     /**
@@ -54,6 +55,7 @@ class Product
 
     #[ORM\ManyToOne(inversedBy: 'products')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['vendor_does_not_sell'])]
     private ?Type $type = null;
 
     public function __construct()
@@ -192,13 +194,13 @@ class Product
         return $this;
     }
 
-    #[Groups(['product_list'])]
+    #[Groups(['product_list', 'vendor_products'])]
     public function getTypeId(): ?int
     {
         return $this->type->getId();
     }
 
-    #[Groups(['product_list'])]
+    #[Groups(['product_list', 'vendor_products'])]
     public function getProducerId(): ?int
     {
         return $this->producer->getId();

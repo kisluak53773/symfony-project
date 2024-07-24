@@ -10,6 +10,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Type;
 use App\Services\Uploader\TypesImageUploader;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
 #[Route('/api/type', name: 'api_type_')]
 class TypeController extends AbstractController
@@ -38,7 +39,19 @@ class TypeController extends AbstractController
         $entityManger->persist($type);
         $entityManger->flush();
 
-        return $this->json(['message' => 'type created'], 201);
+        return $this->json(['message' => 'type created', 'id' => $type->getId()], 201);
+    }
+
+    #[Route('/vendor', name: 'get_vendor', methods: 'get')]
+    public function get(ManagerRegistry $registry): JsonResponse
+    {
+        $entityManager = $registry->getManager();
+        $types = $entityManager->getRepository(Type::class)->findAll();
+
+        return $this->json(
+            data: $types,
+            context: [AbstractNormalizer::GROUPS => ['vendor_type']]
+        );
     }
 
     #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]

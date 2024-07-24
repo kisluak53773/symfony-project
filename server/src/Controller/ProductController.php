@@ -13,23 +13,28 @@ use App\Entity\Producer;
 use App\Repository\ProductRepository;
 use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use App\Entity\Vendor;
 use App\Entity\Type;
 use App\Entity\VendorProduct;
 use App\Services\Uploader\ProductImageUploader;
 use App\Services\Validator\ProductValidator;
+use Symfony\Bundle\SecurityBundle\Security;
+use App\Constants\RoleConstants;
+use App\Entity\User;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/product', name: 'api_product_')]
 class ProductController extends AbstractController
 {
-    #[Route('/vendor', name: 'add', methods: 'post')]
+    #[Route('/create', name: 'add', methods: 'post')]
     public function addWithVendor(
         Request $request,
         ManagerRegistry $registry,
         ProductImageUploader $uploader,
-        ProductValidator $validator
+        ProductValidator $validator,
+        Security $security
     ): JsonResponse {
         $entityManager = $registry->getManager();
+        $user = $security->getUser();
 
         if (!$validator->isProductWithVendorValid($request)) {
             return $this->json(['message' => 'insufficient data'], 400);
@@ -40,13 +45,6 @@ class ProductController extends AbstractController
 
         if (!isset($producer)) {
             return $this->json(['message' => 'such producer does not exist'], 400);
-        }
-
-        $vendorId = $request->request->get('vendorId');
-        $vendor = $entityManager->getRepository(Vendor::class)->find($vendorId);
-
-        if (!isset($vendor)) {
-            return $this->json(['message' => 'such vendor does not exist'], 400);
         }
 
         $typeId = $request->request->get('typeId');
@@ -75,20 +73,33 @@ class ProductController extends AbstractController
         $product->setProducer($producer);
         $entityManager->persist($product);
 
-        $vendorProduct = new VendorProduct();
-        $vendorProduct->setPrice($request->request->get('price'));
-        $vendorProduct->setProduct($product);
-        $vendorProduct->setVendor($vendor);
-        $entityManager->persist($vendorProduct);
+        if (isset($user) && in_array(RoleConstants::ROLE_VENDOR, $user->getRoles())) {
+            $userPhone = $user->getUserIdentifier();
+            $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+
+            $vendorProduct = new VendorProduct();
+            $vendorProduct->setVendor($user->getVendor());
+            $vendorProduct->setProduct($product);
+            $vendorProduct->setPrice($request->request->get('price'));
+
+            if ($request->request->has('quantity')) {
+                $vendorProduct->setQuantity($request->request->get('quantity'));
+            }
+
+            $entityManager->persist($vendorProduct);
+        }
 
         $entityManager->flush();
 
-        return $this->json(['message' => 'new produt craeted'], 201);
+        return $this->json(['message' => 'new produt craeted', 'id' => $product->getId()], 201);
     }
 
     #[Route(name: 'list', methods: ['GET'])]
-    public function list(Request $request, PaginatorInterface $paginator, ProductRepository $productRepository): JsonResponse
-    {
+    public function list(
+        Request $request,
+        PaginatorInterface $paginator,
+        ProductRepository $productRepository
+    ): JsonResponse {
         $querryBuilder = $productRepository->createQueryBuilderForPagination();
 
         $pagination = $paginator->paginate(
@@ -113,6 +124,48 @@ class ProductController extends AbstractController
         return $this->json(
             data: $response,
             context: [AbstractNormalizer::GROUPS => ['product_list']]
+        );
+    }
+
+    #[Route('/vendor', name: 'get_products_vendor_does_not_sell', methods: 'get')]
+    #[IsGranted('ROLE_VENDOR', message: 'You are not allowed to access this route.')]
+    public function getProductsVendorDoesNotSell(
+        Request $request,
+        PaginatorInterface $paginator,
+        ProductRepository $productRepository,
+        Security $security,
+        ManagerRegistry $registry
+    ): JsonResponse {
+        $entityMnager = $registry->getManager();
+
+        $userPhone = $security->getUser()->getUserIdentifier();
+        $user = $entityMnager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+
+        $vendor = $user->getVendor();
+        $querryBuilder = $productRepository->findAllProductsExcludingVendor($vendor);
+
+        $pagination = $paginator->paginate(
+            $querryBuilder,
+            $request->query->getInt('page', 1),
+            $request->query->get('limit', 5)
+        );
+
+        $products = $pagination->getItems();
+        $totalItems = $pagination->getTotalItemCount();
+        $itemsPerPage = $pagination->getItemNumberPerPage();
+        $currentPage = $pagination->getCurrentPageNumber();
+        $totalPages = ceil($totalItems / $itemsPerPage);
+
+        $response = [
+            'total_items' => $totalItems,
+            'current_page' => $currentPage,
+            'total_pages' => $totalPages,
+            'data' => $products,
+        ];
+
+        return $this->json(
+            data: $response,
+            context: [AbstractNormalizer::GROUPS => ['vendor_does_not_sell']]
         );
     }
 

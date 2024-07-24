@@ -40,28 +40,38 @@ export const ProductItem: FC<IProductItemProps> = ({ product }) => {
         height={400}
         alt="Картинка продукта"
       />
-      <p className="font-semibold text-red-500 text-[18px]">
-        {product.vendorProducts[0].price} р.
-      </p>
+      {product.vendorProducts.length > 0 ? (
+        <p className="font-semibold text-red-500 text-[18px]">
+          {product.vendorProducts[0].price + "р."}
+        </p>
+      ) : (
+        <p className="font-semibold text-gray-400 text-[18px]">
+          Товара нет в наличии
+        </p>
+      )}
       <p>{product.title}</p>
       <p className=" text-[13px] text-gray-400 mb-[30px]">{product.weight}</p>
-      {isItemInCart ? (
-        <div className=" flex w-full justify-between h-[34px]">
-          <button onClick={() => dispatch(decrementQuantity(isItemInCart))}>
-            <FiMinus size={20} color="black" />
-          </button>
-          <span>{isItemInCart.quantity} шт.</span>
-          <button onClick={() => dispatch(incrementQuantity(isItemInCart))}>
-            <FiPlus size={20} color="black" />
-          </button>
-        </div>
-      ) : (
-        <button
-          onClick={handleAdd}
-          className="flex items-center justify-center bg-blue-500 hover:bg-blue-300 rounded-lg w-[64px] h-[34px]"
-        >
-          <FiPlus size={30} color="white" />
-        </button>
+      {product.vendorProducts.length > 0 && (
+        <>
+          {isItemInCart ? (
+            <div className=" flex w-full justify-between h-[34px]">
+              <button onClick={() => dispatch(decrementQuantity(isItemInCart))}>
+                <FiMinus size={20} color="black" />
+              </button>
+              <span>{isItemInCart.quantity} шт.</span>
+              <button onClick={() => dispatch(incrementQuantity(isItemInCart))}>
+                <FiPlus size={20} color="black" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleAdd}
+              className="flex items-center justify-center bg-blue-500 hover:bg-blue-300 rounded-lg w-[64px] h-[34px]"
+            >
+              <FiPlus size={30} color="white" />
+            </button>
+          )}
+        </>
       )}
     </section>
   );

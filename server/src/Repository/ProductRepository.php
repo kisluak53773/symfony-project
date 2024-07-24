@@ -5,6 +5,8 @@ namespace App\Repository;
 use App\Entity\Product;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use App\Entity\Vendor;
+use Doctrine\ORM\QueryBuilder;
 
 /**
  * @extends ServiceEntityRepository<Product>
@@ -16,10 +18,19 @@ class ProductRepository extends ServiceEntityRepository
         parent::__construct($registry, Product::class);
     }
 
-    public function createQueryBuilderForPagination()
+    public function createQueryBuilderForPagination(): QueryBuilder
     {
         return $this->createQueryBuilder('p')
             ->orderBy('p.id', 'ASC');
+    }
+
+    public function findAllProductsExcludingVendor(Vendor $vendor): QueryBuilder
+    {
+        return $this->createQueryBuilder('p')
+            ->leftJoin('p.vendorProducts', 'vp')
+            ->leftJoin('vp.vendor', 'v')
+            ->where('v.id IS NULL OR v.id != :vendorId')
+            ->setParameter('vendorId', $vendor->getId());;
     }
 
     //    /**

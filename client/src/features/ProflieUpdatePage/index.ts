@@ -1,0 +1,1 @@
+export { ProflieUpdatePage } from "./components";

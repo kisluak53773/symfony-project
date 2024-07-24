@@ -21,4 +21,18 @@ class VendorValidator
 
         return true;
     }
+
+    public function isVendorValidForPatch(mixed $request): bool
+    {
+        if (
+            !isset($request->title) ||
+            !isset($request->address) ||
+            !isset($request->inn) ||
+            !isset($request->registrationAuthority)
+        ) {
+            return false;
+        }
+
+        return true;
+    }
 }

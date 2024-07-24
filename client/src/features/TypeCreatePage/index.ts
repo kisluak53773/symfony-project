@@ -1,0 +1,1 @@
+export { TypeCreatePage } from "./components";

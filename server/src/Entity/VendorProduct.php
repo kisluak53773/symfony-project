@@ -14,17 +14,18 @@ class VendorProduct
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['product_list', 'vendor_products'])]
     private ?int $id = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
-    #[Groups(['product_list'])]
+    #[Groups(['product_list', 'vendor_products'])]
     private ?string $price = null;
 
     #[ORM\Column(
         nullable: false,
         options: ["default" => 0]
     )]
-    #[Groups(['product_list'])]
+    #[Groups(['product_list', 'vendor_products'])]
     private ?int $quantity = null;
 
     #[ORM\ManyToOne(inversedBy: 'vendorProducts')]
@@ -33,6 +34,7 @@ class VendorProduct
 
     #[ORM\ManyToOne(inversedBy: 'vendorProducts')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['vendor_products'])]
     private ?Product $product = null;
 
     public function getId(): ?int

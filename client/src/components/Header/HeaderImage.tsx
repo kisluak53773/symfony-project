@@ -6,6 +6,7 @@ import { IoPersonOutline } from "react-icons/io5";
 import { IoIosMenu } from "react-icons/io";
 import { BsBoxSeam } from "react-icons/bs";
 import { CiSearch } from "react-icons/ci";
+import { TbDeviceIpadMinus } from "react-icons/tb";
 
 export const HeaderImage: FC<IHeaderImageProps> = ({ type }) => {
   switch (type) {
@@ -21,5 +22,7 @@ export const HeaderImage: FC<IHeaderImageProps> = ({ type }) => {
       return <BsBoxSeam color="gray" size={25} />;
     case "search":
       return <CiSearch color="gray" size={25} />;
+    case "vendor":
+      return <TbDeviceIpadMinus color="gray" size={25} />;
   }
 };

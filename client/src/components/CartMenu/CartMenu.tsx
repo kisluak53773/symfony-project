@@ -20,7 +20,7 @@ export const CartMenu: FC = () => {
   const [isModelActive, setIsModelActive] = useState(false);
 
   return (
-    <aside className=" flex flex-col border-l-[1px] px-[5px] border-l-gray-400 bg-white border-solid absolute right-0 top-0 z-20 h-[100vh]">
+    <aside className=" flex flex-col border-l-[1px] px-[5px] border-l-gray-400 bg-white border-solid fixed right-0 top-0 z-20 h-[100vh]">
       {productsInCart.length > 0 ? (
         <>
           <button

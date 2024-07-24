@@ -2,7 +2,7 @@
 
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { type ICart, type ICartProduct } from "./@types";
-import { RootState } from "@/store/store";
+import { type RootState } from "@/store/store";
 import { type IProduct } from "@/services/product";
 
 const initialState: ICart = {

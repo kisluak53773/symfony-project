@@ -5,6 +5,8 @@ namespace App\Repository;
 use App\Entity\VendorProduct;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use App\Entity\Vendor;
+use Doctrine\ORM\QueryBuilder;
 
 /**
  * @extends ServiceEntityRepository<VendorProduct>
@@ -14,6 +16,14 @@ class VendorProductRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, VendorProduct::class);
+    }
+
+    public function createQueryBuilderForPaginationWithVendor(Vendor $vendor): QueryBuilder
+    {
+        return $this->createQueryBuilder('vp')
+            ->where('vp.vendor = :vendor')
+            ->setParameter('vendor', $vendor)
+            ->orderBy('vp.id', 'ASC');
     }
 
     //    /**

@@ -19,7 +19,7 @@ export const Modal: FC<IModalProps> = ({
   if (!modalRoot) return null;
 
   return createPortal(
-    <div className=" fixed inset-0 z-30">
+    <div className={cx(" fixed inset-0 z-30", classes?.modalContainer)}>
       <div
         onClick={() => setIsModelActive(false)}
         className="bg-[rgba(0,0,0,0.7)] h-[100vh] w-[100vw] z-30"

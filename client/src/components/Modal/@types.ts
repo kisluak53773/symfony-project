@@ -4,5 +4,6 @@ export interface IModalProps extends PropsWithChildren {
   setIsModelActive: React.Dispatch<React.SetStateAction<boolean>>;
   classes?: {
     modalWindow?: string;
+    modalContainer?: string;
   };
 }
