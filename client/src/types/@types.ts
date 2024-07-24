@@ -22,3 +22,9 @@ export interface IPagination {
   current_page: number;
   total_pages: number;
 }
+
+export interface IPaginationHook {
+  totalPageCount: number;
+  siblingCount?: number;
+  currentPage: number;
+}

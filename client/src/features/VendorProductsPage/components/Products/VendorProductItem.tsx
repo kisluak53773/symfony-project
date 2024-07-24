@@ -10,8 +10,15 @@ import { productService } from "@/services/product";
 
 export const VendorProductItem: FC<IProductVendorItemProps> = ({
   vendorProduct,
+  handleRefetch,
+  handleProductOfVendorUpdate,
 }) => {
   const [isModelActive, setIsModelActive] = useState(false);
+
+  const handleDelete = async () => {
+    await productService.deleteProductForVendor(vendorProduct.id);
+    handleRefetch();
+  };
 
   return (
     <li className=" mb-[10px] group/vendorProduct">
@@ -37,9 +44,7 @@ export const VendorProductItem: FC<IProductVendorItemProps> = ({
           Редактировать
         </button>
         <button
-          onClick={() =>
-            productService.deleteProductForVendor(vendorProduct.id)
-          }
+          onClick={handleDelete}
           className="absolute right-[10px] top-[10px] hidden group-hover/vendorProduct:block"
         >
           <FaRegTrashCan size={25} color="red" />
@@ -53,6 +58,7 @@ export const VendorProductItem: FC<IProductVendorItemProps> = ({
           }}
         >
           <VendorProductModal
+            handleProductOfVendorUpdate={handleProductOfVendorUpdate}
             setIsModelActive={setIsModelActive}
             vendorProduct={vendorProduct}
           />

@@ -14,6 +14,7 @@ import { productService } from "@/services/product";
 export const ExistingProductModal: FC<IExistingProductModalProps> = ({
   productId,
   setIsModalActive,
+  handleRefetch,
 }) => {
   const { control, handleSubmit, reset } = useForm<IVendorProductForm>({
     mode: "onBlur",
@@ -25,6 +26,7 @@ export const ExistingProductModal: FC<IExistingProductModalProps> = ({
       await productService.setProductFroVendor({ ...data, productId });
       setError("");
       reset();
+      handleRefetch();
       setIsModalActive(false);
     } catch (error) {
       if (getErrorStatusCode(error) === 400) {

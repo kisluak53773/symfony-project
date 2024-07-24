@@ -6,6 +6,7 @@ import {
   type IProductVendorDoesNotSell,
 } from "@/services/product";
 import { ExistingProductItem } from "./ExistingProductItem";
+import { CustomPagination } from "@/components/Pagination";
 
 export const ExistingProductList: FC = () => {
   const [products, setProducts] = useState<IProductVendorDoesNotSell[] | null>(
@@ -13,13 +14,21 @@ export const ExistingProductList: FC = () => {
   );
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [refetch, setRefetch] = useState(false);
+
+  const handleRefetch = () => {
+    if (products && products.length === 1 && page !== 1) {
+      setPage(page - 1);
+    } else {
+      setRefetch(!refetch);
+    }
+  };
 
   useEffect(() => {
     (async () => {
       const data = await productService.getProductsVendorDoesNotSell(page);
 
       setProducts(data.data);
-      setPage(data.current_page);
       setTotalPages(data.total_pages);
     })();
   }, [page]);
@@ -27,11 +36,22 @@ export const ExistingProductList: FC = () => {
   return (
     <>
       {products && products.length > 0 ? (
-        <ul>
-          {products.map((item) => (
-            <ExistingProductItem key={item.id} product={item} />
-          ))}
-        </ul>
+        <>
+          <ul>
+            {products.map((item) => (
+              <ExistingProductItem
+                handleRefetch={handleRefetch}
+                key={item.id}
+                product={item}
+              />
+            ))}
+          </ul>
+          <CustomPagination
+            currentPage={page}
+            setPage={setPage}
+            totalPageCount={totalPages}
+          />
+        </>
       ) : (
         <h1 className="text-[26px] flex items-center justify-center">
           Таких продуктов нету

@@ -14,6 +14,7 @@ import { type IProductOfVendor, productService } from "@/services/product";
 export const VendorProductModal: FC<IVerdorProductModalProps> = ({
   vendorProduct,
   setIsModelActive,
+  handleProductOfVendorUpdate,
 }) => {
   const { control, handleSubmit, reset } = useForm<IVendorProductForm>({
     mode: "onBlur",
@@ -24,6 +25,7 @@ export const VendorProductModal: FC<IVerdorProductModalProps> = ({
     try {
       await productService.updateVendorProduct(data, vendorProduct.id);
       setError("");
+      handleProductOfVendorUpdate(data, vendorProduct.id);
       setIsModelActive(false);
     } catch (error) {
       if (getErrorStatusCode(error) === 400) {

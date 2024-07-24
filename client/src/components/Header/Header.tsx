@@ -21,7 +21,7 @@ export const Header: FC = () => {
         removeTokens();
       }
     };
-  });
+  }, []);
 
   return (
     <header className=" h-[8vh] bg-white sticky top-0 w-full z-20 flex border-b-[1px] border-b-gray-400 gap-[20px] items-center justify-center ">

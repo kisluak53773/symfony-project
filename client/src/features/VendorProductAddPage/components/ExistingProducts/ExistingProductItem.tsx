@@ -8,6 +8,7 @@ import { Modal } from "@/components/Modal";
 
 export const ExistingProductItem: FC<IExistingProductItemProps> = ({
   product,
+  handleRefetch,
 }) => {
   const [isModalActive, setIsModalActive] = useState(false);
 
@@ -45,6 +46,7 @@ export const ExistingProductItem: FC<IExistingProductItemProps> = ({
           <ExistingProductModal
             setIsModalActive={setIsModalActive}
             productId={product.id}
+            handleRefetch={handleRefetch}
           />
         </Modal>
       )}
