@@ -7,6 +7,7 @@ export interface IPaginatedProducts extends IPagination {
 }
 
 interface IListProductVendorProduct {
+  id: number;
   price: string;
   quantity: number;
   vendorId: number;

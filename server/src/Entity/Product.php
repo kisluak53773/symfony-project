@@ -15,11 +15,11 @@ class Product
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell', 'elastica'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 40)]
-    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell', 'elastica'])]
     #[Assert\Length(
         min: 2,
         max: 40,
@@ -29,7 +29,7 @@ class Product
     private ?string $title = null;
 
     #[ORM\Column(length: 1000)]
-    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell', 'elastica'])]
     #[Assert\Length(
         min: 1,
         max: 1000,
@@ -39,7 +39,7 @@ class Product
     private ?string $description = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell', 'elastica'])]
     #[Assert\Length(
         min: 1,
         max: 1000,
@@ -49,7 +49,7 @@ class Product
     private ?string $compound = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell', 'elastica'])]
     #[Assert\Length(
         min: 1,
         max: 255,
@@ -59,7 +59,7 @@ class Product
     private ?string $storageConditions = null;
 
     #[ORM\Column(length: 40)]
-    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell', 'elastica'])]
     #[Assert\Length(
         min: 1,
         max: 40,
@@ -69,7 +69,7 @@ class Product
     private ?string $weight = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell', 'elastica'])]
     #[Assert\NotBlank]
     private ?string $image = null;
 
@@ -83,7 +83,7 @@ class Product
      * @var Collection<int, VendorProduct>
      */
     #[ORM\OneToMany(targetEntity: VendorProduct::class, mappedBy: 'product', orphanRemoval: true)]
-    #[Groups(['product_list'])]
+    #[Groups(['product_list', 'elastica'])]
     private Collection $vendorProducts;
 
     #[ORM\ManyToOne(inversedBy: 'products')]
@@ -228,13 +228,13 @@ class Product
         return $this;
     }
 
-    #[Groups(['product_list', 'vendor_products'])]
+    #[Groups(['product_list', 'vendor_products', 'elastica'])]
     public function getTypeId(): ?int
     {
         return $this->type->getId();
     }
 
-    #[Groups(['product_list', 'vendor_products'])]
+    #[Groups(['product_list', 'vendor_products', 'elastica'])]
     public function getProducerId(): ?int
     {
         return $this->producer->getId();

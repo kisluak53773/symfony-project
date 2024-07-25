@@ -77,9 +77,12 @@ class ProductController extends AbstractController
         $errors = $validator->validate($product);
 
         if (count($errors) > 0) {
-            $errorsString = (string) $errors;
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[$error->getPropertyPath()] = $error->getMessage();
+            }
 
-            return $this->json(['message' => $errorsString], 400);
+            return $this->json(['message' => 'Validation failed', 'errors' => $errorMessages], 400);
         }
 
         $entityManager->persist($product);
@@ -100,9 +103,12 @@ class ProductController extends AbstractController
             $errors = $validator->validate($vendorProduct);
 
             if (count($errors) > 0) {
-                $errorsString = (string) $errors;
+                $errorMessages = [];
+                foreach ($errors as $error) {
+                    $errorMessages[$error->getPropertyPath()] = $error->getMessage();
+                }
 
-                return $this->json(['message' => $errorsString], 400);
+                return $this->json(['message' => 'Validation failed', 'errors' => $errorMessages], 400);
             }
 
             $entityManager->persist($vendorProduct);
@@ -119,7 +125,7 @@ class ProductController extends AbstractController
         PaginatorInterface $paginator,
         ProductRepository $productRepository
     ): JsonResponse {
-        $querryBuilder = $productRepository->createQueryBuilderForPagination();
+        $querryBuilder = $productRepository->searchByTitle($request);
 
         $pagination = $paginator->paginate(
             $querryBuilder,

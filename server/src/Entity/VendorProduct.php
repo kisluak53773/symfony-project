@@ -15,11 +15,11 @@ class VendorProduct
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['product_list', 'vendor_products'])]
+    #[Groups(['product_list', 'vendor_products', 'elastica'])]
     private ?int $id = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
-    #[Groups(['product_list', 'vendor_products'])]
+    #[Groups(['product_list', 'vendor_products', 'elastica'])]
     #[Assert\NotBlank(message: 'Price should not be blank')]
     private ?string $price = null;
 
@@ -27,7 +27,7 @@ class VendorProduct
         nullable: false,
         options: ["default" => 0]
     )]
-    #[Groups(['product_list', 'vendor_products'])]
+    #[Groups(['product_list', 'vendor_products', 'elastica'])]
     private ?int $quantity = null;
 
     #[ORM\ManyToOne(inversedBy: 'vendorProducts')]
@@ -102,7 +102,7 @@ class VendorProduct
         }
     }
 
-    #[Groups(['product_list'])]
+    #[Groups(['product_list', 'elastica'])]
     public function getVendorId(): ?int
     {
         return $this->vendor->getId();

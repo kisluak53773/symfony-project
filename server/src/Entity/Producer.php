@@ -15,11 +15,11 @@ class Producer
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['product_list', 'vendor_producer', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_producer', 'vendor_does_not_sell', 'elastica'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 40)]
-    #[Groups(['product_list', 'vendor_producer', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_producer', 'vendor_does_not_sell', 'elastica'])]
     #[Assert\Length(
         min: 2,
         max: 40,
@@ -29,7 +29,7 @@ class Producer
     private ?string $title = null;
 
     #[ORM\Column(length: 40)]
-    #[Groups(['product_list', 'vendor_producer', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_producer', 'vendor_does_not_sell', 'elastica'])]
     #[Assert\Length(
         min: 2,
         max: 40,
@@ -39,7 +39,7 @@ class Producer
     private ?string $country = null;
 
     #[ORM\Column(length: 100)]
-    #[Groups(['product_list', 'vendor_producer', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_producer', 'vendor_does_not_sell', 'elastica'])]
     #[Assert\Length(
         min: 2,
         max: 100,
