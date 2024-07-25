@@ -43,6 +43,7 @@ class ProductRepository extends ServiceEntityRepository
     public function searchByTitle(Request $request): PaginatorAdapterInterface
     {
         $title = $request->query->get('title', '');
+        $priceSort = $request->query->get('priceSort', 'asc');
         $query = new Query();
         $boolQuery = new BoolQuery();
 
@@ -55,14 +56,17 @@ class ProductRepository extends ServiceEntityRepository
         }
 
         $query->setQuery($boolQuery);
-        $query->setSort([
-            'vendorProducts.price' => [
-                'order' => 'desc',
-                'nested' => [
-                    'path' => 'vendorProducts',
+
+        if ($priceSort) {
+            $query->setSort([
+                'vendorProducts.price' => [
+                    'order' => $priceSort,
+                    'nested' => [
+                        'path' => 'vendorProducts',
+                    ],
                 ],
-            ],
-        ]);
+            ]);
+        }
 
         $results = $this->productFinder->createPaginatorAdapter($query);
 
