@@ -166,13 +166,13 @@ class ProductController extends AbstractController
         $userPhone = $security->getUser()->getUserIdentifier();
         $user = $entityMnager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
 
-        $vendor = $user->getVendor();
-        $querryBuilder = $productRepository->findAllProductsExcludingVendor($vendor);
+        $vendorId = $user->getVendor()->getId();
+        $querryBuilder = $productRepository->searchByTitle($request, $vendorId);
 
         $pagination = $paginator->paginate(
             $querryBuilder,
             $request->query->getInt('page', 1),
-            $request->query->get('limit', 5)
+            $request->query->get('limit', 5),
         );
 
         $products = $pagination->getItems();

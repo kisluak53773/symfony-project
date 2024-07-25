@@ -13,6 +13,8 @@ use Elastica\Query;
 use Elastica\Query\BoolQuery;
 use Elastica\Query\QueryString;
 use FOS\ElasticaBundle\Paginator\PaginatorAdapterInterface;
+use Elastica\Query\Term;
+use Elastica\Query\Nested;
 
 
 /**
@@ -40,7 +42,7 @@ class ProductRepository extends ServiceEntityRepository
             ->setParameter('vendorId', $vendor->getId());;
     }
 
-    public function searchByTitle(Request $request): PaginatorAdapterInterface
+    public function searchByTitle(Request $request, int $vendorId = null): PaginatorAdapterInterface
     {
         $title = $request->query->get('title', '');
         $priceSort = $request->query->get('priceSort', 'asc');
@@ -53,6 +55,19 @@ class ProductRepository extends ServiceEntityRepository
             $queryString->setDefaultField('title');
 
             $boolQuery->addMust($queryString);
+        }
+
+        if (isset($vendorId)) {
+            $nestedBoolQuery = new BoolQuery();
+            $termQuery = new Term(['vendorProducts.vendorId' => $vendorId]);
+            $nestedBoolQuery->addMust($termQuery);
+
+            $nestedQuery = new Nested();
+            $nestedQuery->setPath('vendorProducts');
+
+            $nestedQuery->setQuery((new BoolQuery())->addMustNot($nestedBoolQuery));
+
+            $boolQuery->addFilter($nestedQuery);
         }
 
         $query->setQuery($boolQuery);
