@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 class Product
@@ -19,31 +20,63 @@ class Product
 
     #[ORM\Column(length: 40)]
     #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Assert\Length(
+        min: 2,
+        max: 40,
+        minMessage: 'Title must not be so short',
+        maxMessage: 'Title should not be so long',
+    )]
     private ?string $title = null;
 
     #[ORM\Column(length: 1000)]
     #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Assert\Length(
+        min: 1,
+        max: 1000,
+        minMessage: 'Description must not be so short',
+        maxMessage: 'Description should not be so long',
+    )]
     private ?string $description = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Assert\Length(
+        min: 1,
+        max: 1000,
+        minMessage: 'Compound must not be so short',
+        maxMessage: 'Compound should not be so long',
+    )]
     private ?string $compound = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Assert\Length(
+        min: 1,
+        max: 255,
+        minMessage: 'Storage conditions must not be so short',
+        maxMessage: 'Storage conditions should not be so long',
+    )]
     private ?string $storageConditions = null;
 
     #[ORM\Column(length: 40)]
     #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Assert\Length(
+        min: 1,
+        max: 40,
+        minMessage: 'Weight conditions must not be so short',
+        maxMessage: 'Weightshould not be so long',
+    )]
     private ?string $weight = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Assert\NotBlank]
     private ?string $image = null;
 
     #[ORM\ManyToOne(inversedBy: 'products')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['vendor_does_not_sell'])]
+    #[Assert\NotBlank]
     private ?Producer $producer = null;
 
     /**
@@ -56,6 +89,7 @@ class Product
     #[ORM\ManyToOne(inversedBy: 'products')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['vendor_does_not_sell'])]
+    #[Assert\NotBlank]
     private ?Type $type = null;
 
     public function __construct()

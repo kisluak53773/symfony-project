@@ -18,6 +18,7 @@ use Knp\Component\Pager\PaginatorInterface;
 use App\Repository\VendorProductRepository;
 use App\Services\Validator\VendorProductValidator;
 use App\Constants\RoleConstants;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/vendorProduct', name: 'api_vendorProduct_')]
 class VendorProductController extends AbstractController
@@ -27,7 +28,8 @@ class VendorProductController extends AbstractController
     public function add(
         Request $request,
         ManagerRegistry $managerRegistry,
-        Security $security
+        Security $security,
+        ValidatorInterface $validator
     ): JsonResponse {
         $entityManager = $managerRegistry->getManager();
         $decoded = json_decode($request->getContent());
@@ -70,6 +72,14 @@ class VendorProductController extends AbstractController
             $vendorProduct->setQuantity($decoded->quantity);
         }
 
+        $errors = $validator->validate($vendorProduct);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+
+            return $this->json(['message' => $errorsString], 400);
+        }
+
         $entityManager->persist($vendorProduct);
         $entityManager->flush();
 
@@ -106,6 +116,10 @@ class VendorProductController extends AbstractController
         $currentPage = $pagination->getCurrentPageNumber();
         $totalPages = ceil($totalItems / $itemsPerPage);
 
+        if (!isset($vendorProducts)) {
+            return $this->json(['message' => 'there are no such products'], 404);
+        }
+
         $response = [
             'total_items' => $totalItems,
             'current_page' => $currentPage,
@@ -125,18 +139,27 @@ class VendorProductController extends AbstractController
         int $id,
         Request $request,
         ManagerRegistry $registry,
-        VendorProductValidator $validator
+        VendorProductValidator $vendorProductValidator,
+        ValidatorInterface $validator
     ): JsonResponse {
         $entityManager = $registry->getManager();
         $decoded = json_decode($request->getContent());
 
-        if (!$validator->validateVendorToPatch($decoded)) {
+        if (!$vendorProductValidator->validateVendorToPatch($decoded)) {
             return $this->json(['message' => 'insufficient data'], 400);
         }
 
         $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($id);
         $vendorProduct->setPrice($decoded->price);
         $vendorProduct->setQuantity($decoded->quantity);
+
+        $errors = $validator->validate($vendorProduct);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+
+            return $this->json(['message' => $errorsString], 400);
+        }
 
         $entityManager->persist($vendorProduct);
         $entityManager->flush();

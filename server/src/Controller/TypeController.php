@@ -11,13 +11,18 @@ use App\Entity\Type;
 use App\Services\Uploader\TypesImageUploader;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/type', name: 'api_type_')]
 class TypeController extends AbstractController
 {
     #[Route(name: 'create', methods: 'post')]
-    public function add(Request $request, ManagerRegistry $registry, TypesImageUploader $uploader): JsonResponse
-    {
+    public function add(
+        Request $request,
+        ManagerRegistry $registry,
+        TypesImageUploader $uploader,
+        ValidatorInterface $validator
+    ): JsonResponse {
         $entityManger = $registry->getManager();
 
         if (!$request->request->has('title')) {
@@ -34,6 +39,14 @@ class TypeController extends AbstractController
             } catch (FileException $e) {
                 return $this->json(['message' => $e->getMessage()], 500);
             }
+        }
+
+        $errors = $validator->validate($type);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+
+            return $this->json(['message' => $errorsString], 400);
         }
 
         $entityManger->persist($type);

@@ -21,6 +21,7 @@ use Symfony\Bundle\SecurityBundle\Security;
 use App\Constants\RoleConstants;
 use App\Entity\User;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/product', name: 'api_product_')]
 class ProductController extends AbstractController
@@ -30,13 +31,14 @@ class ProductController extends AbstractController
         Request $request,
         ManagerRegistry $registry,
         ProductImageUploader $uploader,
-        ProductValidator $validator,
-        Security $security
+        ProductValidator $productValidator,
+        Security $security,
+        ValidatorInterface $validator
     ): JsonResponse {
         $entityManager = $registry->getManager();
         $user = $security->getUser();
 
-        if (!$validator->isProductWithVendorValid($request)) {
+        if (!$productValidator->isProductWithVendorValid($request)) {
             return $this->json(['message' => 'insufficient data'], 400);
         }
 
@@ -71,6 +73,15 @@ class ProductController extends AbstractController
         $product->setImage($imagePath);
         $product->setType($type);
         $product->setProducer($producer);
+
+        $errors = $validator->validate($product);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+
+            return $this->json(['message' => $errorsString], 400);
+        }
+
         $entityManager->persist($product);
 
         if (isset($user) && in_array(RoleConstants::ROLE_VENDOR, $user->getRoles())) {
@@ -84,6 +95,14 @@ class ProductController extends AbstractController
 
             if ($request->request->has('quantity')) {
                 $vendorProduct->setQuantity($request->request->get('quantity'));
+            }
+
+            $errors = $validator->validate($vendorProduct);
+
+            if (count($errors) > 0) {
+                $errorsString = (string) $errors;
+
+                return $this->json(['message' => $errorsString], 400);
             }
 
             $entityManager->persist($vendorProduct);
@@ -155,6 +174,10 @@ class ProductController extends AbstractController
         $itemsPerPage = $pagination->getItemNumberPerPage();
         $currentPage = $pagination->getCurrentPageNumber();
         $totalPages = ceil($totalItems / $itemsPerPage);
+
+        if (!isset($products)) {
+            return $this->json(['message' => 'there are no such proucts'], 404);
+        }
 
         $response = [
             'total_items' => $totalItems,

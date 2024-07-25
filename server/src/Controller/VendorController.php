@@ -15,6 +15,7 @@ use App\Constants\RoleConstants;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/vendor', name: 'api_vendor_')]
 class VendorController extends AbstractController
@@ -23,12 +24,14 @@ class VendorController extends AbstractController
     public function add(
         Request $request,
         ManagerRegistry $managerRegistry,
-        VendorValidator $validator
+        VendorValidator $vendorValidator,
+        ValidatorInterface $validator
+
     ): JsonResponse {
         $entityManager = $managerRegistry->getManager();
         $decoded = json_decode($request->getContent());
 
-        if (!isset($decoded->userId) || !$validator->isVendorValid($decoded)) {
+        if (!isset($decoded->userId) || !$vendorValidator->isVendorValid($decoded)) {
             return $this->json(['message' => 'insufficient data'], 400);
         }
 
@@ -54,6 +57,15 @@ class VendorController extends AbstractController
         $vendor->setRegistrationDate($registraionDate);
         $vendor->setRegistrationCertificateDate($registrationCertificateDate);
         $vendor->setUser($user);
+
+        $errors = $validator->validate($vendor);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+
+            return $this->json(['message' => $errorsString], 400);
+        }
+
         $entityManager->persist($vendor);
 
         $user->setRoles([RoleConstants::ROLE_VENDOR]);
@@ -68,7 +80,6 @@ class VendorController extends AbstractController
     #[IsGranted('ROLE_VENDOR', message: 'You are not allowed to access this route.')]
     public function getCurrentVendor(
         ManagerRegistry $doctrine,
-        Request $request,
         Security $security
     ): JsonResponse {
         $entityManager = $doctrine->getManager();
@@ -89,12 +100,13 @@ class VendorController extends AbstractController
         ManagerRegistry $doctrine,
         Request $request,
         Security $security,
-        VendorValidator $validator
+        VendorValidator $vendorValidator,
+        ValidatorInterface $validator
     ): JsonResponse {
         $entityManager = $doctrine->getManager();
         $decoded = json_decode($request->getContent());
 
-        if (!$validator->isVendorValidForPatch($decoded)) {
+        if (!$vendorValidator->isVendorValidForPatch($decoded)) {
             return $this->json(['message' => 'insufficient data'], 400);
         }
 
@@ -106,6 +118,14 @@ class VendorController extends AbstractController
         $vendor->setAddress($decoded->address);
         $vendor->setInn($decoded->inn);
         $vendor->setRegistrationAuthority($decoded->registrationAuthority);
+
+        $errors = $validator->validate($vendor);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+
+            return $this->json(['message' => $errorsString], 400);
+        }
 
         $entityManager->persist($vendor);
         $entityManager->flush();

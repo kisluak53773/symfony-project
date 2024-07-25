@@ -11,6 +11,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\User;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/user', name: 'api_user_')]
 class UserController extends AbstractController
@@ -36,7 +37,8 @@ class UserController extends AbstractController
     public function patchCurrentUser(
         ManagerRegistry $doctrine,
         Request $request,
-        Security $security
+        Security $security,
+        ValidatorInterface $validator
     ): JsonResponse {
         $user = $security->getUser();
         $entityManager = $doctrine->getManager();
@@ -69,6 +71,14 @@ class UserController extends AbstractController
 
         if (isset($decoded->fullName)) {
             $user->setFullName($decoded->fullName);
+        }
+
+        $errors = $validator->validate($user);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+
+            return $this->json(['message' => $errorsString], 400);
         }
 
         $entityManager->persist($user);

@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: VendorRepository::class)]
 class Vendor
@@ -20,30 +21,57 @@ class Vendor
 
     #[ORM\Column(length: 40)]
     #[Groups(['current_vendor'])]
+    #[Assert\Length(
+        min: 2,
+        max: 40,
+        minMessage: 'Title must not be so short',
+        maxMessage: 'Title should not be so long',
+    )]
     private ?string $title = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(['current_vendor'])]
+    #[Assert\Length(
+        min: 2,
+        max: 255,
+        minMessage: 'Address must not be so short',
+        maxMessage: 'Address should not be so long',
+    )]
     private ?string $address = null;
 
     #[ORM\Column(length: 10)]
     #[Groups(['current_vendor'])]
+    #[Assert\Length(
+        min: 2,
+        max: 10,
+        minMessage: 'INN must not be so short',
+        maxMessage: 'INN should not be so long',
+    )]
     private ?string $inn = null;
 
     #[ORM\Column(length: 100)]
     #[Groups(['current_vendor'])]
+    #[Assert\Length(
+        min: 2,
+        max: 100,
+        minMessage: 'Registration authority must not be so short',
+        maxMessage: 'Registration authority should not be so long',
+    )]
     private ?string $registrationAuthority = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     #[Groups(['current_vendor'])]
+    #[Assert\Date]
     private ?\DateTimeInterface $registrationDate = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     #[Groups(['current_vendor'])]
+    #[Assert\Date]
     private ?\DateTimeInterface $registrationCertificateDate = null;
 
     #[ORM\OneToOne(inversedBy: 'vendor', cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: false)]
+    #[Assert\NotBlank]
     private ?User $user = null;
 
     /**

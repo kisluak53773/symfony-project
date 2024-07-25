@@ -26,10 +26,15 @@ export const ExistingProductList: FC = () => {
 
   useEffect(() => {
     (async () => {
-      const data = await productService.getProductsVendorDoesNotSell(page);
+      try {
+        const data = await productService.getProductsVendorDoesNotSell(page);
 
-      setProducts(data.data);
-      setTotalPages(data.total_pages);
+        setProducts(data.data);
+        setTotalPages(data.total_pages);
+      } catch (error) {
+        setProducts(null);
+        setTotalPages(1);
+      }
     })();
   }, [page]);
 

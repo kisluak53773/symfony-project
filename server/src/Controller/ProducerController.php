@@ -9,13 +9,17 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\Producer;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/producer', name: 'api_producer_')]
 class ProducerController extends AbstractController
 {
     #[Route(name: 'add', methods: 'post')]
-    public function add(ManagerRegistry $registry, Request $request): JsonResponse
-    {
+    public function add(
+        ManagerRegistry $registry,
+        Request $request,
+        ValidatorInterface $validator
+    ): JsonResponse {
         $entityManager = $registry->getManager();
         $decoded = json_decode($request->getContent());
 
@@ -31,6 +35,14 @@ class ProducerController extends AbstractController
         $producer->setTitle($title);
         $producer->setCountry($country);
         $producer->setAddress($address);
+
+        $errors = $validator->validate($producer);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+
+            return $this->json(['message' => $errorsString], 400);
+        }
 
         $entityManager->persist($producer);
         $entityManager->flush();
