@@ -14,7 +14,17 @@ export const SearchItem: FC<ISearchItemProps> = ({ product }) => {
         alt="Image of product"
         className="w-[100px] h-[100px]"
       />
-      <p className=" font-semibold text-center">{product.title}</p>
+      <div className=" fles flex-col">
+        <p className=" font-semibold text-center">{product.title}</p>
+        <p className=" text-[12px] text-gray-400">{product.weight}</p>
+        {product.vendorProducts.length > 0 ? (
+          <p className=" font-semibold text-red-400 mt-[10px]">
+            {product.vendorProducts[0].price} руб.
+          </p>
+        ) : (
+          <p className=" font-semibold text-gray-400">Товара нет в галичии</p>
+        )}
+      </div>
     </li>
   );
 };

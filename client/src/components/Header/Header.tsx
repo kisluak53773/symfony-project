@@ -13,14 +13,14 @@ export const Header: FC = () => {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    async () => {
+    (async () => {
       try {
         await authService.refresh();
       } catch (error) {
         dispatch(logout());
         removeTokens();
       }
-    };
+    })();
   }, []);
 
   return (
