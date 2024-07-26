@@ -48,6 +48,8 @@ class ProductRepository extends ServiceEntityRepository
         $priceSort = $request->query->get('priceSort', 'asc');
         $query = new Query();
         $boolQuery = new BoolQuery();
+        $typesArray = $request->query->all('types');
+        $producersArray = $request->query->all('producers');
 
         if ($title) {
             $queryString = new QueryString();
@@ -68,6 +70,24 @@ class ProductRepository extends ServiceEntityRepository
             $nestedQuery->setQuery((new BoolQuery())->addMustNot($nestedBoolQuery));
 
             $boolQuery->addFilter($nestedQuery);
+        }
+
+        if (count($typesArray) > 0) {
+            $typesBool = new BoolQuery();
+            foreach ($typesArray as $type) {
+                $typesTerm = new Term(['typeId' => $type]);
+                $typesBool->addShould($typesTerm);
+            }
+            $boolQuery->addFilter($typesBool);
+        }
+
+        if (count($producersArray) > 0) {
+            $producersBool = new BoolQuery();
+            foreach ($producersArray as $producer) {
+                $producerTerm = new Term(['typeId' => $producer]);
+                $producersBool->addShould($producerTerm);
+            }
+            $boolQuery->addFilter($producersBool);
         }
 
         $query->setQuery($boolQuery);
