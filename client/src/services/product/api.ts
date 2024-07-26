@@ -5,15 +5,31 @@ import {
   type IVendorProductUpdate,
   type IPgainatedProductVendorDoesNotSell,
   type IVendorProductCreate,
+  type IGetProductsParams,
 } from "./@types";
+import { convertArrayToQuerryParams } from "../converter";
 
 const BASE_URL = "/product";
 
 export const productService = {
-  async getProducts(page: number = 1) {
-    const response = await axiosDefault.get<IPaginatedProducts[]>(
-      `${BASE_URL}?page=${page}`
-    );
+  async getProducts({
+    page = 1,
+    title = "",
+    types = [],
+    producers = [],
+    limit = 5,
+  }: IGetProductsParams) {
+    let endpoint = `${BASE_URL}?page=${page}&title=${title}&limit=${limit}`;
+
+    if (types.length > 0) {
+      endpoint += convertArrayToQuerryParams("types", types);
+    }
+
+    if (producers.length > 0) {
+      endpoint += convertArrayToQuerryParams("producers", producers);
+    }
+
+    const response = await axiosDefault.get<IPaginatedProducts>(endpoint);
 
     return response.data;
   },

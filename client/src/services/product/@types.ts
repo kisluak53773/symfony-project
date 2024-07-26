@@ -55,3 +55,11 @@ export interface IPgainatedProductVendorDoesNotSell extends IPagination {
 export interface IVendorProductCreate extends IVendorProductUpdate {
   productId: number;
 }
+
+export interface IGetProductsParams {
+  page?: number;
+  title?: string;
+  types?: number[];
+  producers?: number[];
+  limit?: number;
+}

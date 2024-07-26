@@ -19,3 +19,13 @@ export const convertToReactSelectOptions = (
     return { value: `${item.id}`, label: item.title };
   });
 };
+
+export const convertArrayToQuerryParams = (title: string, data: any[]) => {
+  let str = "";
+
+  for (const item of data) {
+    str += `&${title}[]=${item}`;
+  }
+
+  return str;
+};
