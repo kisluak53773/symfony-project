@@ -40,7 +40,7 @@ export const SearchList: FC<ISearchListProsp> = ({ search }) => {
           </ul>
           {quantity > 4 && (
             <div className="flex items-center justify-center w-full py-[10px]">
-              <Link href={`/producst?search=${debouncedSearch}`}>
+              <Link href={`/products?search=${debouncedSearch}`}>
                 Показать все продукты
               </Link>
             </div>

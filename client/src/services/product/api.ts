@@ -7,7 +7,10 @@ import {
   type IVendorProductCreate,
   type IGetProductsParams,
 } from "./@types";
-import { convertArrayToQuerryParams } from "../converter";
+import {
+  convertArrayToQuerryParams,
+  convertSortToQuerryParams,
+} from "../converter";
 
 const BASE_URL = "/product";
 
@@ -18,6 +21,7 @@ export const productService = {
     types = [],
     producers = [],
     limit = 5,
+    sort,
   }: IGetProductsParams) {
     let endpoint = `${BASE_URL}?page=${page}&title=${title}&limit=${limit}`;
 
@@ -27,6 +31,10 @@ export const productService = {
 
     if (producers.length > 0) {
       endpoint += convertArrayToQuerryParams("producers", producers);
+    }
+
+    if (sort) {
+      endpoint += convertSortToQuerryParams(sort);
     }
 
     const response = await axiosDefault.get<IPaginatedProducts>(endpoint);

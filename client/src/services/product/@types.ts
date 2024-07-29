@@ -1,6 +1,7 @@
 import { type IPagination } from "@/types";
 import { type IProducer } from "../producer";
 import { type IType } from "../type";
+import { type ISort } from "@/features/ProductsPage/types";
 
 export interface IPaginatedProducts extends IPagination {
   data: IProduct[];
@@ -62,4 +63,5 @@ export interface IGetProductsParams {
   types?: number[];
   producers?: number[];
   limit?: number;
+  sort?: ISort;
 }

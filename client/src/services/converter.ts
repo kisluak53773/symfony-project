@@ -1,6 +1,7 @@
 import { type IType } from "./type";
 import { type IProducer } from "@/services/producer";
 import { type IOption } from "@/types";
+import { type ISort } from "@/features/ProductsPage/types";
 
 export const convertToFormData = (data: any): FormData => {
   const formData = new FormData();
@@ -28,4 +29,8 @@ export const convertArrayToQuerryParams = (title: string, data: any[]) => {
   }
 
   return str;
+};
+
+export const convertSortToQuerryParams = (sort: ISort) => {
+  return `&${sort.tag}=${sort.value}`;
 };
