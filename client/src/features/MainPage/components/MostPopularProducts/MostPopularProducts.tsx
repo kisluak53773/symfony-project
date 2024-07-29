@@ -14,7 +14,7 @@ export const MostPopularProducts: FC = () => {
 
   useEffect(() => {
     (async () => {
-      const data = await productService.getProducts();
+      const data = await productService.getProducts({});
       setProducts(data.data);
     })();
   }, []);

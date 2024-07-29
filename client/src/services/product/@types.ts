@@ -1,12 +1,14 @@
 import { type IPagination } from "@/types";
 import { type IProducer } from "../producer";
 import { type IType } from "../type";
+import { type ISort } from "@/features/ProductsPage/types";
 
 export interface IPaginatedProducts extends IPagination {
   data: IProduct[];
 }
 
 interface IListProductVendorProduct {
+  id: number;
   price: string;
   quantity: number;
   vendorId: number;
@@ -53,4 +55,13 @@ export interface IPgainatedProductVendorDoesNotSell extends IPagination {
 
 export interface IVendorProductCreate extends IVendorProductUpdate {
   productId: number;
+}
+
+export interface IGetProductsParams {
+  page?: number;
+  title?: string;
+  types?: number[];
+  producers?: number[];
+  limit?: number;
+  sort?: ISort;
 }

@@ -29,6 +29,10 @@ services:
   App\Services\Uploader\TypesImageUploader:
     arguments:
       $targetDirectory: "%types_directory%"
+
+  App\Repository\ProductRepository:
+    arguments:
+      - "@fos_elastica.finder.product"
 # config/services.yaml
 
 # ...

@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 class Product
@@ -14,48 +15,81 @@ class Product
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell', 'elastica'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 40)]
-    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell', 'elastica'])]
+    #[Assert\Length(
+        min: 2,
+        max: 40,
+        minMessage: 'Title must not be so short',
+        maxMessage: 'Title should not be so long',
+    )]
     private ?string $title = null;
 
     #[ORM\Column(length: 1000)]
-    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell', 'elastica'])]
+    #[Assert\Length(
+        min: 1,
+        max: 1000,
+        minMessage: 'Description must not be so short',
+        maxMessage: 'Description should not be so long',
+    )]
     private ?string $description = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell', 'elastica'])]
+    #[Assert\Length(
+        min: 1,
+        max: 1000,
+        minMessage: 'Compound must not be so short',
+        maxMessage: 'Compound should not be so long',
+    )]
     private ?string $compound = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell', 'elastica'])]
+    #[Assert\Length(
+        min: 1,
+        max: 255,
+        minMessage: 'Storage conditions must not be so short',
+        maxMessage: 'Storage conditions should not be so long',
+    )]
     private ?string $storageConditions = null;
 
     #[ORM\Column(length: 40)]
-    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell', 'elastica'])]
+    #[Assert\Length(
+        min: 1,
+        max: 40,
+        minMessage: 'Weight conditions must not be so short',
+        maxMessage: 'Weightshould not be so long',
+    )]
     private ?string $weight = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell'])]
+    #[Groups(['product_list', 'vendor_products', 'vendor_does_not_sell', 'elastica'])]
+    #[Assert\NotBlank]
     private ?string $image = null;
 
     #[ORM\ManyToOne(inversedBy: 'products')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['vendor_does_not_sell'])]
+    #[Assert\NotBlank]
     private ?Producer $producer = null;
 
     /**
      * @var Collection<int, VendorProduct>
      */
     #[ORM\OneToMany(targetEntity: VendorProduct::class, mappedBy: 'product', orphanRemoval: true)]
-    #[Groups(['product_list'])]
+    #[Groups(['product_list', 'elastica'])]
     private Collection $vendorProducts;
 
     #[ORM\ManyToOne(inversedBy: 'products')]
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(['vendor_does_not_sell'])]
+    #[Assert\NotBlank]
     private ?Type $type = null;
 
     public function __construct()
@@ -194,13 +228,13 @@ class Product
         return $this;
     }
 
-    #[Groups(['product_list', 'vendor_products'])]
+    #[Groups(['product_list', 'vendor_products', 'elastica'])]
     public function getTypeId(): ?int
     {
         return $this->type->getId();
     }
 
-    #[Groups(['product_list', 'vendor_products'])]
+    #[Groups(['product_list', 'vendor_products', 'elastica'])]
     public function getProducerId(): ?int
     {
         return $this->producer->getId();

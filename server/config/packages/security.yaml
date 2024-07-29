@@ -11,6 +11,7 @@ security:
         property: phone
 
   role_hierarchy:
+    ROLE_DELETED: []
     ROLE_USER: []
     ROLE_VENDOR: [ROLE_USER]
     ROLE_ADMIN: [ROLE_USER, ROLE_VENDOR]

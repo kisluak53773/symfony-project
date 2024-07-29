@@ -14,6 +14,7 @@ use App\Entity\Vendor;
 use DateTimeImmutable;
 use App\Services\Validator\UserValidator;
 use App\Services\Validator\VendorValidator;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/auth', name: 'api_auth_')]
 class AuthController extends AbstractController
@@ -22,7 +23,8 @@ class AuthController extends AbstractController
     public function register(
         ManagerRegistry $doctrine,
         Request $request,
-        UserPasswordHasherInterface $passwordHasher
+        UserPasswordHasherInterface $passwordHasher,
+        ValidatorInterface $validator
     ): JsonResponse {
         $entityManager = $doctrine->getManager();
         $decoded = json_decode($request->getContent());
@@ -58,6 +60,14 @@ class AuthController extends AbstractController
             $user->setFullName($decoded->fullName);
         }
 
+        $errors = $validator->validate($user);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+
+            return $this->json(['message' => $errorsString], 400);
+        }
+
         $entityManager->persist($user);
         $entityManager->flush();
 
@@ -71,6 +81,7 @@ class AuthController extends AbstractController
         UserPasswordHasherInterface $passwordHasher,
         UserValidator $userValidator,
         VendorValidator $vendorValidator,
+        ValidatorInterface $validator
     ): JsonResponse {
         $entityManager = $doctrine->getManager();
         $decoded = json_decode($request->getContent());
@@ -106,6 +117,15 @@ class AuthController extends AbstractController
         $user->setEmail($email);
         $user->setFullName($fullName);
         $user->setRoles([RoleConstants::ROLE_VENDOR]);
+
+        $errors = $validator->validate($user);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+
+            return $this->json(['message' => $errorsString], 400);
+        }
+
         $entityManager->persist($user);
 
         $vendor = new Vendor();
@@ -116,6 +136,15 @@ class AuthController extends AbstractController
         $vendor->setRegistrationDate($registraionDate);
         $vendor->setRegistrationCertificateDate($registrationCertificateDate);
         $vendor->setUser($user);
+
+        $errors = $validator->validate($vendor);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+
+            return $this->json(['message' => $errorsString], 400);
+        }
+
         $entityManager->persist($vendor);
 
         $entityManager->flush();

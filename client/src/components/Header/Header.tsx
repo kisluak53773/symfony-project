@@ -2,7 +2,7 @@
 
 import React, { FC, useEffect } from "react";
 import { HeaderLinks } from "./HeaderLinks";
-import { HeaderSeach } from "./HeaderSeach";
+import { HeaderSeach } from "./HeaderSearch";
 import Link from "next/link";
 import { authService } from "@/services/auth";
 import { useAppDispatch } from "@/store";
@@ -13,14 +13,14 @@ export const Header: FC = () => {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    async () => {
+    (async () => {
       try {
         await authService.refresh();
       } catch (error) {
         dispatch(logout());
         removeTokens();
       }
-    };
+    })();
   }, []);
 
   return (

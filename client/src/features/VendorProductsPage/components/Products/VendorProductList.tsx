@@ -36,11 +36,15 @@ export const VendorProductList: FC = () => {
 
   useEffect(() => {
     (async () => {
-      const data = await productService.getVendorProducts(page);
+      try {
+        const data = await productService.getVendorProducts(page);
 
-      setPage(data.current_page);
-      setTotalPages(data.total_pages);
-      setProducsts(data.data);
+        setTotalPages(data.total_pages);
+        setProducsts(data.data);
+      } catch (error) {
+        setProducsts(null);
+        setTotalPages(1);
+      }
     })();
   }, [page, refetch]);
 
