@@ -18,19 +18,12 @@ class OrderProduct
     #[ORM\JoinColumn(nullable: false)]
     private ?Order $orderEntity = null;
 
-    #[ORM\ManyToOne(inversedBy: 'orderProducts')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Product $product = null;
-
-    #[ORM\ManyToOne(inversedBy: 'orderProducts')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Vendor $vendor = null;
-
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
-    private ?string $price = null;
-
     #[ORM\Column]
     private ?int $quantity = null;
+
+    #[ORM\ManyToOne(inversedBy: 'orderProducts')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?VendorProduct $vendorProduct = null;
 
     public function getId(): ?int
     {
@@ -49,42 +42,6 @@ class OrderProduct
         return $this;
     }
 
-    public function getProduct(): ?Product
-    {
-        return $this->product;
-    }
-
-    public function setProduct(?Product $product): static
-    {
-        $this->product = $product;
-
-        return $this;
-    }
-
-    public function getVendor(): ?Vendor
-    {
-        return $this->vendor;
-    }
-
-    public function setVendor(?Vendor $vendor): static
-    {
-        $this->vendor = $vendor;
-
-        return $this;
-    }
-
-    public function getPrice(): ?string
-    {
-        return $this->price;
-    }
-
-    public function setPrice(string $price): static
-    {
-        $this->price = $price;
-
-        return $this;
-    }
-
     public function getQuantity(): ?int
     {
         return $this->quantity;
@@ -93,6 +50,18 @@ class OrderProduct
     public function setQuantity(int $quantity): static
     {
         $this->quantity = $quantity;
+
+        return $this;
+    }
+
+    public function getVendorProduct(): ?VendorProduct
+    {
+        return $this->vendorProduct;
+    }
+
+    public function setVendorProduct(?VendorProduct $vendorProduct): static
+    {
+        $this->vendorProduct = $vendorProduct;
 
         return $this;
     }

@@ -18,19 +18,12 @@ class CartProduct
     #[ORM\JoinColumn(nullable: false)]
     private ?Cart $cart = null;
 
-    #[ORM\ManyToOne(inversedBy: 'cartProducts')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Vendor $vendor = null;
-
-    #[ORM\Column(type: Types::DECIMAL, precision: 10, scale: 2)]
-    private ?string $price = null;
-
     #[ORM\Column]
     private ?int $quantity = null;
 
     #[ORM\ManyToOne(inversedBy: 'cartProducts')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Product $product = null;
+    private ?VendorProduct $vendorProduct = null;
 
     public function getId(): ?int
     {
@@ -49,30 +42,6 @@ class CartProduct
         return $this;
     }
 
-    public function getVendor(): ?Vendor
-    {
-        return $this->vendor;
-    }
-
-    public function setVendor(?Vendor $vendor): static
-    {
-        $this->vendor = $vendor;
-
-        return $this;
-    }
-
-    public function getPrice(): ?string
-    {
-        return $this->price;
-    }
-
-    public function setPrice(string $price): static
-    {
-        $this->price = $price;
-
-        return $this;
-    }
-
     public function getQuantity(): ?int
     {
         return $this->quantity;
@@ -85,14 +54,14 @@ class CartProduct
         return $this;
     }
 
-    public function getProduct(): ?Product
+    public function getVendorProduct(): ?VendorProduct
     {
-        return $this->product;
+        return $this->vendorProduct;
     }
 
-    public function setProduct(?Product $product): static
+    public function setVendorProduct(?VendorProduct $vendorProduct): static
     {
-        $this->product = $product;
+        $this->vendorProduct = $vendorProduct;
 
         return $this;
     }
