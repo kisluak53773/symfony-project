@@ -27,6 +27,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class ProductController extends AbstractController
 {
     #[Route('/create', name: 'add', methods: 'post')]
+    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
     public function addWithVendor(
         Request $request,
         ManagerRegistry $registry,
@@ -153,7 +154,7 @@ class ProductController extends AbstractController
     }
 
     #[Route('/vendor', name: 'get_products_vendor_does_not_sell', methods: 'get')]
-    #[IsGranted('ROLE_VENDOR', message: 'You are not allowed to access this route.')]
+    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
     public function getProductsVendorDoesNotSell(
         Request $request,
         PaginatorInterface $paginator,
@@ -199,6 +200,7 @@ class ProductController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
+    #[IsGranted(RoleConstants::ROLE_ADMIN, message: 'You are not allowed to access this route.')]
     public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
     {
         $entityManager = $managerRegistry->getManager();

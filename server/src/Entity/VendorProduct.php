@@ -187,4 +187,14 @@ class VendorProduct
 
         return $this;
     }
+
+    public function decreaseQuantity(int $quantity): void
+    {
+        $this->quantity -= $quantity;
+    }
+
+    public function increaseQuantity(int $quantity): void
+    {
+        $this->quantity += $quantity;
+    }
 }

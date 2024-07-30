@@ -68,4 +68,14 @@ class CartProduct
 
         return $this;
     }
+
+    public function increaseQuantity(int $quantity): void
+    {
+        $this->quantity += $quantity;
+    }
+
+    public function decreaseQuantity(int $quantity): void
+    {
+        $this->quantity -= $quantity;
+    }
 }
