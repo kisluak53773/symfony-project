@@ -6,6 +6,8 @@ use App\Repository\OrderRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use App\Constants\PaymnetConstants;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
@@ -18,6 +20,7 @@ class Order
 
     #[ORM\ManyToOne(inversedBy: 'orders')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Assert\NotBlank(message: 'Customer should be present')]
     private ?User $customer = null;
 
     /**
@@ -25,6 +28,10 @@ class Order
      */
     #[ORM\OneToMany(targetEntity: OrderProduct::class, mappedBy: 'orderEntity')]
     private Collection $orderProducts;
+
+    #[ORM\Column(length: 20)]
+    #[Assert\Choice([PaymnetConstants::PAYMENT_CASH, PaymnetConstants::PAYMENT_CARD])]
+    private ?string $paymentMethod = null;
 
     public function __construct()
     {
@@ -74,6 +81,18 @@ class Order
                 $orderProduct->setOrderEntity(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getPaymentMethod(): ?string
+    {
+        return $this->paymentMethod;
+    }
+
+    public function setPaymentMethod(string $paymentMethod): static
+    {
+        $this->paymentMethod = $paymentMethod;
 
         return $this;
     }

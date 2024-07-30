@@ -3,8 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\OrderProductRepository;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: OrderProductRepository::class)]
 class OrderProduct
@@ -16,13 +16,16 @@ class OrderProduct
 
     #[ORM\ManyToOne(inversedBy: 'orderProducts')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Assert\NotBlank(message: 'Order should be present')]
     private ?Order $orderEntity = null;
 
     #[ORM\Column]
+    #[Assert\NotBlank(message: 'Quanti should be present')]
     private ?int $quantity = null;
 
     #[ORM\ManyToOne(inversedBy: 'orderProducts')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Assert\NotBlank(message: 'VendorProduct should be present')]
     private ?VendorProduct $vendorProduct = null;
 
     public function getId(): ?int
