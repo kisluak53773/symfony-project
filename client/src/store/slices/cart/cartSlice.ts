@@ -1,51 +1,86 @@
 "use client";
 
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { type ICart, type ICartProduct } from "./@types";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { type ICart, type ICartItemCreate } from "./@types";
 import { type RootState } from "@/store/store";
-import { type IProduct } from "@/services/product";
+import { cartService, type ICartUpdateData } from "@/services/cart";
+import { errorCatch } from "@/services/axios";
 
 const initialState: ICart = {
   producst: [],
   error: "",
 };
 
+export const addProductToCart = createAsyncThunk(
+  "addProductToCart",
+  async (action: ICartItemCreate) => {
+    const data = await cartService.addProductToCart({
+      vendorProductId: action.vendorProductId,
+      quantity: action.quantity,
+    });
+
+    return { ...action, id: data.id };
+  }
+);
+
+export const decreaseQuantity = createAsyncThunk(
+  "decreaseQuantityOfProduct",
+  async (action: ICartUpdateData) => {
+    await cartService.decrementProductQuantity(action);
+
+    return action;
+  }
+);
+
+export const increaseQuantity = createAsyncThunk(
+  "increaseQuantityOfProduct",
+  async (action: ICartUpdateData) => {
+    const data = await cartService.incrementProductQuantity(action);
+
+    return { ...action, quantity: data.quantity };
+  }
+);
+
+export const deleteProductFromCart = createAsyncThunk(
+  "deleteProdcutFromCart",
+  async (action: { vendorProductId: number }) => {
+    await cartService.deleteProductFromCart(action.vendorProductId);
+
+    return action;
+  }
+);
+
+export const deleteAllProducstInCart = createAsyncThunk(
+  "deleteAllProdcutsInCart",
+  async () => {
+    const data = await cartService.deleteAllProdcutsFromCart();
+
+    return data;
+  }
+);
+
 export const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
-    addToCart: (state, action: PayloadAction<ICartProduct>) => {
-      const itemInCart = state.producst.find(
-        (product) => product.id === action.payload.id
-      );
-      if (itemInCart) {
-        itemInCart.quantity++;
-      } else {
-        state.producst.push({ ...action.payload, quantity: 1 });
-      }
-    },
-    removeFromCart: (state, action: PayloadAction<IProduct>) => {
-      const filteredItems = state.producst.filter(
-        (product) => product.id !== action.payload.id
-      );
-      state.producst = filteredItems;
-    },
-    removeAllFromCart: (state) => {
+    emptyCart: (state) => {
       state.producst = initialState.producst;
     },
-    incrementQuantity: (state, action: PayloadAction<ICartProduct>) => {
+  },
+  extraReducers: (builder) => {
+    builder.addCase(addProductToCart.fulfilled, (state, action) => {
+      state.producst.push(action.payload);
+    });
+    builder.addCase(addProductToCart.rejected, (state, action) => {
+      state.error = errorCatch(action.error);
+    });
+    builder.addCase(decreaseQuantity.fulfilled, (state, action) => {
       const itemInCart = state.producst.find(
-        (product) => product.id === action.payload.id
-      );
-      if (itemInCart) itemInCart.quantity++;
-    },
-    decrementQuantity: (state, action: PayloadAction<ICartProduct>) => {
-      const itemInCart = state.producst.find(
-        (product) => product.id === action.payload.id
+        (product) => product.vendorProductId === action.payload.vendorProductId
       );
       if (itemInCart) {
-        if (itemInCart.quantity !== 1) {
-          itemInCart.quantity--;
+        if (itemInCart.quantity > action.payload.quantity) {
+          itemInCart.quantity -= action.payload.quantity;
         } else {
           const filteredItems = state.producst.filter(
             (product) => product.id !== itemInCart.id
@@ -53,18 +88,41 @@ export const cartSlice = createSlice({
           state.producst = filteredItems;
         }
       }
-    },
+    });
+    builder.addCase(decreaseQuantity.rejected, (state, action) => {
+      state.error = errorCatch(action.error);
+    });
+    builder.addCase(increaseQuantity.fulfilled, (state, action) => {
+      const cartItem = state.producst.find(
+        (item) => item.vendorProductId === action.payload.vendorProductId
+      );
+
+      if (cartItem) {
+        cartItem.quantity += action.payload.quantity;
+      }
+    });
+    builder.addCase(increaseQuantity.rejected, (state, action) => {
+      state.error = errorCatch(action.error);
+    });
+    builder.addCase(deleteProductFromCart.fulfilled, (state, action) => {
+      const filteredArray = state.producst.filter(
+        (item) => item.vendorProductId !== action.payload.vendorProductId
+      );
+      state.producst = filteredArray;
+    });
+    builder.addCase(deleteProductFromCart.rejected, (state, action) => {
+      state.error = errorCatch(action.error);
+    });
+    builder.addCase(deleteAllProducstInCart.fulfilled, (state) => {
+      state.producst = initialState.producst;
+    });
+    builder.addCase(deleteAllProducstInCart.rejected, (state, action) => {
+      state.error = errorCatch(action.error);
+    });
   },
-  extraReducers: (builder) => {},
 });
 
 export const getCartError = (state: RootState) => state.cart.error;
 export const getCartProducts = (state: RootState) => state.cart.producst;
 
-export const {
-  addToCart,
-  removeFromCart,
-  incrementQuantity,
-  decrementQuantity,
-  removeAllFromCart,
-} = cartSlice.actions;
+export const { emptyCart } = cartSlice.actions;

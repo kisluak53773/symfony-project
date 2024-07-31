@@ -6,7 +6,7 @@ import { getCartProducts } from "@/store/slices/cart";
 import { CartModalItem } from "../CartItem";
 import { IoBagOutline } from "react-icons/io5";
 import { useAppDispatch } from "@/store";
-import { removeAllFromCart } from "@/store/slices/cart";
+import { deleteAllProducstInCart } from "@/store/slices/cart";
 import { IoReloadOutline } from "react-icons/io5";
 
 export const CartModal: FC = () => {
@@ -25,7 +25,7 @@ export const CartModal: FC = () => {
         <h1 className=" font-semibold text-[25px]">Корзина</h1>
         {productsInCart.length > 0 && (
           <button
-            onClick={() => dispatch(removeAllFromCart())}
+            onClick={() => dispatch(deleteAllProducstInCart())}
             className=" text-gray-500 hover:text-black transition-all"
           >
             Удалить все

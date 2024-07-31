@@ -1,12 +1,8 @@
-import { type IProduct } from "@/services/product";
-
-export interface ICartProduct extends Omit<IProduct, "vendorProducts"> {
-  quantity: number;
-  price: string;
-  vendorId: number;
-}
+import { type ICartItem } from "@/services/cart";
 
 export interface ICart {
-  producst: ICartProduct[];
+  producst: ICartItem[];
   error: string;
 }
+
+export interface ICartItemCreate extends Omit<ICartItem, "id"> {}

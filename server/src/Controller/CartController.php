@@ -85,10 +85,11 @@ class CartController extends AbstractController
         $cartProduct = $entityManager->getRepository(CartProduct::class)->findOneBy(['vendorProduct' => $vendorProduct]);
 
         if (isset($cartProduct)) {
-            $cartProduct->increaseQuantity($vendorProduct->getQuantity() > $decoded->quantity ?
-                $decoded->quantity : $vendorProduct->getQuantity());
-            $vendorProduct->decreaseQuantity($vendorProduct->getQuantity() > $decoded->quantity ?
-                $decoded->quantity : $vendorProduct->getQuantity());
+            $qunatity = $vendorProduct->getQuantity() > $decoded->quantity ?
+                $decoded->quantity : $vendorProduct->getQuantity();
+
+            $cartProduct->increaseQuantity($qunatity);
+            $vendorProduct->decreaseQuantity($qunatity);
 
             $entityManager->persist($cartProduct);
             $entityManager->persist($vendorProduct);
@@ -123,7 +124,7 @@ class CartController extends AbstractController
         $entityManager->persist($vendorProduct);
         $entityManager->flush();
 
-        return $this->json(['message' => 'Product added to cart'], 201);
+        return $this->json(['message' => 'Product added to cart', 'id' => $cartProduct->getId()], 201);
     }
 
     #[Route('/increase', name: 'increase_amount_of_product_in_cart', methods: 'post')]
@@ -152,16 +153,17 @@ class CartController extends AbstractController
             return $this->json(['message' => 'No such product in cart'], 400);
         }
 
-        $cartProduct->increaseQuantity($vendorProduct->getQuantity() > $decoded->quantity ?
-            $decoded->quantity : $vendorProduct->getQuantity());
-        $vendorProduct->decreaseQuantity($vendorProduct->getQuantity() > $decoded->quantity ?
-            $decoded->quantity : $vendorProduct->getQuantity());
+        $quantity = $vendorProduct->getQuantity() > $decoded->quantity ?
+            $decoded->quantity : $vendorProduct->getQuantity();
+
+        $cartProduct->increaseQuantity($quantity);
+        $vendorProduct->decreaseQuantity($quantity);
 
         $entityManager->persist($cartProduct);
         $entityManager->persist($vendorProduct);
         $entityManager->flush();
 
-        return $this->json(['message' => 'Quantity increased'], 200);
+        return $this->json(['message' => 'Quantity increased', 'quantity' => $quantity], 200);
     }
 
     #[Route('/decrease', name: 'decrease_amount_of_product_in_cart', methods: 'post')]
@@ -231,6 +233,29 @@ class CartController extends AbstractController
         $entityManager->remove($cartProduct);
         $entityManager->flush();
 
-        return $this->json(['message' => 'Deleted sucseffully', 'vendorProductId' => $vendorProductId], 200);
+        return $this->json(['message' => 'Deleted sucseffully'], 200);
+    }
+
+    #[Route('/removeAll', name: 'remove_all_from_cart', methods: 'delete')]
+    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
+    public function removeAllFromCart(ManagerRegistry $registry, Security $security): JsonResponse
+    {
+        $entityManager = $registry->getManager();
+        $userPhone = $security->getUser()->getUserIdentifier();
+        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+
+        $cartProducts = $user->getCart()->getCartProducts()->getValues();
+
+        if (count($cartProducts) === 0) {
+            return $this->json(['message' => 'Your cart is empty'], 400);
+        }
+
+        foreach ($cartProducts as $cartProduct) {
+            $entityManager->remove($cartProduct);
+        }
+
+        $entityManager->flush();
+
+        return $this->json(['message' => 'Deleted sucseffully'], 200);
     }
 }
