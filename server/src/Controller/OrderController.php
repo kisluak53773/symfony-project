@@ -12,8 +12,8 @@ use App\Services\Validator\OrderValidator;
 use Symfony\Bundle\SecurityBundle\Security;
 use App\Entity\User;
 use App\Entity\OrderProduct;
-use App\Entity\VendorProduct;
 use App\Entity\Order;
+use DateTime;
 
 #[Route('/api/order', name: 'api_order_')]
 class OrderController extends AbstractController
@@ -27,7 +27,7 @@ class OrderController extends AbstractController
         ValidatorInterface $validator
     ): JsonResponse {
         $entityManager = $registry->getManager();
-        $decoded = json_decode($request->getContent(), true);
+        $decoded = json_decode($request->getContent());
 
         if (!$orderValidator->isValidToCreateOrder($decoded)) {
             return $this->json(['message' => 'insufficient data'], 400);
@@ -36,9 +36,20 @@ class OrderController extends AbstractController
         $userPhone = $security->getUser()->getUserIdentifier();
         $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
 
+        $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i:s', $decoded->deliveryTime);
+
+        if ($deliveryDate === false) {
+            return $this->json(['message' => 'Invalid delivery time format'], 400);
+        }
+
         $order = new Order();
         $order->setCustomer($user);
-        $order->setPaymentMethod($decoded['paymentMethod']);
+        $order->setPaymentMethod($decoded->paymentMethod);
+        $order->setDeliveryTime($deliveryDate);
+
+        if (isset($decoded->comment)) {
+            $order->setComment($decoded->comment);
+        }
 
         $errors = $validator->validate($order);
 
@@ -50,17 +61,23 @@ class OrderController extends AbstractController
 
         $entityManager->persist($order);
 
-        foreach ($decoded['products'] as $product) {
-            $vendorProdcut = $entityManager->getRepository(VendorProduct::class)->find($product['vendorProductId']);
+        $cart = $user->getCart();
 
-            if (!isset($vendorProdcut)) {
-                return $this->json(['message' => 'Vendor does not sell this product'], 400);
-            }
+        if (!isset($cart)) {
+            return $this->json(['message' => 'You do not have a cart'], 400);
+        }
 
+        $cartProducts = $cart->getCartProducts()->getValues();
+
+        if (count($cartProducts) === 0) {
+            return $this->json(['message' => 'Your cart is empty'], 400);
+        }
+
+        foreach ($cartProducts as $cartProduct) {
             $orderProduct = new OrderProduct();
             $orderProduct->setOrderEntity($order);
-            $orderProduct->setQuantity($product['qunatity']);
-            $orderProduct->setVendorProduct($vendorProdcut);
+            $orderProduct->setQuantity($cartProduct->getQuantity());
+            $orderProduct->setVendorProduct($cartProduct->getVendorProduct());
 
             $errors = $validator->validate($orderProduct);
 
@@ -71,6 +88,7 @@ class OrderController extends AbstractController
             }
 
             $entityManager->persist($orderProduct);
+            $entityManager->remove($cartProduct);
         }
 
         $entityManager->flush();

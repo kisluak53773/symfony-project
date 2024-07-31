@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\OrderRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use App\Constants\PaymnetConstants;
@@ -32,6 +33,12 @@ class Order
     #[ORM\Column(length: 20)]
     #[Assert\Choice([PaymnetConstants::PAYMENT_CASH, PaymnetConstants::PAYMENT_CARD])]
     private ?string $paymentMethod = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $deliveryTime = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $comment = null;
 
     public function __construct()
     {
@@ -93,6 +100,30 @@ class Order
     public function setPaymentMethod(string $paymentMethod): static
     {
         $this->paymentMethod = $paymentMethod;
+
+        return $this;
+    }
+
+    public function getDeliveryTime(): ?\DateTimeInterface
+    {
+        return $this->deliveryTime;
+    }
+
+    public function setDeliveryTime(\DateTimeInterface $deliveryTime): static
+    {
+        $this->deliveryTime = $deliveryTime;
+
+        return $this;
+    }
+
+    public function getComment(): ?string
+    {
+        return $this->comment;
+    }
+
+    public function setComment(?string $comment): static
+    {
+        $this->comment = $comment;
 
         return $this;
     }

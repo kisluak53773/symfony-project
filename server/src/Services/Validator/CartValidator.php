@@ -9,8 +9,8 @@ class CartValidator
     public function isValidToAddToCart(mixed $request): bool
     {
         if (
-            !$request->request->has('quantity') ||
-            !$request->request->has('vendorProductId')
+            !isset($request->quantity) ||
+            !isset($request->vendorProductId)
         ) {
             return false;
         }
@@ -21,8 +21,8 @@ class CartValidator
     public function isValidToIncreaseAmounInCart(mixed $request): bool
     {
         if (
-            !$request->request->has('quantity') ||
-            !$request->request->has('vendorProductId')
+            !isset($request->quantity) ||
+            !isset($request->vendorProductId)
         ) {
             return false;
         }
@@ -33,8 +33,8 @@ class CartValidator
     public function isValidToDecreaseAmounInCart(mixed $request): bool
     {
         if (
-            !$request->request->has('quantity') ||
-            !$request->request->has('vendorProductId')
+            !isset($request->quantity) ||
+            !isset($request->vendorProductId)
         ) {
             return false;
         }
@@ -45,7 +45,7 @@ class CartValidator
     public function isValidToRemove(mixed $request): bool
     {
         if (
-            !$request->request->has('vendorProductId')
+            !isset($request->vendorProductId)
         ) {
             return false;
         }
