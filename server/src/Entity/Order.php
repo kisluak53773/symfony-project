@@ -9,6 +9,8 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use App\Constants\PaymnetConstants;
+use App\Constants\OrderConstatns;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
@@ -17,6 +19,7 @@ class Order
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['orders'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'orders')]
@@ -28,17 +31,36 @@ class Order
      * @var Collection<int, OrderProduct>
      */
     #[ORM\OneToMany(targetEntity: OrderProduct::class, mappedBy: 'orderEntity')]
+    #[Groups(['orders'])]
     private Collection $orderProducts;
 
     #[ORM\Column(length: 20)]
     #[Assert\Choice([PaymnetConstants::PAYMENT_CASH, PaymnetConstants::PAYMENT_CARD])]
+    #[Groups(['orders'])]
     private ?string $paymentMethod = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Assert\DateTime(message: 'Wrong date format')]
+    #[Assert\Choice([
+        OrderConstatns::ORDER_PROCESSED,
+        OrderConstatns::ORDER_ON_THE_WAY,
+        OrderConstatns::ORDER_DELIVERED,
+        OrderConstatns::ORDER_CANCELED
+    ])]
+    #[Groups(['orders'])]
     private ?\DateTimeInterface $deliveryTime = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Assert\Length(
+        max: 255,
+        maxMessage: 'Comment should not be so long',
+    )]
+    #[Groups(['orders'])]
     private ?string $comment = null;
+
+    #[ORM\Column(length: 20)]
+    #[Groups(['orders'])]
+    private ?string $orderStatus = null;
 
     public function __construct()
     {
@@ -126,5 +148,29 @@ class Order
         $this->comment = $comment;
 
         return $this;
+    }
+
+    public function getOrderStatus(): ?string
+    {
+        return $this->orderStatus;
+    }
+
+    public function setOrderStatus(string $orderStatus): static
+    {
+        $this->orderStatus = $orderStatus;
+
+        return $this;
+    }
+
+    #[Groups(['orders_admin'])]
+    public function getCustomerPhone(): ?string
+    {
+        return $this->getCustomer()->getPhone();
+    }
+
+    #[Groups(['orders_admin'])]
+    public function getCustomerId(): ?string
+    {
+        return $this->getCustomer()->getId();
     }
 }

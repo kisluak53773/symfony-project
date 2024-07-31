@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\OrderProductRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: OrderProductRepository::class)]
 class OrderProduct
@@ -12,6 +13,7 @@ class OrderProduct
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['orders'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'orderProducts')]
@@ -21,6 +23,7 @@ class OrderProduct
 
     #[ORM\Column]
     #[Assert\NotBlank(message: 'Quanti should be present')]
+    #[Groups(['orders'])]
     private ?int $quantity = null;
 
     #[ORM\ManyToOne(inversedBy: 'orderProducts')]
@@ -67,5 +70,41 @@ class OrderProduct
         $this->vendorProduct = $vendorProduct;
 
         return $this;
+    }
+
+    #[Groups(['orders'])]
+    public function getVendorProductId(): ?int
+    {
+        return $this->getVendorProduct()->getId();
+    }
+
+    #[Groups(['orders'])]
+    public function getPrice(): ?string
+    {
+        return $this->getVendorProduct()->getPrice();
+    }
+
+    #[Groups(['orders'])]
+    public function getProductId(): ?int
+    {
+        return $this->getVendorProduct()->getProduct()->getId();
+    }
+
+    #[Groups(['orders'])]
+    public function getProductImage(): ?string
+    {
+        return $this->getVendorProduct()->getProduct()->getImage();
+    }
+
+    #[Groups(['orders'])]
+    public function getProductWeight(): ?string
+    {
+        return $this->getVendorProduct()->getProduct()->getWeight();
+    }
+
+    #[Groups(['orders'])]
+    public function getProductTitle(): ?string
+    {
+        return $this->getVendorProduct()->getProduct()->getTitle();
     }
 }

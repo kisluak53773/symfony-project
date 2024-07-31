@@ -16,6 +16,7 @@ use App\Services\Validator\UserValidator;
 use App\Services\Validator\VendorValidator;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Entity\Cart;
 
 #[Route('/api/auth', name: 'api_auth_')]
 class AuthController extends AbstractController
@@ -70,6 +71,20 @@ class AuthController extends AbstractController
         }
 
         $entityManager->persist($user);
+
+        $cart = new Cart();
+        $cart->setCustomer($user);
+
+        $errors = $validator->validate($cart);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+
+            return $this->json(['message' => $errorsString], 400);
+        }
+
+        $entityManager->persist($cart);
+
         $entityManager->flush();
 
         return $this->json(['message' => 'registered succsessfully'], 201);

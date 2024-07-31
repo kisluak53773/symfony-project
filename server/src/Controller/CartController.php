@@ -16,6 +16,7 @@ use App\Entity\Cart;
 use App\Services\Validator\CartValidator;
 use App\Entity\CartProduct;
 use App\Entity\VendorProduct;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
 #[Route('/api/cart', name: 'api_cart_')]
 class CartController extends AbstractController
@@ -38,6 +39,25 @@ class CartController extends AbstractController
         $entityManager->flush();
 
         return $this->json(['message' => 'cart created'], 201);
+    }
+
+    #[Route('/prodcuts', name: 'get_products', methods: 'get')]
+    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
+    public function getProductsCart(
+        ManagerRegistry $registry,
+        Security $security
+    ): JsonResponse {
+        $entityManager = $registry->getManager();
+
+        $userPhoen = $security->getUser()->getUserIdentifier();
+        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhoen]);
+
+        $cartProducts = $user->getCart()->getCartProducts();
+
+        return $this->json(
+            data: $cartProducts,
+            context: [AbstractNormalizer::GROUPS => ['cart_product']]
+        );
     }
 
     #[Route('/add', name: 'addToCart', methods: 'post')]

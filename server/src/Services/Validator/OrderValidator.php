@@ -17,4 +17,17 @@ class OrderValidator
 
         return true;
     }
+
+    public function isValidToPatchOrder(mixed $request): bool
+    {
+        if (
+            !isset($request->paymentMethod) ||
+            !isset($request->deliveryTime) ||
+            !isset($request->orderStatus)
+        ) {
+            return false;
+        }
+
+        return true;
+    }
 }
