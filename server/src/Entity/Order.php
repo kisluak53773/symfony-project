@@ -40,13 +40,6 @@ class Order
     private ?string $paymentMethod = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Assert\DateTime(message: 'Wrong date format')]
-    #[Assert\Choice([
-        OrderConstatns::ORDER_PROCESSED,
-        OrderConstatns::ORDER_ON_THE_WAY,
-        OrderConstatns::ORDER_DELIVERED,
-        OrderConstatns::ORDER_CANCELED
-    ])]
     #[Groups(['orders'])]
     private ?\DateTimeInterface $deliveryTime = null;
 
@@ -60,6 +53,12 @@ class Order
 
     #[ORM\Column(length: 20)]
     #[Groups(['orders'])]
+    #[Assert\Choice([
+        OrderConstatns::ORDER_PROCESSED,
+        OrderConstatns::ORDER_ON_THE_WAY,
+        OrderConstatns::ORDER_DELIVERED,
+        OrderConstatns::ORDER_CANCELED
+    ])]
     private ?string $orderStatus = null;
 
     public function __construct()

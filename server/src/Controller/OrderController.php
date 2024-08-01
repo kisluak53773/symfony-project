@@ -43,7 +43,7 @@ class OrderController extends AbstractController
         $userPhone = $security->getUser()->getUserIdentifier();
         $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
 
-        $deliveryDate = DateTime::createFromFormat('Y-m-d H:i:s', $decoded->deliveryTime);
+        $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i', $decoded->deliveryTime);
 
         $order = new Order();
         $order->setCustomer($user);

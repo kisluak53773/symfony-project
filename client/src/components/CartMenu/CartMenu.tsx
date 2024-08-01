@@ -8,6 +8,7 @@ import { IoBagOutline } from "react-icons/io5";
 import { Modal } from "../Modal";
 import { CartModal } from "./CartModal";
 import { IoReloadOutline } from "react-icons/io5";
+import Link from "next/link";
 
 export const CartMenu: FC = () => {
   const productsInCart = useSelector(getCartProducts);
@@ -39,9 +40,12 @@ export const CartMenu: FC = () => {
             <p className="text-[14px] my-[10px] text-center">
               {totalPrice} руб.
             </p>
-            <button className="flex items-center justify-center mt-auto mb-[20px] bg-blue-500 hover:bg-blue-300 py-[5px] rounded-lg w-[56px] h-[34px]">
+            <Link
+              href="/order"
+              className="flex items-center justify-center mt-auto mb-[20px] bg-blue-500 hover:bg-blue-300 py-[5px] rounded-lg w-[56px] h-[34px]"
+            >
               <IoBagOutline size={25} color="white" />
-            </button>
+            </Link>
           </div>
         </>
       ) : (
