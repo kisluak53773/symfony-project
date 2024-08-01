@@ -77,6 +77,8 @@ class CartController extends AbstractController
         }
 
         $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($decoded->vendorProductId);
+        $qunatity = $vendorProduct->getQuantity() > $decoded->quantity ?
+            $decoded->quantity : $vendorProduct->getQuantity();
 
         if (!isset($vendorProduct) || $vendorProduct->getQuantity() === 0) {
             return $this->json(['message' => 'No such item in stock'], 400);
@@ -85,9 +87,6 @@ class CartController extends AbstractController
         $cartProduct = $entityManager->getRepository(CartProduct::class)->findOneBy(['vendorProduct' => $vendorProduct]);
 
         if (isset($cartProduct)) {
-            $qunatity = $vendorProduct->getQuantity() > $decoded->quantity ?
-                $decoded->quantity : $vendorProduct->getQuantity();
-
             $cartProduct->increaseQuantity($qunatity);
             $vendorProduct->decreaseQuantity($qunatity);
 
@@ -106,8 +105,7 @@ class CartController extends AbstractController
         $cartProduct = new CartProduct();
         $cartProduct->setCart($cart);
         $cartProduct->setVendorProduct($vendorProduct);
-        $cartProduct->setQuantity($vendorProduct->getQuantity() > $decoded->quantity ?
-            $decoded->quantity : $vendorProduct->getQuantity());
+        $cartProduct->setQuantity($qunatity);
 
         $errors = $validator->validate($cartProduct);
 
@@ -117,8 +115,7 @@ class CartController extends AbstractController
             return $this->json(['message' => $errorsString], 400);
         }
 
-        $vendorProduct->decreaseQuantity($vendorProduct->getQuantity() > $decoded->quantity ?
-            $decoded->quantity : $vendorProduct->getQuantity());
+        $vendorProduct->decreaseQuantity($qunatity);
 
         $entityManager->persist($cartProduct);
         $entityManager->persist($vendorProduct);

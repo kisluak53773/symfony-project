@@ -29,6 +29,7 @@ export const ProductItem: FC<IProductItemProps> = ({ product }) => {
       productImage: product.image,
       productWeight: product.weight,
       productTitle: product.title,
+      inStock: product.vendorProducts[0].quantity,
     };
 
     dispatch(addProductToCart(newProduct));

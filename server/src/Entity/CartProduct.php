@@ -117,4 +117,10 @@ class CartProduct
     {
         return $this->getVendorProduct()->getProduct()->getTitle();
     }
+
+    #[Groups(['cart_product'])]
+    public function getInStock(): ?int
+    {
+        return $this->getVendorProduct()->getQuantity();
+    }
 }

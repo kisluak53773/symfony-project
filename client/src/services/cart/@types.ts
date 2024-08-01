@@ -9,6 +9,7 @@ export interface ICartItem {
   productImage: string;
   productWeight: string;
   productTitle: string;
+  inStock: number;
 }
 
 export interface ICartUpdateData {

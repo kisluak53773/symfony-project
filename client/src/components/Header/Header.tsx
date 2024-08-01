@@ -8,6 +8,7 @@ import { authService } from "@/services/auth";
 import { useAppDispatch } from "@/store";
 import { logout } from "@/store/slices/user";
 import { removeTokens } from "@/services";
+import { getCart } from "@/store/slices/cart";
 
 export const Header: FC = () => {
   const dispatch = useAppDispatch();
@@ -16,6 +17,7 @@ export const Header: FC = () => {
     (async () => {
       try {
         await authService.refresh();
+        dispatch(getCart());
       } catch (error) {
         dispatch(logout());
         removeTokens();
