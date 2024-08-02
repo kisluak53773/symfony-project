@@ -19,7 +19,7 @@ export const OrdersList: FC = () => {
 
   useEffect(() => {
     (async () => {
-      const data = await orderService.getOrdersOfCurrentUser();
+      const data = await orderService.getOrdersOfCurrentUser({ page });
 
       setOrders(data.data);
       setTotalPages(data.total_pages);

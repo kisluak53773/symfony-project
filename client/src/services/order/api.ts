@@ -1,5 +1,9 @@
 import { axiosWithAuth } from "../axios";
-import { type IOrderCreate, type IPaginatedOrders } from "./@types";
+import {
+  type IOrderCreate,
+  type IPaginatedOrders,
+  type IOrdersPaginationRequestData,
+} from "./@types";
 
 const BASE_URL = "/order";
 
@@ -10,9 +14,12 @@ export const orderService = {
     return response;
   },
 
-  async getOrdersOfCurrentUser() {
+  async getOrdersOfCurrentUser({
+    page,
+    limit = 5,
+  }: IOrdersPaginationRequestData) {
     const response = await axiosWithAuth.get<IPaginatedOrders>(
-      `${BASE_URL}/current`
+      `${BASE_URL}/current?page=${page}&limit=${limit}`
     );
 
     return response.data;

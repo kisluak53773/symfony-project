@@ -21,3 +21,8 @@ export interface IOrder {
 export interface IPaginatedOrders extends IPagination {
   data: IOrder[];
 }
+
+export interface IOrdersPaginationRequestData {
+  page: number;
+  limit?: number;
+}
