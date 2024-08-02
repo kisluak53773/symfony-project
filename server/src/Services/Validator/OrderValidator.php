@@ -30,4 +30,15 @@ class OrderValidator
 
         return true;
     }
+
+    public function isValidToPatchVendorOrder(mixed $request): bool
+    {
+        if (
+            !isset($request->orderStatus)
+        ) {
+            return false;
+        }
+
+        return true;
+    }
 }

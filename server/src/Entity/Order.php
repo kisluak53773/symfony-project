@@ -11,9 +11,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 use App\Constants\PaymnetConstants;
 use App\Constants\OrderConstatns;
 use Symfony\Component\Serializer\Annotation\Groups;
+use DateTime;
+use DateTimeImmutable;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
+#[ORM\HasLifecycleCallbacks]
 class Order
 {
     #[ORM\Id]
@@ -31,7 +34,7 @@ class Order
      * @var Collection<int, OrderProduct>
      */
     #[ORM\OneToMany(targetEntity: OrderProduct::class, mappedBy: 'orderEntity')]
-    #[Groups(['orders'])]
+    #[Groups(['order_product'])]
     private Collection $orderProducts;
 
     #[ORM\Column(length: 20)]
@@ -60,6 +63,14 @@ class Order
         OrderConstatns::ORDER_CANCELED
     ])]
     private ?string $orderStatus = null;
+
+    #[ORM\Column]
+    #[Groups(['orders'])]
+    private ?DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(['orders'])]
+    private ?\DateTimeInterface $updatedAt = null;
 
     public function __construct()
     {
@@ -171,5 +182,61 @@ class Order
     public function getCustomerId(): ?string
     {
         return $this->getCustomer()->getId();
+    }
+
+    public function getCreatedAt(): ?DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(DateTimeImmutable $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeInterface
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(\DateTimeInterface $updatedAt): static
+    {
+        $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    #[ORM\PrePersist]
+    public function setCreatedAtValue(): void
+    {
+        $this->createdAt = new DateTimeImmutable('now');
+    }
+
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function setUpdatedAtValue(): void
+    {
+        $this->updatedAt = new DateTime('now');
+    }
+
+    #[Groups(['orders'])]
+    public function getTotalPrice(): ?float
+    {
+        $products = $this->getOrderProducts()->getValues();
+
+        return array_reduce($products, function ($sum, $item) {
+            $quantity = $item->getQuantity();
+            $price = $item->getVendorProduct()->getPrice();
+
+            return $sum + $quantity * $price;
+        }, 0);
+    }
+
+    #[Groups(['orders'])]
+    public function getDeliveryAddress(): ?string
+    {
+        return $this->getCustomer()->getAddress();
     }
 }

@@ -21,14 +21,15 @@ class OrderRepository extends ServiceEntityRepository
     public function createQuerryBuilderForPagination(): QueryBuilder
     {
         return $this->createQueryBuilder('o')
-            ->orderBy('o.id', 'ASC');
+            ->orderBy('o.createdAt', 'ASC');
     }
 
     public function getAllOrdersBelonignToUser(User $user): QueryBuilder
     {
         return $this->createQueryBuilder('o')
             ->where('o.customer = :user')
-            ->setParameter('user', $user);
+            ->setParameter('user', $user)
+            ->orderBy('o.createdAt', 'ASC');
     }
 
     //    /**

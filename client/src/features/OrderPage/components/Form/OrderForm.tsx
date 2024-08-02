@@ -106,7 +106,7 @@ export const OrderForm: FC = () => {
         type="submit"
         className="w-[600px] mt-[20px] text-center bg-blue-500 text-white hover:bg-blue-300 transition-all rounded-[5px] p-[5px]"
       >
-        Создать производителя
+        Оформить заказ
       </button>
     </form>
   );

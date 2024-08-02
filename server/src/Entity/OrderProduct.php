@@ -13,7 +13,7 @@ class OrderProduct
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['orders'])]
+    #[Groups(['order_product'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'orderProducts')]
@@ -23,7 +23,7 @@ class OrderProduct
 
     #[ORM\Column]
     #[Assert\NotBlank(message: 'Quanti should be present')]
-    #[Groups(['orders'])]
+    #[Groups(['order_product'])]
     private ?int $quantity = null;
 
     #[ORM\ManyToOne(inversedBy: 'orderProducts')]
@@ -72,37 +72,37 @@ class OrderProduct
         return $this;
     }
 
-    #[Groups(['orders'])]
+    #[Groups(['order_product'])]
     public function getVendorProductId(): ?int
     {
         return $this->getVendorProduct()->getId();
     }
 
-    #[Groups(['orders'])]
+    #[Groups(['order_product'])]
     public function getPrice(): ?string
     {
         return $this->getVendorProduct()->getPrice();
     }
 
-    #[Groups(['orders'])]
+    #[Groups(['order_product'])]
     public function getProductId(): ?int
     {
         return $this->getVendorProduct()->getProduct()->getId();
     }
 
-    #[Groups(['orders'])]
+    #[Groups(['order_product'])]
     public function getProductImage(): ?string
     {
         return $this->getVendorProduct()->getProduct()->getImage();
     }
 
-    #[Groups(['orders'])]
+    #[Groups(['order_product'])]
     public function getProductWeight(): ?string
     {
         return $this->getVendorProduct()->getProduct()->getWeight();
     }
 
-    #[Groups(['orders'])]
+    #[Groups(['order_product'])]
     public function getProductTitle(): ?string
     {
         return $this->getVendorProduct()->getProduct()->getTitle();

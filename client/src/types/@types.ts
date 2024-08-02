@@ -33,3 +33,7 @@ export interface IDefaultResponse {
   message: string;
   id: number;
 }
+
+export interface IDeliveryStateProps {
+  status: string;
+}

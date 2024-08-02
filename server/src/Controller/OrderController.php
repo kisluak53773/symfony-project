@@ -196,11 +196,46 @@ class OrderController extends AbstractController
             return $this->json(['message' => 'Such order does not exist'], 404);
         }
 
-        $deliveryDate = DateTime::createFromFormat('Y-m-d H:i:s', $decoded->deliveryTime);
+        $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i', $decoded->deliveryTime);
 
         $order->setPaymentMethod($decoded->paymentMethod);
         $order->setOrderStatus($decoded->orderStatus);
         $order->setDeliveryTime($deliveryDate);
+
+        $errors = $validator->validate($order);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+
+            return $this->json(['message' => $errorsString], 400);
+        }
+
+        $entityManager->persist($order);
+        $entityManager->flush();
+
+        return $this->json(['message' => 'Succesfully patched'], 200);
+    }
+
+    #[Route('/customer/{id<\d+>}', name: 'cancel_order', methods: 'patch')]
+    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
+    public function cancelOrder(
+        int $id,
+        ManagerRegistry $registry,
+        ValidatorInterface $validator,
+        Security $security,
+    ): JsonResponse {
+        $entityManager = $registry->getManager();
+        $order = $entityManager->getRepository(Order::class)->find($id);
+
+        if (!isset($order)) {
+            return $this->json(['message' => 'Such order does not exist'], 404);
+        }
+
+        if ($security->getUser()->getUserIdentifier() !== $order->getCustomer()->getUserIdentifier()) {
+            return $this->json(['message' => 'You can not cancel this order']);
+        }
+
+        $order->setOrderStatus(OrderConstatns::ORDER_CANCELED);
 
         $errors = $validator->validate($order);
 
