@@ -22,7 +22,7 @@ export const HeaderSeach: FC = () => {
             modalWindow: "absolute top-0 left-0 h-[8vh]",
           }}
         >
-          <HeaderSearchModal />
+          <HeaderSearchModal setIsModalActive={setIsModalActive} />
         </Modal>
       )}
     </div>

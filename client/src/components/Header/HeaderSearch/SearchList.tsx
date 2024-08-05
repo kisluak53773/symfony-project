@@ -7,7 +7,10 @@ import { useDebounce } from "@/hooks";
 import { SearchItem } from "./SearchItem";
 import Link from "next/link";
 
-export const SearchList: FC<ISearchListProsp> = ({ search }) => {
+export const SearchList: FC<ISearchListProsp> = ({
+  search,
+  setIsModalActive,
+}) => {
   const [products, setProducts] = useState<IProduct[] | null>(null);
   const debouncedSearch = useDebounce<string>(search);
   const [quantity, setQunatity] = useState(0);
@@ -39,7 +42,10 @@ export const SearchList: FC<ISearchListProsp> = ({ search }) => {
             ))}
           </ul>
           {quantity > 4 && (
-            <div className="flex items-center justify-center w-full py-[10px]">
+            <div
+              onClick={() => setIsModalActive(false)}
+              className="flex items-center justify-center w-full py-[10px]"
+            >
               <Link href={`/products?search=${debouncedSearch}`}>
                 Показать все продукты
               </Link>

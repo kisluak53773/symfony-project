@@ -3,8 +3,11 @@
 import React, { FC, useState } from "react";
 import { SearchList } from "./SearchList";
 import { HeaderImage } from "../HeaderImage";
+import { type IHeaderSearchModalProps } from "../@types";
 
-export const HeaderSearchModal: FC = () => {
+export const HeaderSearchModal: FC<IHeaderSearchModalProps> = ({
+  setIsModalActive,
+}) => {
   const [search, setSearch] = useState("");
 
   return (
@@ -20,7 +23,7 @@ export const HeaderSearchModal: FC = () => {
           />
         </div>
       </header>
-      <SearchList search={search} />
+      <SearchList search={search} setIsModalActive={setIsModalActive} />
     </>
   );
 };

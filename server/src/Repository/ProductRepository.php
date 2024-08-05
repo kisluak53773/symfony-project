@@ -46,10 +46,10 @@ class ProductRepository extends ServiceEntityRepository
     {
         $title = $request->query->get('title', '');
         $priceSort = $request->query->get('priceSort', 'asc');
-        $query = new Query();
-        $boolQuery = new BoolQuery();
         $typesArray = $request->query->all('types');
         $producersArray = $request->query->all('producers');
+        $query = new Query();
+        $boolQuery = new BoolQuery();
 
         if ($title) {
             $queryString = new QueryString();
