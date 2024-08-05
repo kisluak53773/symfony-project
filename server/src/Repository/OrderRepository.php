@@ -7,6 +7,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Doctrine\ORM\QueryBuilder;
 use App\Entity\User;
+use App\Entity\Vendor;
 
 /**
  * @extends ServiceEntityRepository<Order>
@@ -29,7 +30,17 @@ class OrderRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('o')
             ->where('o.customer = :user')
             ->setParameter('user', $user)
-            ->orderBy('o.createdAt', 'ASC');
+            ->orderBy('o.createdAt', 'DESC');
+    }
+
+    public function createQuerryBuilderForVendorAndPagination(Vendor $vendor): QueryBuilder
+    {
+        return $this->createQueryBuilder('o')
+            ->innerJoin('o.orderProducts', 'op')
+            ->innerJoin('op.vendorProduct', 'vp')
+            ->where('vp.vendor = :vendor')
+            ->setParameter('vendor', $vendor)
+            ->orderBy('o.createdAt', 'DESC');
     }
 
     //    /**

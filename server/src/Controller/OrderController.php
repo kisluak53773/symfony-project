@@ -121,7 +121,7 @@ class OrderController extends AbstractController
             $request->query->get('limit', 5)
         );
 
-        $products = $pagination->getItems();
+        $orders = $pagination->getItems();
         $totalItems = $pagination->getTotalItemCount();
         $itemsPerPage = $pagination->getItemNumberPerPage();
         $currentPage = $pagination->getCurrentPageNumber();
@@ -131,12 +131,84 @@ class OrderController extends AbstractController
             'total_items' => $totalItems,
             'current_page' => $currentPage,
             'total_pages' => $totalPages,
-            'data' => $products,
+            'data' => $orders,
         ];
 
         return $this->json(
             data: $response,
             context: [AbstractNormalizer::GROUPS => ['orders']]
+        );
+    }
+
+    #[Route('/vendor', name: 'get_vendor_orders', methods: 'get')]
+    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
+    public function getVendorOrders(
+        PaginatorInterface $paginator,
+        OrderRepository $orderRepository,
+        Request $request,
+        Security $security,
+        ManagerRegistry $registry,
+    ): JsonResponse {
+        $entityManager = $registry->getManager();
+        $userPhone = $security->getUser()->getUserIdentifier();
+        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $vendor = $user->getVendor();
+
+        if (!isset($vendor)) {
+            return $this->json(['message' => 'Vendor data is not found'], 404);
+        }
+
+        $querryBuilder = $orderRepository->createQuerryBuilderForVendorAndPagination($vendor);
+
+        $pagination = $paginator->paginate(
+            $querryBuilder,
+            $request->query->getInt('page', 1),
+            $request->query->get('limit', 5)
+        );
+
+        $orders = $pagination->getItems();
+        $totalItems = $pagination->getTotalItemCount();
+        $itemsPerPage = $pagination->getItemNumberPerPage();
+        $currentPage = $pagination->getCurrentPageNumber();
+        $totalPages = ceil($totalItems / $itemsPerPage);
+
+        $response = [
+            'total_items' => $totalItems,
+            'current_page' => $currentPage,
+            'total_pages' => $totalPages,
+            'data' => $orders,
+        ];
+
+        return $this->json(
+            data: $response,
+            context: [AbstractNormalizer::GROUPS => ['orders']]
+        );
+    }
+
+    #[Route('/vendor/{id<\d+>}', name: 'get_vendor_order_by_id', methods: 'get')]
+    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
+    public function getVendorOrderById(
+        int $id,
+        Security $security,
+        ManagerRegistry $registry,
+    ): JsonResponse {
+        $entityManager = $registry->getManager();
+        $userPhone = $security->getUser()->getUserIdentifier();
+        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $vendor = $user->getVendor();
+
+        if (!isset($vendor)) {
+            return $this->json(['message' => 'Vendor data is not found'], 404);
+        }
+
+        $order = $entityManager->getRepository(Order::class)->find($id);
+        $products = $order->getOrderProducts()->getValues();
+
+        $products = array_filter($products, fn ($item) => $item->getVendorProduct()->getVendor()->getId() === $vendor->getId());
+
+        return $this->json(
+            data: ['orderData' => $order, 'products' => $products],
+            context: [AbstractNormalizer::GROUPS => ['orders', 'vendor_order']]
         );
     }
 
@@ -155,7 +227,7 @@ class OrderController extends AbstractController
             $request->query->get('limit', 5)
         );
 
-        $products = $pagination->getItems();
+        $orders = $pagination->getItems();
         $totalItems = $pagination->getTotalItemCount();
         $itemsPerPage = $pagination->getItemNumberPerPage();
         $currentPage = $pagination->getCurrentPageNumber();
@@ -165,7 +237,7 @@ class OrderController extends AbstractController
             'total_items' => $totalItems,
             'current_page' => $currentPage,
             'total_pages' => $totalPages,
-            'data' => $products,
+            'data' => $orders,
         ];
 
         return $this->json(
@@ -249,5 +321,9 @@ class OrderController extends AbstractController
         $entityManager->flush();
 
         return $this->json(['message' => 'Succesfully patched'], 200);
+    }
+
+    public function filterOrdersByVendorId(int $vendorId, array $orders)
+    {
     }
 }

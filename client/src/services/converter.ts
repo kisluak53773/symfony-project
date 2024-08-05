@@ -34,3 +34,15 @@ export const convertArrayToQuerryParams = (title: string, data: any[]) => {
 export const convertSortToQuerryParams = (sort: ISort) => {
   return `&${sort.tag}=${sort.value}`;
 };
+
+export const formatDateString = (dateString: string) => {
+  const date = new Date(dateString);
+
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  let hours = date.getUTCHours();
+  const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+
+  return `${year}.${month}.${day} ${hours}:${minutes}`;
+};

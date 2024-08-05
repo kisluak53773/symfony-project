@@ -22,7 +22,7 @@ export const SearchItem: FC<ISearchItemProps> = ({ product }) => {
             {product.vendorProducts[0].price} руб.
           </p>
         ) : (
-          <p className=" font-semibold text-gray-400">Товара нет в галичии</p>
+          <p className=" font-semibold text-gray-400">Товара нет в наличии</p>
         )}
       </div>
     </li>
