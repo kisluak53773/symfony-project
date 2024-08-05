@@ -6,7 +6,9 @@ export const HiddenCartItem: FC<ICartItemProps> = ({ product }) => {
   return (
     <section
       style={{
-        backgroundImage: `url(${productImagePathConverter(product.image)})`,
+        backgroundImage: `url(${productImagePathConverter(
+          product.productImage
+        )})`,
       }}
       className=" w-[56px] bg-contain h-[66px] flex items-end"
     >

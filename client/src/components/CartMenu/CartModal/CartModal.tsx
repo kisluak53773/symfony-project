@@ -6,8 +6,9 @@ import { getCartProducts } from "@/store/slices/cart";
 import { CartModalItem } from "../CartItem";
 import { IoBagOutline } from "react-icons/io5";
 import { useAppDispatch } from "@/store";
-import { removeAllFromCart } from "@/store/slices/cart";
+import { deleteAllProducstInCart } from "@/store/slices/cart";
 import { IoReloadOutline } from "react-icons/io5";
+import Link from "next/link";
 
 export const CartModal: FC = () => {
   const productsInCart = useSelector(getCartProducts);
@@ -25,7 +26,7 @@ export const CartModal: FC = () => {
         <h1 className=" font-semibold text-[25px]">Корзина</h1>
         {productsInCart.length > 0 && (
           <button
-            onClick={() => dispatch(removeAllFromCart())}
+            onClick={() => dispatch(deleteAllProducstInCart())}
             className=" text-gray-500 hover:text-black transition-all"
           >
             Удалить все
@@ -53,10 +54,13 @@ export const CartModal: FC = () => {
                 {totalPrice} р.
               </span>
             </div>
-            <button className=" rounded-lg flex items-center justify-center h-[45px] text-white bg-blue-500 hover:bg-blue-300 w-full">
+            <Link
+              href="/order"
+              className=" rounded-lg flex items-center justify-center h-[45px] text-white bg-blue-500 hover:bg-blue-300 w-full"
+            >
               <IoBagOutline size={20} color="white" />
               <span className="text-[15px] ml-[10px]">Перейти в корзину</span>
-            </button>
+            </Link>
           </div>
         </>
       ) : (

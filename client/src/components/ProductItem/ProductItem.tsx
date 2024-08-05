@@ -7,28 +7,32 @@ import { useSelector } from "react-redux";
 import { getCartProducts } from "@/store/slices/cart";
 import { useAppDispatch } from "@/store";
 import {
-  addToCart,
-  incrementQuantity,
-  decrementQuantity,
+  addProductToCart,
+  decreaseQuantity,
+  increaseQuantity,
 } from "@/store/slices/cart";
 import { FiMinus } from "react-icons/fi";
 import { productImagePathConverter } from "@/services";
 
 export const ProductItem: FC<IProductItemProps> = ({ product }) => {
   const isItemInCart = useSelector(getCartProducts).find(
-    (item) => item.id === product.id
+    (item) => item.productId === product.id
   );
   const dispatch = useAppDispatch();
 
   const handleAdd = () => {
     const newProduct = {
-      ...product,
       quantity: 1,
+      vendorProductId: product.vendorProducts[0].id,
       price: product.vendorProducts[0].price,
-      vendorId: product.vendorProducts[0].vendorId,
+      productId: product.id,
+      productImage: product.image,
+      productWeight: product.weight,
+      productTitle: product.title,
+      inStock: product.vendorProducts[0].quantity,
     };
 
-    dispatch(addToCart(newProduct));
+    dispatch(addProductToCart(newProduct));
   };
 
   return (
@@ -40,7 +44,8 @@ export const ProductItem: FC<IProductItemProps> = ({ product }) => {
         height={400}
         alt="Картинка продукта"
       />
-      {product.vendorProducts.length > 0 ? (
+      {product.vendorProducts.length > 0 &&
+      product.vendorProducts[0].quantity > 0 ? (
         <p className="font-semibold text-red-500 text-[18px]">
           {product.vendorProducts[0].price + "р."}
         </p>
@@ -51,28 +56,47 @@ export const ProductItem: FC<IProductItemProps> = ({ product }) => {
       )}
       <p>{product.title}</p>
       <p className=" text-[13px] text-gray-400 mb-[30px]">{product.weight}</p>
-      {product.vendorProducts.length > 0 && (
-        <>
-          {isItemInCart ? (
-            <div className=" flex w-full justify-between h-[34px]">
-              <button onClick={() => dispatch(decrementQuantity(isItemInCart))}>
-                <FiMinus size={20} color="black" />
+      {product.vendorProducts.length > 0 &&
+        product.vendorProducts[0].quantity > 0 && (
+          <>
+            {isItemInCart ? (
+              <div className=" flex w-full justify-between h-[34px]">
+                <button
+                  onClick={() =>
+                    dispatch(
+                      decreaseQuantity({
+                        vendorProductId: isItemInCart.vendorProductId,
+                        quantity: 1,
+                      })
+                    )
+                  }
+                >
+                  <FiMinus size={20} color="black" />
+                </button>
+                <span>{isItemInCart.quantity} шт.</span>
+                <button
+                  onClick={() =>
+                    dispatch(
+                      increaseQuantity({
+                        quantity: 1,
+                        vendorProductId: isItemInCart.vendorProductId,
+                      })
+                    )
+                  }
+                >
+                  <FiPlus size={20} color="black" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleAdd}
+                className="flex items-center justify-center bg-blue-500 hover:bg-blue-300 rounded-lg w-[64px] h-[34px]"
+              >
+                <FiPlus size={30} color="white" />
               </button>
-              <span>{isItemInCart.quantity} шт.</span>
-              <button onClick={() => dispatch(incrementQuantity(isItemInCart))}>
-                <FiPlus size={20} color="black" />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={handleAdd}
-              className="flex items-center justify-center bg-blue-500 hover:bg-blue-300 rounded-lg w-[64px] h-[34px]"
-            >
-              <FiPlus size={30} color="white" />
-            </button>
-          )}
-        </>
-      )}
+            )}
+          </>
+        )}
     </section>
   );
 };

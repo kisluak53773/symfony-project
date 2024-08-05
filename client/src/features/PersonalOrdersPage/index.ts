@@ -1,0 +1,1 @@
+export { PersonalOrdersPage } from "./components";

@@ -77,7 +77,7 @@ class VendorController extends AbstractController
     }
 
     #[Route('/current', name: 'get_current_vendor', methods: 'get')]
-    #[IsGranted('ROLE_VENDOR', message: 'You are not allowed to access this route.')]
+    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
     public function getCurrentVendor(
         ManagerRegistry $doctrine,
         Security $security
@@ -95,7 +95,7 @@ class VendorController extends AbstractController
     }
 
     #[Route('/current', name: 'patch_current_vendor', methods: 'patch')]
-    #[IsGranted('ROLE_VENDOR', message: 'You are not allowed to access this route.')]
+    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
     public function patchCurrentVendor(
         ManagerRegistry $doctrine,
         Request $request,
@@ -134,7 +134,7 @@ class VendorController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
-    #[IsGranted('ROLE_VENDOR', message: 'You are not allowed to access this route.')]
+    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
     public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
     {
         $entityManager = $managerRegistry->getManager();

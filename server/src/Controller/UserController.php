@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Constants\RoleConstants;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -17,7 +18,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class UserController extends AbstractController
 {
     #[Route('/current', name: 'get_current', methods: 'get')]
-    #[IsGranted('ROLE_USER', message: 'You are not allowed to access this route.')]
+    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
     public function index(Security $security): JsonResponse
     {
         $user = $security->getUser();
@@ -33,7 +34,7 @@ class UserController extends AbstractController
     }
 
     #[Route(name: 'patch_current_user', methods: 'patch')]
-    #[IsGranted('ROLE_USER', message: 'You are not allowed to access this route.')]
+    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
     public function patchCurrentUser(
         ManagerRegistry $doctrine,
         Request $request,

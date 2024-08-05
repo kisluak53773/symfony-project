@@ -12,11 +12,14 @@ use App\Services\Uploader\TypesImageUploader;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Constants\RoleConstants;
 
 #[Route('/api/type', name: 'api_type_')]
 class TypeController extends AbstractController
 {
     #[Route(name: 'create', methods: 'post')]
+    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
     public function add(
         Request $request,
         ManagerRegistry $registry,
@@ -68,6 +71,7 @@ class TypeController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
+    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
     public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
     {
         $entityManager = $managerRegistry->getManager();

@@ -12,8 +12,13 @@ export interface IHeaderLinkProps {
 
 export interface ISearchListProsp {
   search: string;
+  setIsModalActive: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export interface ISearchItemProps {
   product: IProduct;
+}
+
+export interface IHeaderSearchModalProps {
+  setIsModalActive: React.Dispatch<React.SetStateAction<boolean>>;
 }

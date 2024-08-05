@@ -1,5 +1,5 @@
-import { type ICartProduct } from "@/store/slices/cart";
+import { type ICartItem } from "@/services/cart";
 
 export interface ICartItemProps {
-  product: ICartProduct;
+  product: ICartItem;
 }

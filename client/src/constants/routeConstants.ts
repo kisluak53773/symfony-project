@@ -10,4 +10,9 @@ export const VENDOR_ROUTS = [
     href: "/vendor/addProduct",
     title: "Выбрать товары для продажи из существующих",
   },
+  {
+    id: 6,
+    href: "/vendor/personalOrders",
+    title: "Ваши заказы",
+  },
 ];
