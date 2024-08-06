@@ -73,6 +73,14 @@ class TypeService
         return $entityManager->getRepository(Type::class)->findAll();
     }
 
+    /**
+     * Summary of delete
+     * @param int $id
+     * 
+     * @throws \App\Services\Exception\Request\NotFoundException
+     * 
+     * @return void
+     */
     public function delete(int $id): void
     {
         $entityManager = $this->registry->getManager();

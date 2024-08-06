@@ -20,6 +20,12 @@ class ProducerService
     ) {
     }
 
+    /**
+     * Summary of add
+     * @throws \App\Services\Exception\Request\BadRequsetException
+     * 
+     * @return int
+     */
     public function add(): int
     {
         $entityManager = $this->registry->getManager();
@@ -59,6 +65,14 @@ class ProducerService
         return $entityManager->getRepository(Producer::class)->findAll();
     }
 
+    /**
+     * Summary of delete
+     * @param int $id
+     * 
+     * @throws \App\Services\Exception\Request\NotFoundException
+     * 
+     * @return void
+     */
     public function delete(int $id)
     {
         $entityManager = $this->registry->getManager();
