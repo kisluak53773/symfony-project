@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Entity\User;
-use App\Constants\RoleConstants;
+use App\Enum\Role;
 use App\Entity\Vendor;
 use DateTimeImmutable;
 use App\Services\Validator\UserValidator;
@@ -48,7 +48,7 @@ class AuthController extends AbstractController
         $hashedPassword = $passwordHasher->hashPassword($user, $password);
         $user->setPassword($hashedPassword);
         $user->setPhone($phone);
-        $user->setRoles([RoleConstants::ROLE_USER]);
+        $user->setRoles([Role::ROLE_USER->value]);
 
         if (isset($decoded->address)) {
             $user->setAddress($decoded->address);
@@ -132,7 +132,7 @@ class AuthController extends AbstractController
         $user->setAddress($address);
         $user->setEmail($email);
         $user->setFullName($fullName);
-        $user->setRoles([RoleConstants::ROLE_VENDOR]);
+        $user->setRoles([Role::ROLE_VENDOR->value]);
 
         $errors = $validator->validate($user);
 
@@ -169,7 +169,7 @@ class AuthController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
     {
         $entityManager = $managerRegistry->getManager();
@@ -179,7 +179,7 @@ class AuthController extends AbstractController
         if (!isset($user)) {
             return $this->json(['message' => 'no such user exist'], 404);
         }
-        $user->setRoles([RoleConstants::ROLE_DELETED]);
+        $user->setRoles([Role::ROLE_DELETED->value]);
 
         $entityManager->persist($user);
         $entityManager->flush();

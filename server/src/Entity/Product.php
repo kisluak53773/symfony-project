@@ -92,9 +92,16 @@ class Product
     #[Assert\NotBlank]
     private ?Type $type = null;
 
+    /**
+     * @var Collection<int, User>
+     */
+    #[ORM\ManyToMany(targetEntity: User::class, mappedBy: 'favorite')]
+    private Collection $users;
+
     public function __construct()
     {
         $this->vendorProducts = new ArrayCollection();
+        $this->users = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -238,5 +245,32 @@ class Product
     public function getProducerId(): ?int
     {
         return $this->producer->getId();
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getUsers(): Collection
+    {
+        return $this->users;
+    }
+
+    public function addUser(User $user): static
+    {
+        if (!$this->users->contains($user)) {
+            $this->users->add($user);
+            $user->addFavorite($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUser(User $user): static
+    {
+        if ($this->users->removeElement($user)) {
+            $user->removeFavorite($this);
+        }
+
+        return $this;
     }
 }

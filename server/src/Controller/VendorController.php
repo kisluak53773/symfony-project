@@ -11,7 +11,7 @@ use App\Entity\User;
 use App\Entity\Vendor;
 use App\Services\Validator\VendorValidator;
 use DateTimeImmutable;
-use App\Constants\RoleConstants;
+use App\Enum\Role;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
@@ -68,7 +68,7 @@ class VendorController extends AbstractController
 
         $entityManager->persist($vendor);
 
-        $user->setRoles([RoleConstants::ROLE_VENDOR]);
+        $user->setRoles([Role::ROLE_VENDOR->value]);
         $entityManager->persist($user);
 
         $entityManager->flush();
@@ -77,7 +77,7 @@ class VendorController extends AbstractController
     }
 
     #[Route('/current', name: 'get_current_vendor', methods: 'get')]
-    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function getCurrentVendor(
         ManagerRegistry $doctrine,
         Security $security
@@ -95,7 +95,7 @@ class VendorController extends AbstractController
     }
 
     #[Route('/current', name: 'patch_current_vendor', methods: 'patch')]
-    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function patchCurrentVendor(
         ManagerRegistry $doctrine,
         Request $request,
@@ -134,7 +134,7 @@ class VendorController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
-    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
     {
         $entityManager = $managerRegistry->getManager();

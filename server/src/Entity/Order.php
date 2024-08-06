@@ -8,11 +8,11 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
-use App\Constants\PaymnetConstants;
-use App\Constants\OrderConstatns;
 use Symfony\Component\Serializer\Annotation\Groups;
 use DateTime;
 use DateTimeImmutable;
+use App\Enum\PaymentMethod;
+use App\Enum\OrderStatus;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
@@ -38,7 +38,7 @@ class Order
     private Collection $orderProducts;
 
     #[ORM\Column(length: 20)]
-    #[Assert\Choice([PaymnetConstants::PAYMENT_CASH, PaymnetConstants::PAYMENT_CARD])]
+    #[Assert\Choice([PaymentMethod::PAYMENT_CASH->value, PaymentMethod::PAYMENT_CARD->value])]
     #[Groups(['orders'])]
     private ?string $paymentMethod = null;
 
@@ -57,10 +57,10 @@ class Order
     #[ORM\Column(length: 20)]
     #[Groups(['orders'])]
     #[Assert\Choice([
-        OrderConstatns::ORDER_PROCESSED,
-        OrderConstatns::ORDER_ON_THE_WAY,
-        OrderConstatns::ORDER_DELIVERED,
-        OrderConstatns::ORDER_CANCELED
+        OrderStatus::ORDER_PROCESSED->value,
+        OrderStatus::ORDER_ON_THE_WAY->value,
+        OrderStatus::ORDER_DELIVERED->value,
+        OrderStatus::ORDER_CANCELED->value
     ])]
     private ?string $orderStatus = null;
 

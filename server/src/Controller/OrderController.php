@@ -14,9 +14,9 @@ use App\Entity\User;
 use App\Entity\OrderProduct;
 use App\Entity\Order;
 use DateTime;
-use App\Constants\OrderConstatns;
+use App\Enum\OrderStatus;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use App\Constants\RoleConstants;
+use App\Enum\Role;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Knp\Component\Pager\PaginatorInterface;
 use App\Repository\OrderRepository;
@@ -25,7 +25,7 @@ use App\Repository\OrderRepository;
 class OrderController extends AbstractController
 {
     #[Route(name: 'add', methods: 'post')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function index(
         ManagerRegistry $registry,
         Security $security,
@@ -49,7 +49,7 @@ class OrderController extends AbstractController
         $order->setCustomer($user);
         $order->setPaymentMethod($decoded->paymentMethod);
         $order->setDeliveryTime($deliveryDate);
-        $order->setOrderStatus(OrderConstatns::ORDER_PROCESSED);
+        $order->setOrderStatus(OrderStatus::ORDER_PROCESSED->value);
 
         if (isset($decoded->comment)) {
             $order->setComment($decoded->comment);
@@ -101,7 +101,7 @@ class OrderController extends AbstractController
     }
 
     #[Route('/current', name: 'get_orders_of_current_user', methods: 'get')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function getUserOrders(
         PaginatorInterface $paginator,
         OrderRepository $orderRepository,
@@ -141,7 +141,7 @@ class OrderController extends AbstractController
     }
 
     #[Route('/vendor', name: 'get_vendor_orders', methods: 'get')]
-    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function getVendorOrders(
         PaginatorInterface $paginator,
         OrderRepository $orderRepository,
@@ -186,7 +186,7 @@ class OrderController extends AbstractController
     }
 
     #[Route('/vendor/{id<\d+>}', name: 'get_vendor_order_by_id', methods: 'get')]
-    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function getVendorOrderById(
         int $id,
         Security $security,
@@ -213,7 +213,7 @@ class OrderController extends AbstractController
     }
 
     #[Route(name: 'get_all_orders', methods: 'get')]
-    #[IsGranted(RoleConstants::ROLE_ADMIN, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_ADMIN->value, message: 'You are not allowed to access this route.')]
     public function getAllOrders(
         PaginatorInterface $paginator,
         OrderRepository $orderRepository,
@@ -247,7 +247,7 @@ class OrderController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'patch_order', methods: 'patch')]
-    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function patchOrder(
         int $id,
         ManagerRegistry $registry,
@@ -289,7 +289,7 @@ class OrderController extends AbstractController
     }
 
     #[Route('/customer/{id<\d+>}', name: 'cancel_order', methods: 'patch')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function cancelOrder(
         int $id,
         ManagerRegistry $registry,
@@ -307,7 +307,7 @@ class OrderController extends AbstractController
             return $this->json(['message' => 'You can not cancel this order']);
         }
 
-        $order->setOrderStatus(OrderConstatns::ORDER_CANCELED);
+        $order->setOrderStatus(OrderStatus::ORDER_CANCELED->value);
 
         $errors = $validator->validate($order);
 

@@ -11,13 +11,13 @@ use App\Entity\Producer;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use App\Constants\RoleConstants;
+use App\Enum\Role;
 
 #[Route('/api/producer', name: 'api_producer_')]
 class ProducerController extends AbstractController
 {
     #[Route(name: 'add', methods: 'post')]
-    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function add(
         ManagerRegistry $registry,
         Request $request,
@@ -66,7 +66,7 @@ class ProducerController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
-    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
     {
         $entityManager = $managerRegistry->getManager();

@@ -18,7 +18,7 @@ use App\Entity\VendorProduct;
 use App\Services\Uploader\ProductImageUploader;
 use App\Services\Validator\ProductValidator;
 use Symfony\Bundle\SecurityBundle\Security;
-use App\Constants\RoleConstants;
+use App\Enum\Role;
 use App\Entity\User;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -27,7 +27,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class ProductController extends AbstractController
 {
     #[Route('/create', name: 'add', methods: 'post')]
-    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function addWithVendor(
         Request $request,
         ManagerRegistry $registry,
@@ -88,7 +88,7 @@ class ProductController extends AbstractController
 
         $entityManager->persist($product);
 
-        if (isset($user) && in_array(RoleConstants::ROLE_VENDOR, $user->getRoles())) {
+        if (isset($user) && in_array(Role::ROLE_VENDOR->value, $user->getRoles())) {
             $userPhone = $user->getUserIdentifier();
             $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
 
@@ -154,7 +154,7 @@ class ProductController extends AbstractController
     }
 
     #[Route('/vendor', name: 'get_products_vendor_does_not_sell', methods: 'get')]
-    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function getProductsVendorDoesNotSell(
         Request $request,
         PaginatorInterface $paginator,
@@ -200,7 +200,7 @@ class ProductController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
-    #[IsGranted(RoleConstants::ROLE_ADMIN, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_ADMIN->value, message: 'You are not allowed to access this route.')]
     public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
     {
         $entityManager = $managerRegistry->getManager();

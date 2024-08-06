@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use App\Constants\RoleConstants;
+use App\Enum\Role;
 use Symfony\Bundle\SecurityBundle\Security;
 use App\Entity\User;
 use App\Entity\Cart;
@@ -22,7 +22,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 class CartController extends AbstractController
 {
     #[Route(name: 'create', methods: 'post')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function createCart(
         ManagerRegistry $registry,
         Security $security
@@ -42,7 +42,7 @@ class CartController extends AbstractController
     }
 
     #[Route('/prodcuts', name: 'get_products', methods: 'get')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function getProductsCart(
         ManagerRegistry $registry,
         Security $security
@@ -61,7 +61,7 @@ class CartController extends AbstractController
     }
 
     #[Route('/add', name: 'addToCart', methods: 'post')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function addToCart(
         ManagerRegistry $registry,
         Security $security,
@@ -125,7 +125,7 @@ class CartController extends AbstractController
     }
 
     #[Route('/increase', name: 'increase_amount_of_product_in_cart', methods: 'post')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function increaseProductAmount(
         ManagerRegistry $managerRegistry,
         Request $request,
@@ -164,7 +164,7 @@ class CartController extends AbstractController
     }
 
     #[Route('/decrease', name: 'decrease_amount_of_product_in_cart', methods: 'post')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function decreaseProductAmount(
         ManagerRegistry $managerRegistry,
         Request $request,
@@ -208,7 +208,7 @@ class CartController extends AbstractController
     }
 
     #[Route('/remove/{vendorProductId<\d+>}', name: 'remove_from_cart', methods: 'delete')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function removeFromCart(int $vendorProductId, ManagerRegistry $managerRegistry): JsonResponse
     {
         $entityManager = $managerRegistry->getManager();
@@ -234,7 +234,7 @@ class CartController extends AbstractController
     }
 
     #[Route('/removeAll', name: 'remove_all_from_cart', methods: 'delete')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function removeAllFromCart(ManagerRegistry $registry, Security $security): JsonResponse
     {
         $entityManager = $registry->getManager();

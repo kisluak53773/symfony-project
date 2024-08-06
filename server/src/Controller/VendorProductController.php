@@ -17,14 +17,14 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Knp\Component\Pager\PaginatorInterface;
 use App\Repository\VendorProductRepository;
 use App\Services\Validator\VendorProductValidator;
-use App\Constants\RoleConstants;
+use App\Enum\Role;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/vendorProduct', name: 'api_vendorProduct_')]
 class VendorProductController extends AbstractController
 {
     #[Route(name: 'add', methods: 'post')]
-    #[IsGranted('ROLE_VENDOR', message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function add(
         Request $request,
         ManagerRegistry $managerRegistry,
@@ -39,7 +39,7 @@ class VendorProductController extends AbstractController
             return $this->json(['message' => 'insufficient data'], 400);
         }
 
-        if (isset($user) && in_array(RoleConstants::ROLE_VENDOR, $user->getRoles())) {
+        if (isset($user) && in_array(Role::ROLE_VENDOR->value, $user->getRoles())) {
             $userPhone = $user->getUserIdentifier();
             $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
             $vendor = $user->getVendor();
@@ -88,7 +88,7 @@ class VendorProductController extends AbstractController
     }
 
     #[Route('/vendor', name: 'get_for_vendor', methods: 'get')]
-    #[IsGranted('ROLE_VENDOR', message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function get(
         ManagerRegistry $registry,
         Security $security,
@@ -134,7 +134,7 @@ class VendorProductController extends AbstractController
     }
 
     #[Route('/vendor/update/{id<\d+>}', name: 'update_for_vendor', methods: 'patch')]
-    #[IsGranted('ROLE_VENDOR', message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function patchVendorProdut(
         int $id,
         Request $request,
@@ -168,7 +168,7 @@ class VendorProductController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
-    #[IsGranted('ROLE_VENDOR', message: 'You are not allowed to access this route.')]
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
     {
         $entityManager = $managerRegistry->getManager();
