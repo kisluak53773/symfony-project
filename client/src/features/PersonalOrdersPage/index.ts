@@ -1,1 +1,1 @@
-export { PersonalOrdersPage } from "./components";
+export { PersonalOrdersPage, OrderItemSection } from "./components";

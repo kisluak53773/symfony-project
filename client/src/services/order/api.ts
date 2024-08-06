@@ -3,6 +3,8 @@ import {
   type IOrderCreate,
   type IPaginatedOrders,
   type IOrdersPaginationRequestData,
+  type ISpecificRequestData,
+  type IOrder,
 } from "./@types";
 
 const BASE_URL = "/order";
@@ -28,6 +30,34 @@ export const orderService = {
   async cancelOrder(orderId: number) {
     const response = await axiosWithAuth.patch(
       `${BASE_URL}/customer/${orderId}`
+    );
+
+    return response.data;
+  },
+
+  async getVendorOrderRequsets({
+    page,
+    limit = 5,
+  }: IOrdersPaginationRequestData) {
+    const response = await axiosWithAuth.get<IPaginatedOrders>(
+      `${BASE_URL}/vendor?page=${page}&limit=${limit}`
+    );
+
+    return response.data;
+  },
+
+  async getOrderRequestByOrderId(orderId: number) {
+    const response = await axiosWithAuth.get<ISpecificRequestData>(
+      `${BASE_URL}/vendor/${orderId}`
+    );
+
+    return response.data;
+  },
+
+  async patchOrder(order: IOrder) {
+    const response = await axiosWithAuth.patch<ISpecificRequestData>(
+      `${BASE_URL}/${order.id}`,
+      order
     );
 
     return response.data;

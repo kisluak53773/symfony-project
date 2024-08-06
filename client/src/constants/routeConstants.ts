@@ -15,4 +15,9 @@ export const VENDOR_ROUTS = [
     href: "/vendor/personalOrders",
     title: "Ваши заказы",
   },
+  {
+    id: 7,
+    href: "/vendor/ordersRequset",
+    title: "Ваши заявки",
+  },
 ];

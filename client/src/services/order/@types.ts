@@ -18,6 +18,17 @@ export interface IOrder {
   deliveryAddress: string;
 }
 
+export interface IOrderProduct {
+  id: number;
+  quantity: number;
+  vendorProductId: number;
+  price: string;
+  productId: number;
+  productImage: string;
+  productWeight: string;
+  productTitle: string;
+}
+
 export interface IPaginatedOrders extends IPagination {
   data: IOrder[];
 }
@@ -25,4 +36,9 @@ export interface IPaginatedOrders extends IPagination {
 export interface IOrdersPaginationRequestData {
   page: number;
   limit?: number;
+}
+
+export interface ISpecificRequestData {
+  orderData: IOrder;
+  products: IOrderProduct[];
 }
