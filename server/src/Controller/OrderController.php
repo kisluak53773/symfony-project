@@ -247,7 +247,7 @@ class OrderController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'patch_order', methods: 'patch')]
-    #[IsGranted(RoleConstants::ROLE_ADMIN, message: 'You are not allowed to access this route.')]
+    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
     public function patchOrder(
         int $id,
         ManagerRegistry $registry,
@@ -321,9 +321,5 @@ class OrderController extends AbstractController
         $entityManager->flush();
 
         return $this->json(['message' => 'Succesfully patched'], 200);
-    }
-
-    public function filterOrdersByVendorId(int $vendorId, array $orders)
-    {
     }
 }

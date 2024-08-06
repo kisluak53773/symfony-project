@@ -4,6 +4,7 @@ import {
   type IPaginatedOrders,
   type IOrdersPaginationRequestData,
   type ISpecificRequestData,
+  type IOrder,
 } from "./@types";
 
 const BASE_URL = "/order";
@@ -48,6 +49,15 @@ export const orderService = {
   async getOrderRequestByOrderId(orderId: number) {
     const response = await axiosWithAuth.get<ISpecificRequestData>(
       `${BASE_URL}/vendor/${orderId}`
+    );
+
+    return response.data;
+  },
+
+  async patchOrder(order: IOrder) {
+    const response = await axiosWithAuth.patch<ISpecificRequestData>(
+      `${BASE_URL}/${order.id}`,
+      order
     );
 
     return response.data;
