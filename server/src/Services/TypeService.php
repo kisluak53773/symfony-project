@@ -66,6 +66,10 @@ class TypeService
     }
 
 
+    /**
+     * Summary of get
+     * @return array
+     */
     public function get(): array
     {
         $entityManager = $this->registry->getManager();

@@ -4,9 +4,18 @@ declare(strict_types=1);
 
 namespace App\Services\Validator;
 
+use App\Services\Exception\Request\BadRequsetException;
+
 class VendorValidator
 {
-    public function isVendorValid(mixed $request): bool
+    /**
+     * @param mixed $request
+     * 
+     * @throws \App\Services\Exception\Request\BadRequsetException
+     * 
+     * @return void
+     */
+    public function isVendorValid(mixed $request): void
     {
         if (
             !isset($request->title) ||
@@ -16,13 +25,19 @@ class VendorValidator
             !isset($request->registrationDate) ||
             !isset($request->registrationCertificateDate)
         ) {
-            return false;
+            throw new BadRequsetException();
         }
-
-        return true;
     }
 
-    public function isVendorValidForPatch(mixed $request): bool
+    /**
+     * Summary of isVendorValidForPatch
+     * @param mixed $request
+     * 
+     * @throws \App\Services\Exception\Request\BadRequsetException
+     * 
+     * @return void
+     */
+    public function isVendorValidForPatch(mixed $request): void
     {
         if (
             !isset($request->title) ||
@@ -30,9 +45,7 @@ class VendorValidator
             !isset($request->inn) ||
             !isset($request->registrationAuthority)
         ) {
-            return false;
+            throw new BadRequsetException();
         }
-
-        return true;
     }
 }

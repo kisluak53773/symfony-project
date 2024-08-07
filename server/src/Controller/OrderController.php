@@ -4,135 +4,42 @@ namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\HttpFoundation\Request;
-use App\Services\Validator\OrderValidator;
-use Symfony\Bundle\SecurityBundle\Security;
-use App\Entity\User;
-use App\Entity\OrderProduct;
-use App\Entity\Order;
-use DateTime;
-use App\Enum\OrderStatus;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Enum\Role;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Knp\Component\Pager\PaginatorInterface;
-use App\Repository\OrderRepository;
+use App\Services\OrderService;
+use App\Services\Exception\Request\RequestException;
 
 #[Route('/api/order', name: 'api_order_')]
 class OrderController extends AbstractController
 {
+    public function __construct(private OrderService $orderService)
+    {
+    }
+
     #[Route(name: 'add', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function index(
-        ManagerRegistry $registry,
-        Security $security,
-        Request $request,
-        OrderValidator $orderValidator,
-        ValidatorInterface $validator
-    ): JsonResponse {
-        $entityManager = $registry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        if (!$orderValidator->isValidToCreateOrder($decoded)) {
-            return $this->json(['message' => 'insufficient data'], 400);
+    public function index(): JsonResponse
+    {
+        try {
+            $this->orderService->index();
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
-
-        $userPhone = $security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-
-        $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i', $decoded->deliveryTime);
-
-        $order = new Order();
-        $order->setCustomer($user);
-        $order->setPaymentMethod($decoded->paymentMethod);
-        $order->setDeliveryTime($deliveryDate);
-        $order->setOrderStatus(OrderStatus::ORDER_PROCESSED->value);
-
-        if (isset($decoded->comment)) {
-            $order->setComment($decoded->comment);
-        }
-
-        $errors = $validator->validate($order);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            return $this->json(['message' => $errorsString], 400);
-        }
-
-        $entityManager->persist($order);
-
-        $cart = $user->getCart();
-
-        if (!isset($cart)) {
-            return $this->json(['message' => 'You do not have a cart'], 400);
-        }
-
-        $cartProducts = $cart->getCartProducts()->getValues();
-
-        if (count($cartProducts) === 0) {
-            return $this->json(['message' => 'Your cart is empty'], 400);
-        }
-
-        foreach ($cartProducts as $cartProduct) {
-            $orderProduct = new OrderProduct();
-            $orderProduct->setOrderEntity($order);
-            $orderProduct->setQuantity($cartProduct->getQuantity());
-            $orderProduct->setVendorProduct($cartProduct->getVendorProduct());
-
-            $errors = $validator->validate($orderProduct);
-
-            if (count($errors) > 0) {
-                $errorsString = (string) $errors;
-
-                return $this->json(['message' => $errorsString], 400);
-            }
-
-            $entityManager->persist($orderProduct);
-            $entityManager->remove($cartProduct);
-        }
-
-        $entityManager->flush();
 
         return $this->json(['message' => 'order created'], 200);
     }
 
     #[Route('/current', name: 'get_orders_of_current_user', methods: 'get')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function getUserOrders(
-        PaginatorInterface $paginator,
-        OrderRepository $orderRepository,
-        Request $request,
-        Security $security,
-        ManagerRegistry $registry,
-    ): JsonResponse {
-        $entityManager = $registry->getManager();
-        $userPhone = $security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-
-        $querryBuilder = $orderRepository->getAllOrdersBelonignToUser($user);
-
-        $pagination = $paginator->paginate(
-            $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->get('limit', 5)
-        );
-
-        $orders = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $orders,
-        ];
+    public function getUserOrders(): JsonResponse
+    {
+        try {
+            $response = $this->orderService->getUserOrders();
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        }
 
         return $this->json(
             data: $response,
@@ -142,42 +49,13 @@ class OrderController extends AbstractController
 
     #[Route('/vendor', name: 'get_vendor_orders', methods: 'get')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function getVendorOrders(
-        PaginatorInterface $paginator,
-        OrderRepository $orderRepository,
-        Request $request,
-        Security $security,
-        ManagerRegistry $registry,
-    ): JsonResponse {
-        $entityManager = $registry->getManager();
-        $userPhone = $security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-        $vendor = $user->getVendor();
-
-        if (!isset($vendor)) {
-            return $this->json(['message' => 'Vendor data is not found'], 404);
+    public function getVendorOrders(): JsonResponse
+    {
+        try {
+            $response = $this->orderService->getVendorOrders();
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
-
-        $querryBuilder = $orderRepository->createQuerryBuilderForVendorAndPagination($vendor);
-
-        $pagination = $paginator->paginate(
-            $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->get('limit', 5)
-        );
-
-        $orders = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $orders,
-        ];
 
         return $this->json(
             data: $response,
@@ -187,58 +65,29 @@ class OrderController extends AbstractController
 
     #[Route('/vendor/{id<\d+>}', name: 'get_vendor_order_by_id', methods: 'get')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function getVendorOrderById(
-        int $id,
-        Security $security,
-        ManagerRegistry $registry,
-    ): JsonResponse {
-        $entityManager = $registry->getManager();
-        $userPhone = $security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-        $vendor = $user->getVendor();
-
-        if (!isset($vendor)) {
-            return $this->json(['message' => 'Vendor data is not found'], 404);
+    public function getVendorOrderById(int $id): JsonResponse
+    {
+        try {
+            $response = $this->orderService->getVendorOrderById($id);
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
 
-        $order = $entityManager->getRepository(Order::class)->find($id);
-        $products = $order->getOrderProducts()->getValues();
-
-        $products = array_filter($products, fn ($item) => $item->getVendorProduct()->getVendor()->getId() === $vendor->getId());
-
         return $this->json(
-            data: ['orderData' => $order, 'products' => $products],
+            data: $response,
             context: [AbstractNormalizer::GROUPS => ['orders', 'vendor_order']]
         );
     }
 
     #[Route(name: 'get_all_orders', methods: 'get')]
     #[IsGranted(Role::ROLE_ADMIN->value, message: 'You are not allowed to access this route.')]
-    public function getAllOrders(
-        PaginatorInterface $paginator,
-        OrderRepository $orderRepository,
-        Request $request,
-    ): JsonResponse {
-        $querryBuilder = $orderRepository->createQuerryBuilderForPagination();
-
-        $pagination = $paginator->paginate(
-            $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->get('limit', 5)
-        );
-
-        $orders = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $orders,
-        ];
+    public function getAllOrders(): JsonResponse
+    {
+        try {
+            $response = $this->orderService->getAllOrders();
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        }
 
         return $this->json(
             data: $response,
@@ -248,77 +97,26 @@ class OrderController extends AbstractController
 
     #[Route('/{id<\d+>}', name: 'patch_order', methods: 'patch')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function patchOrder(
-        int $id,
-        ManagerRegistry $registry,
-        Request $request,
-        OrderValidator $orderValidator,
-        ValidatorInterface $validator
-    ): JsonResponse {
-        $entityManager = $registry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        if (!$orderValidator->isValidToPatchOrder($decoded)) {
-            return $this->json(['message' => 'Insufucient data'], 400);
+    public function patchOrder(int $id): JsonResponse
+    {
+        try {
+            $this->orderService->patchOrder($id);
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
-
-        $order = $entityManager->getRepository(Order::class)->find($id);
-
-        if (!isset($order)) {
-            return $this->json(['message' => 'Such order does not exist'], 404);
-        }
-
-        $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i', $decoded->deliveryTime);
-
-        $order->setPaymentMethod($decoded->paymentMethod);
-        $order->setOrderStatus($decoded->orderStatus);
-        $order->setDeliveryTime($deliveryDate);
-
-        $errors = $validator->validate($order);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            return $this->json(['message' => $errorsString], 400);
-        }
-
-        $entityManager->persist($order);
-        $entityManager->flush();
 
         return $this->json(['message' => 'Succesfully patched'], 200);
     }
 
     #[Route('/customer/{id<\d+>}', name: 'cancel_order', methods: 'patch')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function cancelOrder(
-        int $id,
-        ManagerRegistry $registry,
-        ValidatorInterface $validator,
-        Security $security,
-    ): JsonResponse {
-        $entityManager = $registry->getManager();
-        $order = $entityManager->getRepository(Order::class)->find($id);
-
-        if (!isset($order)) {
-            return $this->json(['message' => 'Such order does not exist'], 404);
+    public function cancelOrder(int $id): JsonResponse
+    {
+        try {
+            $this->orderService->cancelOrder($id);
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
-
-        if ($security->getUser()->getUserIdentifier() !== $order->getCustomer()->getUserIdentifier()) {
-            return $this->json(['message' => 'You can not cancel this order']);
-        }
-
-        $order->setOrderStatus(OrderStatus::ORDER_CANCELED->value);
-
-        $errors = $validator->validate($order);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            return $this->json(['message' => $errorsString], 400);
-        }
-
-        $entityManager->persist($order);
-        $entityManager->flush();
 
         return $this->json(['message' => 'Succesfully patched'], 200);
     }

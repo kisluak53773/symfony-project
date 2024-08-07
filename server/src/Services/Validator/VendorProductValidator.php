@@ -4,17 +4,25 @@ declare(strict_types=1);
 
 namespace App\Services\Validator;
 
+use App\Services\Exception\Request\BadRequsetException;
+
 class VendorProductValidator
 {
-    public function validateVendorToPatch(mixed $request): bool
+    /**
+     * Summary of validateVendorToPatch
+     * @param mixed $request
+     * 
+     * @throws \App\Services\Exception\Request\BadRequsetException
+     * 
+     * @return void
+     */
+    public function validateVendorToPatch(mixed $request): void
     {
         if (
             !isset($request->quantity) ||
             !isset($request->price)
         ) {
-            return false;
+            throw new BadRequsetException();
         }
-
-        return true;
     }
 }

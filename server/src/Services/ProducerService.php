@@ -58,6 +58,10 @@ class ProducerService
         return $producer->getId();
     }
 
+    /**
+     * Summary of getForVendor
+     * @return array
+     */
     public function getForVendor(): array
     {
         $entityManager = $this->registry->getManager();

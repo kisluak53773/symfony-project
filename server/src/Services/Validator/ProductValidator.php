@@ -6,9 +6,19 @@ namespace App\Services\Validator;
 
 use Symfony\Component\HttpFoundation\Request;
 
+use App\Services\Exception\Request\BadRequsetException;
+
 class ProductValidator
 {
-    public function isProductWithVendorValid(Request $request): bool
+    /**
+     * Summary of isProductWithVendorValid
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
+     * @throws \App\Services\Exception\Request\BadRequsetException
+     * 
+     * @return void
+     */
+    public function isProductWithVendorValid(Request $request): void
     {
         if (
             !$request->request->has('title') ||
@@ -20,9 +30,7 @@ class ProductValidator
             !$request->request->has('typeId') ||
             !$request->files->has('image')
         ) {
-            return false;
+            throw new BadRequsetException();
         }
-
-        return true;
     }
 }
