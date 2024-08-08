@@ -4,52 +4,75 @@ declare(strict_types=1);
 
 namespace App\Services\Validator;
 
+use App\Services\Exception\Request\BadRequsetException;
+
 class CartValidator
 {
-    public function isValidToAddToCart(mixed $request): bool
+    /**
+     * Summary of isValidToAddToCart
+     * @param mixed $request
+     * 
+     * @throws \App\Services\Exception\Request\BadRequsetException
+     * 
+     * @return void
+     */
+    public function isValidToAddToCart(mixed $request): void
     {
         if (
             !isset($request->quantity) ||
             !isset($request->vendorProductId)
         ) {
-            return false;
+            throw new BadRequsetException();
         }
-
-        return true;
     }
 
-    public function isValidToIncreaseAmounInCart(mixed $request): bool
+    /**
+     * @param mixed $request
+     * 
+     * @throws \App\Services\Exception\Request\BadRequsetException
+     * 
+     * @return void
+     */
+    public function isValidToIncreaseAmounInCart(mixed $request): void
     {
         if (
             !isset($request->quantity) ||
             !isset($request->vendorProductId)
         ) {
-            return false;
+            throw new BadRequsetException();
         }
-
-        return true;
     }
 
-    public function isValidToDecreaseAmounInCart(mixed $request): bool
+    /**
+     * @param mixed $request
+     * 
+     * @throws \App\Services\Exception\Request\BadRequsetException
+     * 
+     * @return void
+     */
+    public function isValidToDecreaseAmounInCart(mixed $request): void
     {
         if (
             !isset($request->quantity) ||
             !isset($request->vendorProductId)
         ) {
-            return false;
+            throw new BadRequsetException();
         }
-
-        return true;
     }
 
-    public function isValidToRemove(mixed $request): bool
+    /**
+     * @param mixed $request
+     * 
+     * @throws \App\Services\Exception\Request\BadRequsetException
+     * 
+     * @return void
+     */
+    public function isValidToRemove(mixed $request): void
     {
         if (
             !isset($request->vendorProductId)
         ) {
-            return false;
+            throw new BadRequsetException();
         }
-
-        return true;
     }
 }

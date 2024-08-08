@@ -13,10 +13,20 @@ import {
 } from "@/store/slices/cart";
 import { FiMinus } from "react-icons/fi";
 import { productImagePathConverter } from "@/services";
+import {
+  getFavoriteProducts,
+  addProductToFavorite,
+  deleteProductFromFavorite,
+} from "@/store/slices/favorite";
+import { FaHeart } from "react-icons/fa";
+import { FaRegHeart } from "react-icons/fa";
 
 export const ProductItem: FC<IProductItemProps> = ({ product }) => {
   const isItemInCart = useSelector(getCartProducts).find(
     (item) => item.productId === product.id
+  );
+  const isInFavorite = useSelector(getFavoriteProducts).find(
+    (item) => item.id === product.id
   );
   const dispatch = useAppDispatch();
 
@@ -36,7 +46,17 @@ export const ProductItem: FC<IProductItemProps> = ({ product }) => {
   };
 
   return (
-    <section className=" flex flex-col shadow-xl p-[10px] rounded-lg my-[10px]">
+    <section className=" flex flex-col group/productItem shadow-xl p-[10px] relative rounded-lg my-[10px]">
+      <button
+        onClick={() =>
+          isInFavorite
+            ? dispatch(deleteProductFromFavorite({ productId: product.id }))
+            : dispatch(addProductToFavorite(product))
+        }
+        className=" absolute top-[5px] group-hover/productItem:block right-[5px] hidden"
+      >
+        {isInFavorite ? <FaHeart /> : <FaRegHeart />}
+      </button>
       <img
         className=" w-full"
         src={productImagePathConverter(product.image)}

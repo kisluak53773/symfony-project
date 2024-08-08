@@ -4,55 +4,43 @@ namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use App\Constants\RoleConstants;
-use Symfony\Bundle\SecurityBundle\Security;
-use App\Entity\User;
-use App\Entity\Cart;
-use App\Services\Validator\CartValidator;
-use App\Entity\CartProduct;
-use App\Entity\VendorProduct;
+use App\Enum\Role;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use App\Services\CartService;
+use App\Services\Exception\Request\RequestException;
+use Symfony\Component\HttpFoundation\Request;
 
 #[Route('/api/cart', name: 'api_cart_')]
 class CartController extends AbstractController
 {
+    public function __construct(private CartService $cartService)
+    {
+    }
+
     #[Route(name: 'create', methods: 'post')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
-    public function createCart(
-        ManagerRegistry $registry,
-        Security $security
-    ): JsonResponse {
-        $entityManager = $registry->getManager();
-
-        $userPhoen = $security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhoen]);
-
-        $cart = new Cart();
-        $cart->setCustomer($user);
-
-        $entityManager->persist($cart);
-        $entityManager->flush();
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
+    public function createCart(): JsonResponse
+    {
+        try {
+            $this->cartService->createCart();
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        }
 
         return $this->json(['message' => 'cart created'], 201);
     }
 
     #[Route('/prodcuts', name: 'get_products', methods: 'get')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
-    public function getProductsCart(
-        ManagerRegistry $registry,
-        Security $security
-    ): JsonResponse {
-        $entityManager = $registry->getManager();
-
-        $userPhoen = $security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhoen]);
-
-        $cartProducts = $user->getCart()->getCartProducts();
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
+    public function getProductsCart(): JsonResponse
+    {
+        try {
+            $cartProducts = $this->cartService->getProductsCart();
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        }
 
         return $this->json(
             data: $cartProducts,
@@ -61,197 +49,66 @@ class CartController extends AbstractController
     }
 
     #[Route('/add', name: 'addToCart', methods: 'post')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
-    public function addToCart(
-        ManagerRegistry $registry,
-        Security $security,
-        Request $request,
-        ValidatorInterface $validator,
-        CartValidator $cartValidator
-    ): JsonResponse {
-        $entityManager = $registry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        if (!$cartValidator->isValidToAddToCart($decoded)) {
-            return $this->json(['message' => 'insufficient data'], 400);
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
+    public function addToCart(Request $request): JsonResponse
+    {
+        try {
+            $response = $this->cartService->addToCart($request);
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
 
-        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($decoded->vendorProductId);
-        $qunatity = $vendorProduct->getQuantity() > $decoded->quantity ?
-            $decoded->quantity : $vendorProduct->getQuantity();
-
-        if (!isset($vendorProduct) || $vendorProduct->getQuantity() === 0) {
-            return $this->json(['message' => 'No such item in stock'], 400);
-        }
-
-        $cartProduct = $entityManager->getRepository(CartProduct::class)->findOneBy(['vendorProduct' => $vendorProduct]);
-
-        if (isset($cartProduct)) {
-            $cartProduct->increaseQuantity($qunatity);
-            $vendorProduct->decreaseQuantity($qunatity);
-
-            $entityManager->persist($cartProduct);
-            $entityManager->persist($vendorProduct);
-            $entityManager->flush();
-
-            return $this->json(['message' => 'Quantity increased'], 200);
-        }
-
-
-        $userPhone = $security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-        $cart = $user->getCart();
-
-        $cartProduct = new CartProduct();
-        $cartProduct->setCart($cart);
-        $cartProduct->setVendorProduct($vendorProduct);
-        $cartProduct->setQuantity($qunatity);
-
-        $errors = $validator->validate($cartProduct);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            return $this->json(['message' => $errorsString], 400);
-        }
-
-        $vendorProduct->decreaseQuantity($qunatity);
-
-        $entityManager->persist($cartProduct);
-        $entityManager->persist($vendorProduct);
-        $entityManager->flush();
-
-        return $this->json(['message' => 'Product added to cart', 'id' => $cartProduct->getId()], 201);
+        return $this->json($response['responseMessage'], $response['statucCode']);
     }
 
     #[Route('/increase', name: 'increase_amount_of_product_in_cart', methods: 'post')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
-    public function increaseProductAmount(
-        ManagerRegistry $managerRegistry,
-        Request $request,
-        CartValidator $cartValidator
-    ): JsonResponse {
-        $entityManager = $managerRegistry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        if (!$cartValidator->isValidToDecreaseAmounInCart($decoded)) {
-            return $this->json(['message' => 'insufficient data'], 400);
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
+    public function increaseProductAmount(Request $request): JsonResponse
+    {
+        try {
+            $quantity = $this->cartService->increaseProductAmount($request);
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
-
-        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($decoded->vendorProductId);
-
-        if (!isset($vendorProduct) || $vendorProduct->getQuantity() === 0) {
-            return $this->json(['message' => 'No such item in stock'], 400);
-        }
-
-        $cartProduct = $entityManager->getRepository(CartProduct::class)->findOneBy(['vendorProduct' => $vendorProduct]);
-
-        if (!isset($cartProduct)) {
-            return $this->json(['message' => 'No such product in cart'], 400);
-        }
-
-        $quantity = $vendorProduct->getQuantity() > $decoded->quantity ?
-            $decoded->quantity : $vendorProduct->getQuantity();
-
-        $cartProduct->increaseQuantity($quantity);
-        $vendorProduct->decreaseQuantity($quantity);
-
-        $entityManager->persist($cartProduct);
-        $entityManager->persist($vendorProduct);
-        $entityManager->flush();
 
         return $this->json(['message' => 'Quantity increased', 'quantity' => $quantity], 200);
     }
 
     #[Route('/decrease', name: 'decrease_amount_of_product_in_cart', methods: 'post')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
-    public function decreaseProductAmount(
-        ManagerRegistry $managerRegistry,
-        Request $request,
-        CartValidator $cartValidator
-    ): JsonResponse {
-        $entityManager = $managerRegistry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        if (!$cartValidator->isValidToDecreaseAmounInCart($decoded)) {
-            return $this->json(['message' => 'Insufficient data'], 400);
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
+    public function decreaseProductAmount(Request $request): JsonResponse
+    {
+        try {
+            $this->cartService->decreaseProductAmount($request);
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
-
-        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($decoded->vendorProductId);
-
-        if (!isset($vendorProduct)) {
-            return $this->json(['message' => 'This vendor does not sell this item'], 400);
-        }
-
-        $cartProduct = $entityManager->getRepository(CartProduct::class)->findOneBy(['vendorProduct' => $vendorProduct]);
-
-        if (!isset($cartProduct)) {
-            return $this->json(['message' => 'No such product in cart'], 400);
-        }
-
-        if ($cartProduct->getQuantity() > $decoded->quantity) {
-            $cartProduct->decreaseQuantity($decoded->quantity);
-            $vendorProduct->increaseQuantity($decoded->quantity);
-
-            $entityManager->persist($cartProduct);
-            $entityManager->persist($vendorProduct);
-        } else {
-            $vendorProduct->increaseQuantity($cartProduct->getQuantity());
-
-            $entityManager->persist($vendorProduct);
-            $entityManager->remove($cartProduct);
-        }
-
-        $entityManager->flush();
 
         return $this->json(['message' => 'Decreased successfully'], 200);
     }
 
     #[Route('/remove/{vendorProductId<\d+>}', name: 'remove_from_cart', methods: 'delete')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
-    public function removeFromCart(int $vendorProductId, ManagerRegistry $managerRegistry): JsonResponse
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
+    public function removeFromCart(int $vendorProductId): JsonResponse
     {
-        $entityManager = $managerRegistry->getManager();
-        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($vendorProductId);
-
-        if (!isset($vendorProduct)) {
-            return $this->json(['message' => 'Vendor does not sell this product'], 404);
+        try {
+            $this->cartService->removeFromCart($vendorProductId);
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
-
-        $cartProduct = $entityManager->getRepository(CartProduct::class)->findOneBy(['vendorProduct' => $vendorProduct]);
-
-        if (!isset($cartProduct)) {
-            return $this->json(['message' => 'No such product in cart'], 404);
-        }
-
-        $vendorProduct->increaseQuantity($cartProduct->getQuantity());
-
-        $entityManager->persist($vendorProduct);
-        $entityManager->remove($cartProduct);
-        $entityManager->flush();
 
         return $this->json(['message' => 'Deleted sucseffully'], 200);
     }
 
     #[Route('/removeAll', name: 'remove_all_from_cart', methods: 'delete')]
-    #[IsGranted(RoleConstants::ROLE_USER, message: 'You are not allowed to access this route.')]
-    public function removeAllFromCart(ManagerRegistry $registry, Security $security): JsonResponse
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
+    public function removeAllFromCart(): JsonResponse
     {
-        $entityManager = $registry->getManager();
-        $userPhone = $security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-
-        $cartProducts = $user->getCart()->getCartProducts()->getValues();
-
-        if (count($cartProducts) === 0) {
-            return $this->json(['message' => 'Your cart is empty'], 400);
+        try {
+            $this->cartService->removeAllFromCart();
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
-
-        foreach ($cartProducts as $cartProduct) {
-            $entityManager->remove($cartProduct);
-        }
-
-        $entityManager->flush();
 
         return $this->json(['message' => 'Deleted sucseffully'], 200);
     }

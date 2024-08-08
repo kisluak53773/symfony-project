@@ -4,89 +4,42 @@ namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Doctrine\Persistence\ManagerRegistry;
-use App\Entity\User;
-use App\Entity\Vendor;
-use App\Services\Validator\VendorValidator;
-use DateTimeImmutable;
-use App\Constants\RoleConstants;
+use App\Enum\Role;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
+use App\Services\VendorService;
+use App\Services\Exception\Request\RequestException;
+use Symfony\Component\HttpFoundation\Request;
 
 #[Route('/api/vendor', name: 'api_vendor_')]
 class VendorController extends AbstractController
 {
+    public function __construct(private VendorService $vendorService)
+    {
+    }
+
     #[Route(name: 'add', methods: 'post')]
-    public function add(
-        Request $request,
-        ManagerRegistry $managerRegistry,
-        VendorValidator $vendorValidator,
-        ValidatorInterface $validator
-
-    ): JsonResponse {
-        $entityManager = $managerRegistry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        if (!isset($decoded->userId) || !$vendorValidator->isVendorValid($decoded)) {
-            return $this->json(['message' => 'insufficient data'], 400);
+    public function add(Request $request): JsonResponse
+    {
+        try {
+            $id = $this->vendorService->add($request);
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
 
-        $userId = $decoded->userId;
-        $user = $entityManager->getRepository(User::class)->find($userId);
-
-        if (!isset($user)) {
-            return $this->json(['message' => 'such user does not exist'], 400);
-        }
-
-        $title = $decoded->title;
-        $vendorAddress = $decoded->vendorAddress;
-        $inn = $decoded->inn;
-        $registrationAuthority = $decoded->registrationAuthority;
-        $registraionDate = DateTimeImmutable::createFromFormat('Y-m-d', $decoded->registrationDate);
-        $registrationCertificateDate = DateTimeImmutable::createFromFormat('Y-m-d', $decoded->registrationCertificateDate);
-
-        $vendor = new Vendor();
-        $vendor->setTitle($title);
-        $vendor->setAddress($vendorAddress);
-        $vendor->setInn($inn);
-        $vendor->setRegistrationAuthority($registrationAuthority);
-        $vendor->setRegistrationDate($registraionDate);
-        $vendor->setRegistrationCertificateDate($registrationCertificateDate);
-        $vendor->setUser($user);
-
-        $errors = $validator->validate($vendor);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            return $this->json(['message' => $errorsString], 400);
-        }
-
-        $entityManager->persist($vendor);
-
-        $user->setRoles([RoleConstants::ROLE_VENDOR]);
-        $entityManager->persist($user);
-
-        $entityManager->flush();
-
-        return $this->json(['message' => 'vendor created', 'id' => $vendor->getId()], 201);
+        return $this->json(['message' => 'vendor created', 'id' => $id], 201);
     }
 
     #[Route('/current', name: 'get_current_vendor', methods: 'get')]
-    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
-    public function getCurrentVendor(
-        ManagerRegistry $doctrine,
-        Security $security
-    ): JsonResponse {
-        $entityManager = $doctrine->getManager();
-        $userPhone = $security->getUser()->getUserIdentifier();
-
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-        $vendor = $user->getVendor();
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
+    public function getCurrentVendor(): JsonResponse
+    {
+        try {
+            $vendor = $this->vendorService->getCurrentVendor();
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        }
 
         return $this->json(
             data: $vendor,
@@ -95,58 +48,27 @@ class VendorController extends AbstractController
     }
 
     #[Route('/current', name: 'patch_current_vendor', methods: 'patch')]
-    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
-    public function patchCurrentVendor(
-        ManagerRegistry $doctrine,
-        Request $request,
-        Security $security,
-        VendorValidator $vendorValidator,
-        ValidatorInterface $validator
-    ): JsonResponse {
-        $entityManager = $doctrine->getManager();
-        $decoded = json_decode($request->getContent());
-
-        if (!$vendorValidator->isVendorValidForPatch($decoded)) {
-            return $this->json(['message' => 'insufficient data'], 400);
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
+    public function patchCurrentVendor(Request $request): JsonResponse
+    {
+        try {
+            $this->vendorService->patchCurrentVendor($request);
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
-
-        $userPhone = $security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-
-        $vendor = $user->getVendor();
-        $vendor->setTitle($decoded->title);
-        $vendor->setAddress($decoded->address);
-        $vendor->setInn($decoded->inn);
-        $vendor->setRegistrationAuthority($decoded->registrationAuthority);
-
-        $errors = $validator->validate($vendor);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            return $this->json(['message' => $errorsString], 400);
-        }
-
-        $entityManager->persist($vendor);
-        $entityManager->flush();
 
         return $this->json(['message' => 'vendor updated'], 200);
     }
 
     #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
-    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
-    public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
+    public function delete(int $id): JsonResponse
     {
-        $entityManager = $managerRegistry->getManager();
-
-        $vendor = $entityManager->getRepository(Vendor::class)->find($id);
-
-        if (!isset($vendor)) {
-            return $this->json(['message' => 'no such vendor exist'], 404);
+        try {
+            $this->vendorService->delete($id);
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
-
-        $entityManager->remove($vendor);
-        $entityManager->flush();
 
         return $this->json(['message' => 'deleted sucseffully'], 204);
     }

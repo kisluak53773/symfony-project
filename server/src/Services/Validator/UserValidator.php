@@ -4,9 +4,18 @@ declare(strict_types=1);
 
 namespace App\Services\Validator;
 
+use App\Services\Exception\Request\BadRequsetException;
+
 class UserValidator
 {
-    public function isUserVendorValid(mixed $request): bool
+    /**
+     * @param mixed $request
+     * 
+     * @throws \App\Services\Exception\Request\BadRequsetException
+     * 
+     * @return void
+     */
+    public function isUserVendorValid(mixed $request): void
     {
         if (
             !isset($request->email) ||
@@ -15,9 +24,7 @@ class UserValidator
             !isset($request->password) ||
             !isset($request->phone)
         ) {
-            return false;
+            throw new BadRequsetException();
         }
-
-        return true;
     }
 }

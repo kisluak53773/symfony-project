@@ -4,41 +4,61 @@ declare(strict_types=1);
 
 namespace App\Services\Validator;
 
+use App\Services\Exception\Request\BadRequsetException;
+
 class OrderValidator
 {
-    public function isValidToCreateOrder(mixed $request): bool
+    /**
+     * Summary of isValidToCreateOrder
+     * @param mixed $request
+     * 
+     * @throws \App\Services\Exception\Request\BadRequsetException
+     * 
+     * @return void
+     */
+    public function isValidToCreateOrder(mixed $request): void
     {
         if (
             !isset($request->paymentMethod) ||
             !isset($request->deliveryTime)
         ) {
-            return false;
+            throw new BadRequsetException();
         }
-
-        return true;
     }
 
-    public function isValidToPatchOrder(mixed $request): bool
+    /**
+     * Summary of isValidToPatchOrder
+     * @param mixed $request
+     * 
+     * @throws \App\Services\Exception\Request\BadRequsetException
+     * 
+     * @return void
+     */
+    public function isValidToPatchOrder(mixed $request): void
     {
         if (
             !isset($request->paymentMethod) ||
             !isset($request->deliveryTime) ||
             !isset($request->orderStatus)
         ) {
-            return false;
+            throw new BadRequsetException();
         }
-
-        return true;
     }
 
-    public function isValidToPatchVendorOrder(mixed $request): bool
+    /**
+     * Summary of isValidToPatchVendorOrder
+     * @param mixed $request
+     * 
+     * @throws \App\Services\Exception\Request\BadRequsetException
+     * 
+     * @return void
+     */
+    public function isValidToPatchVendorOrder(mixed $request): void
     {
         if (
             !isset($request->orderStatus)
         ) {
-            return false;
+            throw new BadRequsetException();
         }
-
-        return true;
     }
 }

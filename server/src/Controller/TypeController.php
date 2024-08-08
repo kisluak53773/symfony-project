@@ -4,65 +4,42 @@ namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Doctrine\Persistence\ManagerRegistry;
-use App\Entity\Type;
-use App\Services\Uploader\TypesImageUploader;
-use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use App\Constants\RoleConstants;
+use App\Enum\Role;
+use App\Services\TypeService;
+use App\Services\Exception\Request\RequestException;
+use Symfony\Component\HttpFoundation\Request;
 
 #[Route('/api/type', name: 'api_type_')]
 class TypeController extends AbstractController
 {
+    public function __construct(private TypeService $typeService)
+    {
+    }
+
     #[Route(name: 'create', methods: 'post')]
-    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
-    public function add(
-        Request $request,
-        ManagerRegistry $registry,
-        TypesImageUploader $uploader,
-        ValidatorInterface $validator
-    ): JsonResponse {
-        $entityManger = $registry->getManager();
-
-        if (!$request->request->has('title')) {
-            return $this->json(['message' => 'insufficient data'], 400);
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
+    public function add(Request $request): JsonResponse
+    {
+        try {
+            $id = $this->typeService->add($request);
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
 
-        $type = new Type();
-        $type->setTitle($request->request->get('title'));
-
-        if ($request->files->has('image')) {
-            try {
-                $imagePath = $uploader->upload($request->files->get('image'));
-                $type->setImage($imagePath);
-            } catch (FileException $e) {
-                return $this->json(['message' => $e->getMessage()], 500);
-            }
-        }
-
-        $errors = $validator->validate($type);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            return $this->json(['message' => $errorsString], 400);
-        }
-
-        $entityManger->persist($type);
-        $entityManger->flush();
-
-        return $this->json(['message' => 'type created', 'id' => $type->getId()], 201);
+        return $this->json(['message' => 'type created', 'id' => $id], 201);
     }
 
     #[Route('/vendor', name: 'get_vendor', methods: 'get')]
-    public function get(ManagerRegistry $registry): JsonResponse
+    public function get(): JsonResponse
     {
-        $entityManager = $registry->getManager();
-        $types = $entityManager->getRepository(Type::class)->findAll();
+        try {
+            $types = $this->typeService->get();
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        }
 
         return $this->json(
             data: $types,
@@ -71,19 +48,14 @@ class TypeController extends AbstractController
     }
 
     #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
-    #[IsGranted(RoleConstants::ROLE_VENDOR, message: 'You are not allowed to access this route.')]
-    public function delete(int $id, ManagerRegistry $managerRegistry): JsonResponse
+    #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
+    public function delete(int $id): JsonResponse
     {
-        $entityManager = $managerRegistry->getManager();
-
-        $type = $entityManager->getRepository(Type::class)->find($id);
-
-        if (!isset($type)) {
-            return $this->json(['message' => 'no such type exist'], 404);
+        try {
+            $this->typeService->delete($id);
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
-
-        $entityManager->remove($type);
-        $entityManager->flush();
 
         return $this->json(['message' => 'deleted sucseffully'], 204);
     }
