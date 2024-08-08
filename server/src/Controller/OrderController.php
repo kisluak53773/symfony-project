@@ -10,6 +10,7 @@ use App\Enum\Role;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use App\Services\OrderService;
 use App\Services\Exception\Request\RequestException;
+use Symfony\Component\HttpFoundation\Request;
 
 #[Route('/api/order', name: 'api_order_')]
 class OrderController extends AbstractController
@@ -20,10 +21,10 @@ class OrderController extends AbstractController
 
     #[Route(name: 'add', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         try {
-            $this->orderService->index();
+            $this->orderService->index($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -33,10 +34,10 @@ class OrderController extends AbstractController
 
     #[Route('/current', name: 'get_orders_of_current_user', methods: 'get')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function getUserOrders(): JsonResponse
+    public function getUserOrders(Request $request): JsonResponse
     {
         try {
-            $response = $this->orderService->getUserOrders();
+            $response = $this->orderService->getUserOrders($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -49,10 +50,10 @@ class OrderController extends AbstractController
 
     #[Route('/vendor', name: 'get_vendor_orders', methods: 'get')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function getVendorOrders(): JsonResponse
+    public function getVendorOrders(Request $request): JsonResponse
     {
         try {
-            $response = $this->orderService->getVendorOrders();
+            $response = $this->orderService->getVendorOrders($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -81,10 +82,10 @@ class OrderController extends AbstractController
 
     #[Route(name: 'get_all_orders', methods: 'get')]
     #[IsGranted(Role::ROLE_ADMIN->value, message: 'You are not allowed to access this route.')]
-    public function getAllOrders(): JsonResponse
+    public function getAllOrders(Request $request): JsonResponse
     {
         try {
-            $response = $this->orderService->getAllOrders();
+            $response = $this->orderService->getAllOrders($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -97,10 +98,10 @@ class OrderController extends AbstractController
 
     #[Route('/{id<\d+>}', name: 'patch_order', methods: 'patch')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function patchOrder(int $id): JsonResponse
+    public function patchOrder(int $id, Request $request): JsonResponse
     {
         try {
-            $this->orderService->patchOrder($id);
+            $this->orderService->patchOrder($id, $request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

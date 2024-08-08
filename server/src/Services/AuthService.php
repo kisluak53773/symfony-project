@@ -22,7 +22,6 @@ class AuthService
 {
     public function __construct(
         private  ManagerRegistry $registry,
-        private  Request $request,
         private  UserPasswordHasherInterface $passwordHasher,
         private  ValidatorInterface $validator,
         private VendorValidator $vendorValidator,
@@ -32,14 +31,16 @@ class AuthService
 
     /**
      * Summary of register
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @throws \App\Services\Exception\Request\BadRequsetException
      * 
      * @return void
      */
-    public function register(): void
+    public function register(Request $request): void
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($this->request->getContent());
+        $decoded = json_decode($request->getContent());
 
         if (!isset($decoded->password) || !isset($decoded->phone)) {
             throw new BadRequsetException();
@@ -100,14 +101,16 @@ class AuthService
 
     /**
      * Summary of registerVendor
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @throws \App\Services\Exception\Request\BadRequsetException
      * 
      * @return void
      */
-    public function registerVendor(): void
+    public function registerVendor(Request $request): void
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($this->request->getContent());
+        $decoded = json_decode($request->getContent());
 
         $this->userValidator->isUserVendorValid($decoded);
         $this->vendorValidator->isVendorValid($decoded);

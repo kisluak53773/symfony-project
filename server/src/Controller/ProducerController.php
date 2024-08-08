@@ -10,6 +10,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Enum\Role;
 use App\Services\ProducerService;
 use App\Services\Exception\Request\RequestException;
+use Symfony\Component\HttpFoundation\Request;
 
 #[Route('/api/producer', name: 'api_producer_')]
 class ProducerController extends AbstractController
@@ -20,10 +21,10 @@ class ProducerController extends AbstractController
 
     #[Route(name: 'add', methods: 'post')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function add(): JsonResponse
+    public function add(Request $request): JsonResponse
     {
         try {
-            $id = $this->producerService->add();
+            $id = $this->producerService->add($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

@@ -9,6 +9,7 @@ use App\Enum\Role;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Services\AuthService;
 use App\Services\Exception\Request\RequestException;
+use Symfony\Component\HttpFoundation\Request;
 
 #[Route('/api/auth', name: 'api_auth_')]
 class AuthController extends AbstractController
@@ -18,10 +19,10 @@ class AuthController extends AbstractController
     }
 
     #[Route('/register', name: 'register', methods: 'post')]
-    public function register(): JsonResponse
+    public function register(Request $request): JsonResponse
     {
         try {
-            $this->authService->register();
+            $this->authService->register($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -30,10 +31,10 @@ class AuthController extends AbstractController
     }
 
     #[Route('/register/vendor', name: 'register_vendor', methods: 'post')]
-    public function registerVendor(): JsonResponse
+    public function registerVendor(Request $request): JsonResponse
     {
         try {
-            $this->authService->registerVendor();
+            $this->authService->registerVendor($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

@@ -20,7 +20,6 @@ class VendorService
 {
     public function __construct(
         private ManagerRegistry $registry,
-        private Request $request,
         private Security $security,
         private VendorValidator $vendorValidator,
         private ValidatorInterface $validator
@@ -29,15 +28,17 @@ class VendorService
 
     /**
      * Summary of add
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @throws \App\Services\Exception\Request\BadRequsetException
      * @throws \App\Services\Exception\Request\NotFoundException
      * 
      * @return int
      */
-    public function add(): int
+    public function add(Request $request): int
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($this->request->getContent());
+        $decoded = json_decode($request->getContent());
 
         $this->vendorValidator->isVendorValid($decoded);
 
@@ -109,14 +110,16 @@ class VendorService
 
     /**
      * Summary of patchCurrentVendor
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @throws \App\Services\Exception\Request\BadRequsetException
      * 
      * @return void
      */
-    public function patchCurrentVendor(): void
+    public function patchCurrentVendor(Request $request): void
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($this->request->getContent());
+        $decoded = json_decode($request->getContent());
 
         $this->vendorValidator->isVendorValidForPatch($decoded);
 

@@ -26,7 +26,6 @@ use App\Services\Exception\Request\ServerErrorException;
 class ProductService
 {
     public function __construct(
-        private Request $request,
         private ManagerRegistry $registry,
         private ProductImageUploader $uploader,
         private ProductValidator $productValidator,
@@ -39,33 +38,35 @@ class ProductService
 
     /**
      * Summary of addWithVendor
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @throws \App\Services\Exception\Request\BadRequsetException
      * @throws \App\Services\Exception\Request\ServerErrorException
      * 
      * @return int
      */
-    public function addWithVendor(): int
+    public function addWithVendor(Request $request): int
     {
         $entityManager = $this->registry->getManager();
         $user = $this->security->getUser();
 
-        $this->productValidator->isProductWithVendorValid($this->request);
+        $this->productValidator->isProductWithVendorValid($request);
 
-        $producerId = $this->request->request->get('producerId');
+        $producerId = $request->request->get('producerId');
         $producer = $entityManager->getRepository(Producer::class)->find($producerId);
 
         if (!isset($producer)) {
             throw new BadRequsetException('Such producer does not exist');
         }
 
-        $typeId = $this->request->request->get('typeId');
+        $typeId = $request->request->get('typeId');
         $type = $entityManager->getRepository(Type::class)->find($typeId);
 
         if (!isset($type)) {
             throw new BadRequsetException('Such type does not exist');
         }
 
-        $image = $this->request->files->get('image');
+        $image = $request->files->get('image');
 
         try {
             $imagePath = $this->uploader->upload($image);
@@ -74,11 +75,11 @@ class ProductService
         }
 
         $product = new Product();
-        $product->setTitle($this->request->request->get('title'));
-        $product->setDescription($this->request->request->get('description'));
-        $product->setCompound($this->request->request->get('compound'));
-        $product->setStorageConditions($this->request->request->get('storageConditions'));
-        $product->setWeight($this->request->request->get('weight'));
+        $product->setTitle($request->request->get('title'));
+        $product->setDescription($request->request->get('description'));
+        $product->setCompound($request->request->get('compound'));
+        $product->setStorageConditions($request->request->get('storageConditions'));
+        $product->setWeight($request->request->get('weight'));
         $product->setImage($imagePath);
         $product->setType($type);
         $product->setProducer($producer);
@@ -100,10 +101,10 @@ class ProductService
             $vendorProduct = new VendorProduct();
             $vendorProduct->setVendor($user->getVendor());
             $vendorProduct->setProduct($product);
-            $vendorProduct->setPrice($this->request->request->get('price'));
+            $vendorProduct->setPrice($request->request->get('price'));
 
-            if ($this->request->request->has('quantity')) {
-                $vendorProduct->setQuantity($this->request->request->get('quantity'));
+            if ($request->request->has('quantity')) {
+                $vendorProduct->setQuantity($request->request->get('quantity'));
             }
 
             $errors = $this->validator->validate($vendorProduct);
@@ -124,16 +125,18 @@ class ProductService
 
     /**
      * Summary of list
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @return array
      */
-    public function list(): array
+    public function list(Request $request): array
     {
-        $querryBuilder = $this->productRepository->searchByTitle($this->request);
+        $querryBuilder = $this->productRepository->searchByTitle($request);
 
         $pagination = $this->paginator->paginate(
             $querryBuilder,
-            $this->request->query->getInt('page', 1),
-            $this->request->query->get('limit', 5)
+            $request->query->getInt('page', 1),
+            $request->query->getInt('limit', 5)
         );
 
         $products = $pagination->getItems();
@@ -154,9 +157,11 @@ class ProductService
 
     /**
      * Summary of getProductsVendorDoesNotSell
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @return array
      */
-    public function getProductsVendorDoesNotSell(): array
+    public function getProductsVendorDoesNotSell(Request $request): array
     {
         $entityMnager = $this->registry->getManager();
 
@@ -164,12 +169,12 @@ class ProductService
         $user = $entityMnager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
 
         $vendorId = $user->getVendor()->getId();
-        $querryBuilder = $this->productRepository->searchByTitle($this->request, $vendorId);
+        $querryBuilder = $this->productRepository->searchByTitle($request, $vendorId);
 
         $pagination = $this->paginator->paginate(
             $querryBuilder,
-            $this->request->query->getInt('page', 1),
-            $this->request->query->get('limit', 5),
+            $request->query->getInt('page', 1),
+            $request->query->getInt('limit', 5),
         );
 
         $products = $pagination->getItems();

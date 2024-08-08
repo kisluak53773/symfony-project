@@ -22,7 +22,6 @@ use App\Services\Exception\Request\NotFoundException;
 class VendorProductService
 {
     public function __construct(
-        private Request $request,
         private ManagerRegistry $registry,
         private Security $security,
         private ValidatorInterface $validator,
@@ -34,15 +33,17 @@ class VendorProductService
 
     /**
      * Summary of add
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @throws \App\Services\Exception\Request\BadRequsetException
      * @throws \App\Services\Exception\Request\NotFoundException
      * 
      * @return int
      */
-    public function add(): int
+    public function add(Request $request): int
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($this->request->getContent());
+        $decoded = json_decode($request->getContent());
         $user = $this->security->getUser();
 
         if (!isset($decoded->productId) || !isset($decoded->price)) {
@@ -99,9 +100,11 @@ class VendorProductService
 
     /**
      * Summary of get
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @return array
      */
-    public function get(): array
+    public function get(Request $request): array
     {
         $entityManager = $this->registry->getManager();
         $user = $this->security->getUser();
@@ -113,8 +116,8 @@ class VendorProductService
 
         $pagination = $this->paginator->paginate(
             $querryBuilder,
-            $this->request->query->getInt('page', 1),
-            $this->request->query->get('limit', 5)
+            $request->query->getInt('page', 1),
+            $request->query->getInt('limit', 5)
         );
 
         $vendorProducts = $pagination->getItems();
@@ -136,15 +139,16 @@ class VendorProductService
     /**
      * Summary of patchVendorProdut
      * @param int $id
+     * @param \Symfony\Component\HttpFoundation\Request $request
      * 
      * @throws \App\Services\Exception\Request\BadRequsetException
      * 
      * @return void
      */
-    public function patchVendorProdut(int $id): void
+    public function patchVendorProdut(int $id, Request $request): void
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($this->request->getContent());
+        $decoded = json_decode($request->getContent());
 
         $this->vendorProductValidator->validateVendorToPatch($decoded);
 

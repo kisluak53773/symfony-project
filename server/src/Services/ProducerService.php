@@ -15,21 +15,22 @@ class ProducerService
 {
     public function __construct(
         private ManagerRegistry $registry,
-        private Request $request,
         private ValidatorInterface $validator
     ) {
     }
 
     /**
      * Summary of add
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @throws \App\Services\Exception\Request\BadRequsetException
      * 
      * @return int
      */
-    public function add(): int
+    public function add(Request $request): int
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($this->request->getContent());
+        $decoded = json_decode($request->getContent());
 
         if (!isset($decoded->title) || !isset($decoded->country) || !isset($decoded->address)) {
             throw new BadRequsetException();

@@ -10,6 +10,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use App\Services\VendorService;
 use App\Services\Exception\Request\RequestException;
+use Symfony\Component\HttpFoundation\Request;
 
 #[Route('/api/vendor', name: 'api_vendor_')]
 class VendorController extends AbstractController
@@ -19,10 +20,10 @@ class VendorController extends AbstractController
     }
 
     #[Route(name: 'add', methods: 'post')]
-    public function add(): JsonResponse
+    public function add(Request $request): JsonResponse
     {
         try {
-            $id = $this->vendorService->add();
+            $id = $this->vendorService->add($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -48,10 +49,10 @@ class VendorController extends AbstractController
 
     #[Route('/current', name: 'patch_current_vendor', methods: 'patch')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function patchCurrentVendor(): JsonResponse
+    public function patchCurrentVendor(Request $request): JsonResponse
     {
         try {
-            $this->vendorService->patchCurrentVendor();
+            $this->vendorService->patchCurrentVendor($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

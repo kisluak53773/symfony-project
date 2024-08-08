@@ -25,7 +25,6 @@ class OrderService
     public function __construct(
         private ManagerRegistry $registry,
         private Security $security,
-        private Request $request,
         private OrderValidator $orderValidator,
         private ValidatorInterface $validator,
         private PaginatorInterface $paginator,
@@ -35,15 +34,17 @@ class OrderService
 
     /**
      * Summary of index
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @throws \App\Services\Exception\Request\BadRequsetException
      * @throws \App\Services\Exception\Request\NotFoundException
      * 
      * @return void
      */
-    public function index(): void
+    public function index(Request $request): void
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($this->request->getContent());
+        $decoded = json_decode($request->getContent());
 
         $this->orderValidator->isValidToCreateOrder($decoded);
 
@@ -107,9 +108,11 @@ class OrderService
 
     /**
      * Summary of getUserOrders
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @return array
      */
-    public function getUserOrders(): array
+    public function getUserOrders(Request $request): array
     {
         $entityManager = $this->registry->getManager();
         $userPhone = $this->security->getUser()->getUserIdentifier();
@@ -119,8 +122,8 @@ class OrderService
 
         $pagination = $this->paginator->paginate(
             $querryBuilder,
-            $this->request->query->getInt('page', 1),
-            $this->request->query->get('limit', 5)
+            $request->query->getInt('page', 1),
+            $request->query->getInt('limit', 5)
         );
 
         $orders = $pagination->getItems();
@@ -141,11 +144,13 @@ class OrderService
 
     /**
      * Summary of getVendorOrders
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @throws \App\Services\Exception\Request\NotFoundException
      * 
      * @return array
      */
-    public function getVendorOrders(): array
+    public function getVendorOrders(Request $request): array
     {
         $entityManager = $this->registry->getManager();
         $userPhone = $this->security->getUser()->getUserIdentifier();
@@ -160,8 +165,8 @@ class OrderService
 
         $pagination = $this->paginator->paginate(
             $querryBuilder,
-            $this->request->query->getInt('page', 1),
-            $this->request->query->get('limit', 5)
+            $request->query->getInt('page', 1),
+            $request->query->getInt('limit', 5)
         );
 
         $orders = $pagination->getItems();
@@ -210,16 +215,18 @@ class OrderService
 
     /**
      * Summary of getAllOrders
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @return array
      */
-    public function getAllOrders(): array
+    public function getAllOrders(Request $request): array
     {
         $querryBuilder = $this->orderRepository->createQuerryBuilderForPagination();
 
         $pagination = $this->paginator->paginate(
             $querryBuilder,
-            $this->request->query->getInt('page', 1),
-            $this->request->query->get('limit', 5)
+            $request->query->getInt('page', 1),
+            $request->query->getInt('limit', 5)
         );
 
         $orders = $pagination->getItems();
@@ -241,16 +248,17 @@ class OrderService
     /**
      * Summary of patchOrder
      * @param int $id
+     * @param \Symfony\Component\HttpFoundation\Request $request
      * 
      * @throws \App\Services\Exception\Request\NotFoundException
      * @throws \App\Services\Exception\Request\BadRequsetException
      * 
      * @return void
      */
-    public function patchOrder(int $id): void
+    public function patchOrder(int $id, Request $request): void
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($this->request->getContent());
+        $decoded = json_decode($request->getContent());
 
         $this->orderValidator->isValidToPatchOrder($decoded);
 

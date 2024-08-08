@@ -10,6 +10,7 @@ use App\Enum\Role;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use App\Services\CartService;
 use App\Services\Exception\Request\RequestException;
+use Symfony\Component\HttpFoundation\Request;
 
 #[Route('/api/cart', name: 'api_cart_')]
 class CartController extends AbstractController
@@ -49,10 +50,10 @@ class CartController extends AbstractController
 
     #[Route('/add', name: 'addToCart', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function addToCart(): JsonResponse
+    public function addToCart(Request $request): JsonResponse
     {
         try {
-            $response = $this->cartService->addToCart();
+            $response = $this->cartService->addToCart($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -62,10 +63,10 @@ class CartController extends AbstractController
 
     #[Route('/increase', name: 'increase_amount_of_product_in_cart', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function increaseProductAmount(): JsonResponse
+    public function increaseProductAmount(Request $request): JsonResponse
     {
         try {
-            $quantity = $this->cartService->increaseProductAmount();
+            $quantity = $this->cartService->increaseProductAmount($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -75,10 +76,10 @@ class CartController extends AbstractController
 
     #[Route('/decrease', name: 'decrease_amount_of_product_in_cart', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function decreaseProductAmount(): JsonResponse
+    public function decreaseProductAmount(Request $request): JsonResponse
     {
         try {
-            $this->cartService->decreaseProductAmount();
+            $this->cartService->decreaseProductAmount($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

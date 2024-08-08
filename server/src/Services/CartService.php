@@ -22,7 +22,6 @@ class CartService
     public function __construct(
         private ManagerRegistry $registry,
         private Security $security,
-        private Request $request,
         private ValidatorInterface $validator,
         private CartValidator $cartValidator
     ) {
@@ -67,14 +66,17 @@ class CartService
     }
 
     /**
+     * Summary of addToCart
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @throws \App\Services\Exception\Request\BadRequsetException
      * 
      * @return array
      */
-    public function addToCart(): array
+    public function addToCart(Request $request): array
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($this->request->getContent());
+        $decoded = json_decode($request->getContent());
 
         $this->cartValidator->isValidToAddToCart($decoded);
 
@@ -128,15 +130,17 @@ class CartService
 
     /**
      * Summary of increaseProductAmount
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @throws \App\Services\Exception\Request\BadRequsetException
      * @throws \App\Services\Exception\Request\NotFoundException
      * 
      * @return int
      */
-    public function increaseProductAmount(): int
+    public function increaseProductAmount(Request $request): int
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($this->request->getContent());
+        $decoded = json_decode($request->getContent());
 
         $this->cartValidator->isValidToDecreaseAmounInCart($decoded);
 
@@ -167,14 +171,16 @@ class CartService
 
     /**
      * Summary of decreaseProductAmount
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @throws \App\Services\Exception\Request\NotFoundException
      * 
      * @return void
      */
-    public function decreaseProductAmount(): void
+    public function decreaseProductAmount(Request $request): void
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($this->request->getContent());
+        $decoded = json_decode($request->getContent());
 
         $this->cartValidator->isValidToDecreaseAmounInCart($decoded);
 

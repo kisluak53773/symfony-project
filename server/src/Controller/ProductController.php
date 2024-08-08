@@ -10,6 +10,7 @@ use App\Enum\Role;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Services\ProductService;
 use App\Services\Exception\Request\RequestException;
+use Symfony\Component\HttpFoundation\Request;
 
 #[Route('/api/product', name: 'api_product_')]
 class ProductController extends AbstractController
@@ -20,10 +21,10 @@ class ProductController extends AbstractController
 
     #[Route('/create', name: 'add', methods: 'post')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function addWithVendor(): JsonResponse
+    public function addWithVendor(Request $request): JsonResponse
     {
         try {
-            $id = $this->productService->addWithVendor();
+            $id = $this->productService->addWithVendor($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -32,10 +33,10 @@ class ProductController extends AbstractController
     }
 
     #[Route(name: 'list', methods: ['GET'])]
-    public function list(): JsonResponse
+    public function list(Request $request): JsonResponse
     {
         try {
-            $response = $this->productService->list();
+            $response = $this->productService->list($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -48,10 +49,10 @@ class ProductController extends AbstractController
 
     #[Route('/vendor', name: 'get_products_vendor_does_not_sell', methods: 'get')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function getProductsVendorDoesNotSell(): JsonResponse
+    public function getProductsVendorDoesNotSell(Request $request): JsonResponse
     {
         try {
-            $response = $this->productService->getProductsVendorDoesNotSell();
+            $response = $this->productService->getProductsVendorDoesNotSell($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

@@ -10,6 +10,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use App\Enum\Role;
 use App\Services\VendorProductService;
 use App\Services\Exception\Request\RequestException;
+use Symfony\Component\HttpFoundation\Request;
 
 #[Route('/api/vendorProduct', name: 'api_vendorProduct_')]
 class VendorProductController extends AbstractController
@@ -20,10 +21,10 @@ class VendorProductController extends AbstractController
 
     #[Route(name: 'add', methods: 'post')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function add(): JsonResponse
+    public function add(Request $request): JsonResponse
     {
         try {
-            $id = $this->vendorProductService->add();
+            $id = $this->vendorProductService->add($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -34,10 +35,10 @@ class VendorProductController extends AbstractController
 
     #[Route('/vendor', name: 'get_for_vendor', methods: 'get')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function get(): JsonResponse
+    public function get(Request $request): JsonResponse
     {
         try {
-            $response = $this->vendorProductService->get();
+            $response = $this->vendorProductService->get($request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -50,10 +51,10 @@ class VendorProductController extends AbstractController
 
     #[Route('/vendor/update/{id<\d+>}', name: 'update_for_vendor', methods: 'patch')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function patchVendorProdut(int $id): JsonResponse
+    public function patchVendorProdut(int $id, Request $request): JsonResponse
     {
         try {
-            $this->vendorProductService->patchVendorProdut($id);
+            $this->vendorProductService->patchVendorProdut($id, $request);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

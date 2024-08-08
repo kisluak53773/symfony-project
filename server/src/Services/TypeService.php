@@ -18,7 +18,6 @@ class TypeService
 {
     public function __construct(
         private ManagerRegistry $registry,
-        private Request $request,
         private TypesImageUploader $uploader,
         private ValidatorInterface $validator
     ) {
@@ -26,25 +25,27 @@ class TypeService
 
     /**
      * Summary of add
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @throws \App\Services\Exception\Request\BadRequsetException
      * @throws \App\Services\Exception\Request\ServerErrorException
      * 
-     * @return void
+     * @return int
      */
-    public function add(): int
+    public function add(Request $request): int
     {
         $entityManger = $this->registry->getManager();
 
-        if (!$this->request->request->has('title')) {
+        if (!$request->request->has('title')) {
             throw new BadRequsetException();
         }
 
         $type = new Type();
-        $type->setTitle($this->request->request->get('title'));
+        $type->setTitle($request->request->get('title'));
 
-        if ($this->request->files->has('image')) {
+        if ($request->files->has('image')) {
             try {
-                $imagePath = $this->uploader->upload($this->request->files->get('image'));
+                $imagePath = $this->uploader->upload($request->files->get('image'));
                 $type->setImage($imagePath);
             } catch (FileException $e) {
                 throw new ServerErrorException($e->getMessage());

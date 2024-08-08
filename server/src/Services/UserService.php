@@ -17,7 +17,6 @@ class UserService
 {
     public function __construct(
         private ManagerRegistry $registry,
-        private Request $request,
         private Security $security,
         private ValidatorInterface $validator
     ) {
@@ -42,15 +41,17 @@ class UserService
 
     /**
      * Summary of patchCurrentUser
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
      * @throws \App\Services\Exception\Request\BadRequsetException
      * 
      * @return void
      */
-    public function patchCurrentUser(): void
+    public function patchCurrentUser(Request $request): void
     {
         $user = $this->security->getUser();
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($this->request->getContent());
+        $decoded = json_decode($request->getContent());
         $userPhone = $user->getUserIdentifier();
 
         if (!isset($decoded->phone)) {
