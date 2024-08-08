@@ -99,10 +99,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\ManyToMany(targetEntity: Product::class, inversedBy: 'users')]
     private Collection $favorite;
 
+    /**
+     * @var Collection<int, Review>
+     */
+    #[ORM\OneToMany(targetEntity: Review::class, mappedBy: 'client', orphanRemoval: true)]
+    private Collection $reviews;
+
     public function __construct()
     {
         $this->orders = new ArrayCollection();
         $this->favorite = new ArrayCollection();
+        $this->reviews = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -325,6 +332,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeFavorite(Product $favorite): static
     {
         $this->favorite->removeElement($favorite);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Review>
+     */
+    public function getReviews(): Collection
+    {
+        return $this->reviews;
+    }
+
+    public function addReview(Review $review): static
+    {
+        if (!$this->reviews->contains($review)) {
+            $this->reviews->add($review);
+            $review->setClient($this);
+        }
+
+        return $this;
+    }
+
+    public function removeReview(Review $review): static
+    {
+        if ($this->reviews->removeElement($review)) {
+            // set the owning side to null (unless already changed)
+            if ($review->getClient() === $this) {
+                $review->setClient(null);
+            }
+        }
 
         return $this;
     }
