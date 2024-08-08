@@ -43,13 +43,13 @@ class FavoriteController extends AbstractController
 
         return $this->json(
             data: $favoriteProducts,
-            context: [AbstractNormalizer::GROUPS => ['favorite_products']]
+            context: [AbstractNormalizer::GROUPS => ['product_list']]
         );
     }
 
     #[Route('/{productId<\d+>}', name: 'delete_prodct_from_favorite', methods: 'delete')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function deleteFromFavorite(int $productId, FavoriteService $favoriteService): JsonResponse
+    public function deleteFromFavorite(int $productId): JsonResponse
     {
         try {
             $this->favoriteService->deleteFromFavorite($productId);
