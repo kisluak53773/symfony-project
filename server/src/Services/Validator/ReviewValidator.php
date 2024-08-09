@@ -27,4 +27,19 @@ class ReviewValidator
             throw new BadRequsetException();
         }
     }
+
+    /**
+     * Summary of isReviewValidToPathc
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
+     * @throws \App\Services\Exception\Request\BadRequsetException
+     * 
+     * @return void
+     */
+    public function isReviewValidToPathc(Request $request): void
+    {
+        if (!isset($request->rating)) {
+            throw new BadRequsetException();
+        }
+    }
 }

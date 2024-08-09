@@ -26,8 +26,7 @@ class AuthService
         private  ValidatorInterface $validator,
         private VendorValidator $vendorValidator,
         private  UserValidator $userValidator,
-    ) {
-    }
+    ) {}
 
     /**
      * Summary of register
@@ -148,6 +147,19 @@ class AuthService
         }
 
         $entityManager->persist($user);
+
+        $cart = new Cart();
+        $cart->setCustomer($user);
+
+        $errors = $this->validator->validate($cart);
+
+        if (count($errors) > 0) {
+            $errorsString = (string) $errors;
+
+            throw new BadRequsetException($errorsString);
+        }
+
+        $entityManager->persist($cart);
 
         $vendor = new Vendor();
         $vendor->setTitle($decoded->title);

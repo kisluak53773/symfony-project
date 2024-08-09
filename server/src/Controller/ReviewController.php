@@ -47,6 +47,19 @@ class ReviewController extends AbstractController
         );
     }
 
+    #[Route('/{id<\d+>}', name: 'patch_review', methods: 'patch')]
+    #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
+    public function pathcReview(int $id, Request $request): JsonResponse
+    {
+        try {
+            $this->reviewService->patchReview($id, $request);
+        } catch (RequestException $e) {
+            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        }
+
+        return $this->json(['message' => 'Review patched'], 200);
+    }
+
     #[Route('/{id<\d+>}', name: 'delete_review', methods: 'delete')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function deleteReview(int $id): JsonResponse

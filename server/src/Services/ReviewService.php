@@ -15,6 +15,7 @@ use App\Entity\Product;
 use App\Services\Exception\Request\NotFoundException;
 use Knp\Component\Pager\PaginatorInterface;
 use App\Repository\ReviewRepository;
+use App\Services\Exception\Request\ForbiddenException;
 
 class ReviewService
 {
@@ -106,6 +107,47 @@ class ReviewService
         ];
 
         return $response;
+    }
+
+    /**
+     * Summary of pathcComment
+     * @param int $id
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     * 
+     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\Request\ForbiddenException
+     * @throws \App\Services\Exception\Request\BadRequsetException
+     * 
+     * @return void
+     */
+    public function patchReview(int $id, Request $request): void
+    {
+        $entityManager = $this->registry->getManager();
+        $decoded = json_decode($request->getContent());
+
+        $this->reviewValidator->isReviewValid($decoded);
+
+        $review = $entityManager->getRepository(Review::class)->find($id);
+
+        if (!isset($review)) {
+            throw new NotFoundException("Such review does not exist");
+        }
+
+        $userPhone = $this->security->getUser()->getUserIdentifier();
+        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+
+        if ($user->getId() !== $review->getClient()->getId()) {
+            throw new ForbiddenException('You are not allowd to patch this comment');
+        }
+
+        $review->setRating($decoded->rating);
+
+        if (isset($decoded->comment)) {
+            $review->setComment($decoded->comment);
+        }
+
+        $entityManager->persist($review);
+        $entityManager->flush();
     }
 
     /**
