@@ -7,6 +7,7 @@ import { IoIosMenu } from "react-icons/io";
 import { BsBoxSeam } from "react-icons/bs";
 import { CiSearch } from "react-icons/ci";
 import { TbDeviceIpadMinus } from "react-icons/tb";
+import { MdOutlineAdminPanelSettings } from "react-icons/md";
 
 export const HeaderImage: FC<IHeaderImageProps> = ({ type }) => {
   switch (type) {
@@ -24,5 +25,7 @@ export const HeaderImage: FC<IHeaderImageProps> = ({ type }) => {
       return <CiSearch color="gray" size={25} />;
     case "vendor":
       return <TbDeviceIpadMinus color="gray" size={25} />;
+    case "admin":
+      return <MdOutlineAdminPanelSettings color="gray" size={25} />;
   }
 };

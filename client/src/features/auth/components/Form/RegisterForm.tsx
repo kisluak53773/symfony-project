@@ -11,7 +11,7 @@ import { getAccessToken } from "@/services";
 import { useRouter } from "next/navigation";
 import { getErrorStatusCode } from "@/services/axios";
 import { useAppDispatch } from "@/store";
-import { fetchUser } from "@/store/slices/user";
+import { login } from "@/store/slices/user";
 
 export const RegisterForm: FC = () => {
   const { control, handleSubmit, reset } = useForm<IRegisterData>({
@@ -32,7 +32,7 @@ export const RegisterForm: FC = () => {
     try {
       reset();
       await authService.register(data);
-      await dispatch(fetchUser());
+      dispatch(login());
       setError("");
       router.push("/");
     } catch (error) {
