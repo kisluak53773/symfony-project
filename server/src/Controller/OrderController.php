@@ -68,7 +68,7 @@ class OrderController extends AbstractController
         );
     }
 
-    #[Route('/vendor/{id<\d+>}', name: 'get_vendor_order_by_id', methods: 'get')]
+    #[Route('/vendor/{id}', name: 'get_vendor_order_by_id', methods: 'get', requirements: ['id' => '\d+'])]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function getVendorOrderById(int $id): JsonResponse
     {
@@ -100,7 +100,7 @@ class OrderController extends AbstractController
         );
     }
 
-    #[Route('/{id<\d+>}', name: 'patch_order', methods: 'patch')]
+    #[Route('/{id}', name: 'patch_order', methods: 'patch', requirements: ['id' => '\d+'])]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function patchOrder(int $id, #[MapRequestPayload] PatchOrderDto $patchOrderDto): JsonResponse
     {
@@ -113,7 +113,7 @@ class OrderController extends AbstractController
         return $this->json(['message' => 'Succesfully patched'], 200);
     }
 
-    #[Route('/customer/{id<\d+>}', name: 'cancel_order', methods: 'patch')]
+    #[Route('/customer/{id}', name: 'cancel_order', methods: 'patch', requirements: ['id' => '\d+'])]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function cancelOrder(int $id): JsonResponse
     {

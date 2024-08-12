@@ -90,7 +90,7 @@ class CartController extends AbstractController
         return $this->json(['message' => 'Decreased successfully'], 200);
     }
 
-    #[Route('/remove/{vendorProductId<\d+>}', name: 'remove_from_cart', methods: 'delete')]
+    #[Route('/remove/{vendorProductId}', name: 'remove_from_cart', methods: 'delete', requirements: ['vendorProductId' => '\d+'])]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function removeFromCart(int $vendorProductId): JsonResponse
     {

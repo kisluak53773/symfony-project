@@ -53,7 +53,7 @@ class VendorProductController extends AbstractController
         );
     }
 
-    #[Route('/vendor/update/{id<\d+>}', name: 'update_for_vendor', methods: 'patch')]
+    #[Route('/vendor/update/{id}', name: 'update_for_vendor', methods: 'patch', requirements: ['id' => '\d+'])]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function patchVendorProdut(
         int $id,
@@ -68,7 +68,7 @@ class VendorProductController extends AbstractController
         return $this->json(['message' => 'Updated successfully'], 200);
     }
 
-    #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
+    #[Route('/{id}', name: 'delete', methods: 'delete', requirements: ['id' => '\d+'])]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function delete(int $id): JsonResponse
     {

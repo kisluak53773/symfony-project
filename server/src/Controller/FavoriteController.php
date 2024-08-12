@@ -18,7 +18,7 @@ class FavoriteController extends AbstractController
 {
     public function __construct(private FavoriteService $favoriteService) {}
 
-    #[Route('/{productId<\d+>}', name: 'add_prodct_to_favorite', methods: 'post')]
+    #[Route('/{productId}', name: 'add_prodct_to_favorite', methods: 'post', requirements: ['productId' => '\d+'])]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function addToFavorite(int $productId): JsonResponse
     {
@@ -47,7 +47,7 @@ class FavoriteController extends AbstractController
         );
     }
 
-    #[Route('/{productId<\d+>}', name: 'delete_prodct_from_favorite', methods: 'delete')]
+    #[Route('/{productId}', name: 'delete_prodct_from_favorite', methods: 'delete', requirements: ['productId' => '\d+'])]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function deleteFromFavorite(int $productId): JsonResponse
     {

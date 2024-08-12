@@ -48,7 +48,7 @@ class ProducerController extends AbstractController
         );
     }
 
-    #[Route('/{id<\d+>}', name: 'delete', methods: 'delete')]
+    #[Route('/{id}', name: 'delete', methods: 'delete', requirements: ['id' => '\d+'])]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function delete(int $id): JsonResponse
     {

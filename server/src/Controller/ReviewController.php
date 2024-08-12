@@ -37,7 +37,7 @@ class ReviewController extends AbstractController
         return $this->json(['message' => 'New review craeted', 'id' => $id], 201);
     }
 
-    #[Route('/product/{productId<\d+>}', name: 'get_reviews_by_product', methods: 'get')]
+    #[Route('/product/{productId}', name: 'get_reviews_by_product', methods: 'get', requirements: ['productId' => '\d+'])]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function getByProductId(
         int $productId,
@@ -55,7 +55,7 @@ class ReviewController extends AbstractController
         );
     }
 
-    #[Route('/{id<\d+>}', name: 'patch_review', methods: 'patch')]
+    #[Route('/{id}', name: 'patch_review', methods: 'patch', requirements: ['id' => '\d+'])]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function pathcReview(int $id, #[MapRequestPayload] PatchReviewDto $patchReviewDto): JsonResponse
     {
@@ -68,7 +68,7 @@ class ReviewController extends AbstractController
         return $this->json(['message' => 'Review patched'], 200);
     }
 
-    #[Route('/{id<\d+>}', name: 'delete_review', methods: 'delete')]
+    #[Route('/{id}', name: 'delete_review', methods: 'delete', requirements: ['id' => '\d+'])]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function deleteReview(int $id): JsonResponse
     {
