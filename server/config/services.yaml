@@ -33,6 +33,50 @@ services:
   App\Repository\ProductRepository:
     arguments:
       - "@fos_elastica.finder.product"
+
+  App\Service\AuthService:
+    arguments:
+      $entityManager: "@doctrine.orm.entity_manager"
+
+  App\Service\CartService:
+    arguments:
+      $entityManager: "@doctrine.orm.entity_manager"
+
+  App\Service\FavoriteService:
+    arguments:
+      $entityManager: "@doctrine.orm.entity_manager"
+
+  App\Service\OrderService:
+    arguments:
+      $entityManager: "@doctrine.orm.entity_manager"
+
+  App\Service\ProducerService:
+    arguments:
+      $entityManager: "@doctrine.orm.entity_manager"
+
+  App\Service\ProductService:
+    arguments:
+      $entityManager: "@doctrine.orm.entity_manager"
+
+  App\Service\ReviewService:
+    arguments:
+      $entityManager: "@doctrine.orm.entity_manager"
+
+  App\Service\TypeService:
+    arguments:
+      $entityManager: "@doctrine.orm.entity_manager"
+
+  App\Service\UserService:
+    arguments:
+      $entityManager: "@doctrine.orm.entity_manager"
+
+  App\Service\VendorProductService:
+    arguments:
+      $entityManager: "@doctrine.orm.entity_manager"
+
+  App\Service\VendorService:
+    arguments:
+      $entityManager: "@doctrine.orm.entity_manager"
 # config/services.yaml
 
 # ...

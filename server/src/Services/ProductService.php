@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Doctrine\Persistence\ManagerRegistry;
 use App\Services\Uploader\ProductImageUploader;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -22,11 +21,12 @@ use App\Services\Exception\Request\ServerErrorException;
 use App\DTO\Product\CreateProductDto;
 use App\DTO\Product\ProductSearchParamsDto;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Doctrine\ORM\EntityManagerInterface;
 
 class ProductService
 {
     public function __construct(
-        private ManagerRegistry $registry,
+        private EntityManagerInterface $entityManager,
         private ProductImageUploader $uploader,
         private Security $security,
         private PaginatorInterface $paginator,
@@ -44,16 +44,15 @@ class ProductService
      */
     public function addWithVendor(UploadedFile $image, CreateProductDto $createProductDto): int
     {
-        $entityManager = $this->registry->getManager();
         $user = $this->security->getUser();
 
-        $producer = $entityManager->getRepository(Producer::class)->find($createProductDto->producerId);
+        $producer = $this->entityManager->getRepository(Producer::class)->find($createProductDto->producerId);
 
         if (!isset($producer)) {
             throw new BadRequsetException('Such producer does not exist');
         }
 
-        $type = $entityManager->getRepository(Type::class)->find($createProductDto->typeId);
+        $type = $this->entityManager->getRepository(Type::class)->find($createProductDto->typeId);
 
         if (!isset($type)) {
             throw new BadRequsetException('Such type does not exist');
@@ -74,11 +73,11 @@ class ProductService
         $product->setImage($imagePath);
         $product->setType($type);
         $product->setProducer($producer);
-        $entityManager->persist($product);
+        $this->entityManager->persist($product);
 
         if (isset($user) && in_array(Role::ROLE_VENDOR->value, $user->getRoles()) && isset($createProductDto->quantity)) {
             $userPhone = $user->getUserIdentifier();
-            $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+            $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
 
             $vendorProduct = new VendorProduct();
             $vendorProduct->setVendor($user->getVendor());
@@ -89,10 +88,10 @@ class ProductService
                 $vendorProduct->setQuantity($createProductDto->quantity);
             }
 
-            $entityManager->persist($vendorProduct);
+            $this->entityManager->persist($vendorProduct);
         }
 
-        $entityManager->flush();
+        $this->entityManager->flush();
 
         return $product->getId();
     }
@@ -137,10 +136,8 @@ class ProductService
      */
     public function getProductsVendorDoesNotSell(ProductSearchParamsDto $productSearchParamsDto): array
     {
-        $entityMnager = $this->registry->getManager();
-
         $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $entityMnager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
 
         $vendorId = $user->getVendor()->getId();
         $querryBuilder = $this->productRepository->searchByTitle($productSearchParamsDto, $vendorId);
@@ -177,15 +174,13 @@ class ProductService
      */
     public function delete(int $id): void
     {
-        $entityManager = $this->registry->getManager();
-
-        $product = $entityManager->getRepository(Product::class)->find($id);
+        $product = $this->entityManager->getRepository(Product::class)->find($id);
 
         if (!isset($product)) {
             throw new NotFoundHttpException('No such product exist');
         }
 
-        $entityManager->remove($product);
-        $entityManager->flush();
+        $this->entityManager->remove($product);
+        $this->entityManager->flush();
     }
 }

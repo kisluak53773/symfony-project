@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
 use App\Entity\User;
 use App\Entity\OrderProduct;
@@ -19,11 +18,12 @@ use App\Services\Exception\Request\ForbiddenException;
 use App\DTO\Order\CreateOrderDto;
 use App\DTO\Order\PatchOrderDto;
 use App\DTO\PaginationQueryDto;
+use Doctrine\ORM\EntityManagerInterface;
 
 class OrderService
 {
     public function __construct(
-        private ManagerRegistry $registry,
+        private EntityManagerInterface $entityManager,
         private Security $security,
         private PaginatorInterface $paginator,
         private OrderRepository $orderRepository,
@@ -40,10 +40,8 @@ class OrderService
      */
     public function createOrderDto(CreateOrderDto $createOrderDto): void
     {
-        $entityManager = $this->registry->getManager();
-
         $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
 
         $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i', $createOrderDto->deliveryTime);
 
@@ -57,7 +55,7 @@ class OrderService
             $order->setComment($createOrderDto->comment);
         }
 
-        $entityManager->persist($order);
+        $this->entityManager->persist($order);
 
         $cart = $user->getCart();
 
@@ -77,11 +75,11 @@ class OrderService
             $orderProduct->setQuantity($cartProduct->getQuantity());
             $orderProduct->setVendorProduct($cartProduct->getVendorProduct());
 
-            $entityManager->persist($orderProduct);
-            $entityManager->remove($cartProduct);
+            $this->entityManager->persist($orderProduct);
+            $this->entityManager->remove($cartProduct);
         }
 
-        $entityManager->flush();
+        $this->entityManager->flush();
     }
 
     /**
@@ -92,9 +90,8 @@ class OrderService
      */
     public function getUserOrders(PaginationQueryDto $paginationQueryDto): array
     {
-        $entityManager = $this->registry->getManager();
         $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
 
         $querryBuilder = $this->orderRepository->getAllOrdersBelonignToUser($user);
 
@@ -130,9 +127,8 @@ class OrderService
      */
     public function getVendorOrders(PaginationQueryDto $paginationQueryDto): array
     {
-        $entityManager = $this->registry->getManager();
         $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
         $vendor = $user->getVendor();
 
         if (!isset($vendor)) {
@@ -173,16 +169,15 @@ class OrderService
      */
     public function getVendorOrderById(int $id): array
     {
-        $entityManager = $this->registry->getManager();
         $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
         $vendor = $user->getVendor();
 
         if (!isset($vendor)) {
             throw new NotFoundException('Vendor data is not found');
         }
 
-        $order = $entityManager->getRepository(Order::class)->find($id);
+        $order = $this->entityManager->getRepository(Order::class)->find($id);
         $products = $order->getOrderProducts()->getValues();
 
         $products = array_filter($products, fn($item) => $item->getVendorProduct()->getVendor()->getId() === $vendor->getId());
@@ -235,8 +230,7 @@ class OrderService
      */
     public function patchOrder(int $id, PatchOrderDto $patchOrderDto): void
     {
-        $entityManager = $this->registry->getManager();
-        $order = $entityManager->getRepository(Order::class)->find($id);
+        $order = $this->entityManager->getRepository(Order::class)->find($id);
 
         if (!isset($order)) {
             throw new NotFoundException('Such order does not exist');
@@ -247,9 +241,9 @@ class OrderService
         $order->setPaymentMethod($patchOrderDto->paymentMethod);
         $order->setOrderStatus($patchOrderDto->orderStatus);
         $order->setDeliveryTime($deliveryDate);
-        $entityManager->persist($order);
+        $this->entityManager->persist($order);
 
-        $entityManager->flush();
+        $this->entityManager->flush();
     }
 
     /**
@@ -264,8 +258,7 @@ class OrderService
      */
     public function cancelOrder(int $id): void
     {
-        $entityManager = $this->registry->getManager();
-        $order = $entityManager->getRepository(Order::class)->find($id);
+        $order = $this->entityManager->getRepository(Order::class)->find($id);
 
         if (!isset($order)) {
             throw new NotFoundException('Such order does not exist');
@@ -276,8 +269,8 @@ class OrderService
         }
 
         $order->setOrderStatus(OrderStatus::ORDER_CANCELED->value);
-        $entityManager->persist($order);
+        $this->entityManager->persist($order);
 
-        $entityManager->flush();
+        $this->entityManager->flush();
     }
 }

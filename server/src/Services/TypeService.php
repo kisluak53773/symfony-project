@@ -6,17 +6,17 @@ namespace App\Services;
 
 use App\Services\Exception\Request\NotFoundException;
 use App\Services\Exception\Request\ServerErrorException;
-use Doctrine\Persistence\ManagerRegistry;
 use App\Services\Uploader\TypesImageUploader;
 use App\Entity\Type;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use App\DTO\Type\CreatTypeDto;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Doctrine\ORM\EntityManagerInterface;
 
 class TypeService
 {
     public function __construct(
-        private ManagerRegistry $registry,
+        private EntityManagerInterface $entityManager,
         private TypesImageUploader $uploader,
     ) {}
 
@@ -31,8 +31,6 @@ class TypeService
      */
     public function add(UploadedFile $image, CreatTypeDto $creatTypeDto): int
     {
-        $entityManger = $this->registry->getManager();
-
         $type = new Type();
         $type->setTitle($creatTypeDto->title);
 
@@ -44,8 +42,8 @@ class TypeService
 
         $type->setImage($imagePath);
 
-        $entityManger->persist($type);
-        $entityManger->flush();
+        $this->entityManager->persist($type);
+        $this->entityManager->flush();
 
         return $type->getId();
     }
@@ -57,9 +55,7 @@ class TypeService
      */
     public function get(): array
     {
-        $entityManager = $this->registry->getManager();
-
-        return $entityManager->getRepository(Type::class)->findAll();
+        return $this->entityManager->getRepository(Type::class)->findAll();
     }
 
     /**
@@ -72,15 +68,13 @@ class TypeService
      */
     public function delete(int $id): void
     {
-        $entityManager = $this->registry->getManager();
-
-        $type = $entityManager->getRepository(Type::class)->find($id);
+        $type = $this->entityManager->getRepository(Type::class)->find($id);
 
         if (!isset($type)) {
             throw new NotFoundException('Type not found');
         }
 
-        $entityManager->remove($type);
-        $entityManager->flush();
+        $this->entityManager->remove($type);
+        $this->entityManager->flush();
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
 use Knp\Component\Pager\PaginatorInterface;
 use App\Repository\VendorProductRepository;
@@ -18,11 +17,12 @@ use App\Services\Exception\Request\NotFoundException;
 use App\DTO\VendorProduct\CreateVendorProductDto;
 use App\DTO\VendorProduct\PatchVendorProduct;
 use App\DTO\PaginationQueryDto;
+use Doctrine\ORM\EntityManagerInterface;
 
 class VendorProductService
 {
     public function __construct(
-        private ManagerRegistry $registry,
+        private EntityManagerInterface $entityManager,
         private Security $security,
         private PaginatorInterface $paginator,
         private VendorProductRepository $vendorProductRepository,
@@ -39,12 +39,11 @@ class VendorProductService
      */
     public function add(CreateVendorProductDto $createVendorProductDto): int
     {
-        $entityManager = $this->registry->getManager();
         $user = $this->security->getUser();
 
         if (isset($user) && in_array(Role::ROLE_VENDOR->value, $user->getRoles())) {
             $userPhone = $user->getUserIdentifier();
-            $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+            $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
             $vendor = $user->getVendor();
         } else {
             if (!isset($createVendorProductDto->vendorId)) {
@@ -52,7 +51,7 @@ class VendorProductService
             }
 
             $vendorId = $createVendorProductDto->vendorId;
-            $vendor = $entityManager->getRepository(Vendor::class)->find($vendorId);
+            $vendor = $this->entityManager->getRepository(Vendor::class)->find($vendorId);
 
             if (!isset($vendor)) {
                 throw new NotFoundException('Such vendor does not exist');
@@ -60,7 +59,7 @@ class VendorProductService
         }
 
         $productId = $createVendorProductDto->productId;
-        $product = $entityManager->getRepository(Product::class)->find($productId);
+        $product = $this->entityManager->getRepository(Product::class)->find($productId);
 
         if (!isset($product)) {
             throw new NotFoundException('Such product does not exist');
@@ -75,8 +74,8 @@ class VendorProductService
             $vendorProduct->setQuantity($createVendorProductDto->quantity);
         }
 
-        $entityManager->persist($vendorProduct);
-        $entityManager->flush();
+        $this->entityManager->persist($vendorProduct);
+        $this->entityManager->flush();
 
 
         return $vendorProduct->getId();
@@ -90,10 +89,9 @@ class VendorProductService
      */
     public function get(PaginationQueryDto $paginationQueryDto): array
     {
-        $entityManager = $this->registry->getManager();
         $user = $this->security->getUser();
 
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $user->getUserIdentifier()]);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $user->getUserIdentifier()]);
         $vendor = $user->getVendor();
 
         $querryBuilder = $this->vendorProductRepository->createQueryBuilderForPaginationWithVendor($vendor);
@@ -131,14 +129,12 @@ class VendorProductService
      */
     public function patchVendorProdut(int $id, PatchVendorProduct $patchVendorProduct): void
     {
-        $entityManager = $this->registry->getManager();
-
-        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($id);
+        $vendorProduct = $this->entityManager->getRepository(VendorProduct::class)->find($id);
         $vendorProduct->setPrice($patchVendorProduct->price);
         $vendorProduct->setQuantity($patchVendorProduct->quantity);
 
-        $entityManager->persist($vendorProduct);
-        $entityManager->flush();
+        $this->entityManager->persist($vendorProduct);
+        $this->entityManager->flush();
     }
 
     /**
@@ -151,15 +147,13 @@ class VendorProductService
      */
     public function delete(int $id): void
     {
-        $entityManager = $this->registry->getManager();
-
-        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($id);
+        $vendorProduct = $this->entityManager->getRepository(VendorProduct::class)->find($id);
 
         if (!isset($vendorProduct)) {
             throw new NotFoundException('Vendor does not sell this product');
         }
 
-        $entityManager->remove($vendorProduct);
-        $entityManager->flush();
+        $this->entityManager->remove($vendorProduct);
+        $this->entityManager->flush();
     }
 }

@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace App\Services;
 
 use Symfony\Bundle\SecurityBundle\Security;
-use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
 use App\Entity\User;
 use App\Services\Exception\Request\NotFoundException;
 use App\Services\Exception\Request\BadRequsetException;
 use App\DTO\User\PatchUserDto;
+use Doctrine\ORM\EntityManagerInterface;
 
 class UserService
 {
     public function __construct(
-        private ManagerRegistry $registry,
+        private EntityManagerInterface $entityManager,
         private Security $security,
     ) {}
 
@@ -47,18 +47,17 @@ class UserService
     public function patchCurrentUser(PatchUserDto $patchUserDto): void
     {
         $user = $this->security->getUser();
-        $entityManager = $this->registry->getManager();
         $userPhone = $user->getUserIdentifier();
 
         if ($patchUserDto->phone !== $userPhone) {
-            $existingUser = $entityManager->getRepository(User::class)->findOneBy(['phone' => $patchUserDto->phone]);
+            $existingUser = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $patchUserDto->phone]);
 
             if (isset($existingUser)) {
                 throw new BadRequsetException('User with such phone already exists');
             }
         }
 
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
 
         $user->setPhone($patchUserDto->phone);
 
@@ -74,7 +73,7 @@ class UserService
             $user->setFullName($patchUserDto->fullName);
         }
 
-        $entityManager->persist($user);
-        $entityManager->flush();
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
     }
 }

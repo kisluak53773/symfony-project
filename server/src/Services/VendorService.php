@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
 use App\Services\Exception\Request\NotFoundException;
 use App\Entity\User;
@@ -13,11 +12,12 @@ use DateTimeImmutable;
 use App\Enum\Role;
 use App\DTO\Vendor\CreateVendorDto;
 use App\DTO\Vendor\PatchVendorDto;
+use Doctrine\ORM\EntityManagerInterface;
 
 class VendorService
 {
     public function __construct(
-        private ManagerRegistry $registry,
+        private EntityManagerInterface $entityManager,
         private Security $security,
     ) {}
 
@@ -32,10 +32,8 @@ class VendorService
      */
     public function add(CreateVendorDto $createVendorDto): int
     {
-        $entityManager = $this->registry->getManager();
-
         $userId = $createVendorDto->userId;
-        $user = $entityManager->getRepository(User::class)->find($userId);
+        $user = $this->entityManager->getRepository(User::class)->find($userId);
 
         if (!isset($user)) {
             throw new NotFoundException('Such user does not exist');
@@ -52,12 +50,12 @@ class VendorService
         $vendor->setRegistrationDate($registraionDate);
         $vendor->setRegistrationCertificateDate($registrationCertificateDate);
         $vendor->setUser($user);
-        $entityManager->persist($vendor);
+        $this->entityManager->persist($vendor);
 
         $user->setRoles([Role::ROLE_VENDOR->value]);
-        $entityManager->persist($user);
+        $this->entityManager->persist($user);
 
-        $entityManager->flush();
+        $this->entityManager->flush();
 
         return $vendor->getId();
     }
@@ -70,10 +68,9 @@ class VendorService
      */
     public function getCurrentVendor(): Vendor
     {
-        $entityManager = $this->registry->getManager();
         $userPhone = $this->security->getUser()->getUserIdentifier();
 
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
         $vendor = $user->getVendor();
 
         if (!isset($vendor)) {
@@ -93,10 +90,8 @@ class VendorService
      */
     public function patchCurrentVendor(PatchVendorDto $patchVendorDto): void
     {
-        $entityManager = $this->registry->getManager();
-
         $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
 
         $vendor = $user->getVendor();
         $vendor->setTitle($patchVendorDto->title);
@@ -104,8 +99,8 @@ class VendorService
         $vendor->setInn($patchVendorDto->inn);
         $vendor->setRegistrationAuthority($patchVendorDto->registrationAuthority);
 
-        $entityManager->persist($vendor);
-        $entityManager->flush();
+        $this->entityManager->persist($vendor);
+        $this->entityManager->flush();
     }
 
     /**
@@ -118,15 +113,13 @@ class VendorService
      */
     public function delete(int $id): void
     {
-        $entityManager = $this->registry->getManager();
-
-        $vendor = $entityManager->getRepository(Vendor::class)->find($id);
+        $vendor = $this->entityManager->getRepository(Vendor::class)->find($id);
 
         if (!isset($vendor)) {
             throw new NotFoundException('No such vendor exist');
         }
 
-        $entityManager->remove($vendor);
-        $entityManager->flush();
+        $this->entityManager->remove($vendor);
+        $this->entityManager->flush();
     }
 }

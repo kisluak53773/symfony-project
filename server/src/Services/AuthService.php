@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use App\Enum\Role;
 use App\Entity\User;
@@ -15,11 +14,12 @@ use App\Entity\Vendor;
 use DateTimeImmutable;
 use App\DTO\Auth\RegisterDto;
 use App\DTO\Auth\RegisterVendorDto;
+use Doctrine\ORM\EntityManagerInterface;
 
 class AuthService
 {
     public function __construct(
-        private  ManagerRegistry $registry,
+        private  EntityManagerInterface $entityManager,
         private  UserPasswordHasherInterface $passwordHasher,
     ) {}
 
@@ -33,12 +33,10 @@ class AuthService
      */
     public function register(RegisterDto $registerDto): void
     {
-        $entityManager = $this->registry->getManager();
-
         $phone = $registerDto->phone;
         $password = $registerDto->password;
 
-        $userInDb = $entityManager->getRepository(User::class)->findOneBy(['phone' => $phone]);
+        $userInDb = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $phone]);
 
         if (isset($userInDb)) {
             throw new BadRequsetException('User with such phone already exists');
@@ -62,13 +60,13 @@ class AuthService
             $user->setFullName($registerDto->fullName);
         }
 
-        $entityManager->persist($user);
+        $this->entityManager->persist($user);
 
         $cart = new Cart();
         $cart->setCustomer($user);
-        $entityManager->persist($cart);
+        $this->entityManager->persist($cart);
 
-        $entityManager->flush();
+        $this->entityManager->flush();
     }
 
     /**
@@ -81,15 +79,13 @@ class AuthService
      */
     public function registerVendor(RegisterVendorDto $registerVendorDto): void
     {
-        $entityManager = $this->registry->getManager();
-
         $phone = $registerVendorDto->phone;
         $password = $registerVendorDto->password;
         $address = $registerVendorDto->address;
         $email = $registerVendorDto->email;
         $fullName = $registerVendorDto->fullName;
 
-        $userInDb = $entityManager->getRepository(User::class)->findOneBy(['phone' => $phone]);
+        $userInDb = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $phone]);
 
         if (isset($userInDb)) {
             throw new BadRequsetException('User with such phone already exists');
@@ -106,11 +102,11 @@ class AuthService
         $user->setEmail($email);
         $user->setFullName($fullName);
         $user->setRoles([Role::ROLE_VENDOR->value]);
-        $entityManager->persist($user);
+        $this->entityManager->persist($user);
 
         $cart = new Cart();
         $cart->setCustomer($user);
-        $entityManager->persist($cart);
+        $this->entityManager->persist($cart);
 
         $vendor = new Vendor();
         $vendor->setTitle($registerVendorDto->title);
@@ -120,9 +116,9 @@ class AuthService
         $vendor->setRegistrationDate($registraionDate);
         $vendor->setRegistrationCertificateDate($registrationCertificateDate);
         $vendor->setUser($user);
-        $entityManager->persist($vendor);
+        $this->entityManager->persist($vendor);
 
-        $entityManager->flush();
+        $this->entityManager->flush();
     }
 
     /**
@@ -135,9 +131,7 @@ class AuthService
      */
     public function delete(int $id): void
     {
-        $entityManager = $this->registry->getManager();
-
-        $user = $entityManager->getRepository(User::class)->find($id);
+        $user = $this->entityManager->getRepository(User::class)->find($id);
 
         if (!isset($user)) {
             throw new NotFoundException();
@@ -145,7 +139,7 @@ class AuthService
 
         $user->setRoles([Role::ROLE_DELETED->value]);
 
-        $entityManager->persist($user);
-        $entityManager->flush();
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
     }
 }
