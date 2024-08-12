@@ -6,22 +6,19 @@ namespace App\Services;
 
 use App\Services\Exception\Request\NotFoundException;
 use App\Services\Exception\Request\ServerErrorException;
-use App\Services\Exception\Request\BadRequsetException;
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\HttpFoundation\Request;
 use App\Services\Uploader\TypesImageUploader;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use App\Entity\Type;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\HttpFoundation\Request;
+use App\DTO\Type\CreatTypeDto;
 
 class TypeService
 {
     public function __construct(
         private ManagerRegistry $registry,
         private TypesImageUploader $uploader,
-        private ValidatorInterface $validator
-    ) {
-    }
+    ) {}
 
     /**
      * Summary of add
@@ -32,16 +29,12 @@ class TypeService
      * 
      * @return int
      */
-    public function add(Request $request): int
+    public function add(Request $request, CreatTypeDto $creatTypeDto): int
     {
         $entityManger = $this->registry->getManager();
 
-        if (!$request->request->has('title')) {
-            throw new BadRequsetException();
-        }
-
         $type = new Type();
-        $type->setTitle($request->request->get('title'));
+        $type->setTitle($creatTypeDto->title);
 
         if ($request->files->has('image')) {
             try {
@@ -50,14 +43,6 @@ class TypeService
             } catch (FileException $e) {
                 throw new ServerErrorException($e->getMessage());
             }
-        }
-
-        $errors = $this->validator->validate($type);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
         }
 
         $entityManger->persist($type);

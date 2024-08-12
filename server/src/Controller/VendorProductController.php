@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -10,21 +12,23 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use App\Enum\Role;
 use App\Services\VendorProductService;
 use App\Services\Exception\Request\RequestException;
-use Symfony\Component\HttpFoundation\Request;
+use App\DTO\VendorProduct\CreateVendorProductDto;
+use App\DTO\VendorProduct\PatchVendorProduct;
+use App\DTO\PaginationQueryDto;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 
 #[Route('/api/vendorProduct', name: 'api_vendorProduct_')]
 class VendorProductController extends AbstractController
 {
-    public function __construct(private VendorProductService $vendorProductService)
-    {
-    }
+    public function __construct(private VendorProductService $vendorProductService) {}
 
     #[Route(name: 'add', methods: 'post')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function add(Request $request): JsonResponse
+    public function add(#[MapRequestPayload] CreateVendorProductDto $createVendorProductDto): JsonResponse
     {
         try {
-            $id = $this->vendorProductService->add($request);
+            $id = $this->vendorProductService->add($createVendorProductDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -35,10 +39,10 @@ class VendorProductController extends AbstractController
 
     #[Route('/vendor', name: 'get_for_vendor', methods: 'get')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function get(Request $request): JsonResponse
+    public function get(#[MapQueryString] PaginationQueryDto $paginationQueryDto): JsonResponse
     {
         try {
-            $response = $this->vendorProductService->get($request);
+            $response = $this->vendorProductService->get($paginationQueryDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -51,10 +55,12 @@ class VendorProductController extends AbstractController
 
     #[Route('/vendor/update/{id<\d+>}', name: 'update_for_vendor', methods: 'patch')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function patchVendorProdut(int $id, Request $request): JsonResponse
-    {
+    public function patchVendorProdut(
+        int $id,
+        #[MapRequestPayload] PatchVendorProduct $patchVendorProduct
+    ): JsonResponse {
         try {
-            $this->vendorProductService->patchVendorProdut($id, $request);
+            $this->vendorProductService->patchVendorProdut($id, $patchVendorProduct);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

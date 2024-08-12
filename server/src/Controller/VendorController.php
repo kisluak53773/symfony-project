@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -10,20 +12,20 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use App\Services\VendorService;
 use App\Services\Exception\Request\RequestException;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use App\DTO\Vendor\CreateVendorDto;
+use App\DTO\Vendor\PatchVendorDto;
 
 #[Route('/api/vendor', name: 'api_vendor_')]
 class VendorController extends AbstractController
 {
-    public function __construct(private VendorService $vendorService)
-    {
-    }
+    public function __construct(private VendorService $vendorService) {}
 
     #[Route(name: 'add', methods: 'post')]
-    public function add(Request $request): JsonResponse
+    public function add(#[MapRequestPayload] CreateVendorDto $createVendorDto): JsonResponse
     {
         try {
-            $id = $this->vendorService->add($request);
+            $id = $this->vendorService->add($createVendorDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -49,10 +51,10 @@ class VendorController extends AbstractController
 
     #[Route('/current', name: 'patch_current_vendor', methods: 'patch')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function patchCurrentVendor(Request $request): JsonResponse
+    public function patchCurrentVendor(#[MapRequestPayload] PatchVendorDto $patchVendorDto): JsonResponse
     {
         try {
-            $this->vendorService->patchCurrentVendor($request);
+            $this->vendorService->patchCurrentVendor($patchVendorDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

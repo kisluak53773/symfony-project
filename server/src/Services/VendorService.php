@@ -4,27 +4,22 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Symfony\Component\HttpFoundation\Request;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use App\Services\Validator\VendorValidator;
-use App\Services\Exception\Request\BadRequsetException;
 use App\Services\Exception\Request\NotFoundException;
 use App\Entity\User;
 use App\Entity\Vendor;
 use DateTimeImmutable;
 use App\Enum\Role;
+use App\DTO\Vendor\CreateVendorDto;
+use App\DTO\Vendor\PatchVendorDto;
 
 class VendorService
 {
     public function __construct(
         private ManagerRegistry $registry,
         private Security $security,
-        private VendorValidator $vendorValidator,
-        private ValidatorInterface $validator
-    ) {
-    }
+    ) {}
 
     /**
      * Summary of add
@@ -35,48 +30,28 @@ class VendorService
      * 
      * @return int
      */
-    public function add(Request $request): int
+    public function add(CreateVendorDto $createVendorDto): int
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
 
-        $this->vendorValidator->isVendorValid($decoded);
-
-        if (!isset($decoded->userId)) {
-            throw new BadRequsetException();
-        }
-
-        $userId = $decoded->userId;
+        $userId = $createVendorDto->userId;
         $user = $entityManager->getRepository(User::class)->find($userId);
 
         if (!isset($user)) {
             throw new NotFoundException('Such user does not exist');
         }
 
-        $title = $decoded->title;
-        $vendorAddress = $decoded->vendorAddress;
-        $inn = $decoded->inn;
-        $registrationAuthority = $decoded->registrationAuthority;
-        $registraionDate = DateTimeImmutable::createFromFormat('Y-m-d', $decoded->registrationDate);
-        $registrationCertificateDate = DateTimeImmutable::createFromFormat('Y-m-d', $decoded->registrationCertificateDate);
+        $registraionDate = DateTimeImmutable::createFromFormat('Y-m-d', $createVendorDto->registrationDate);
+        $registrationCertificateDate = DateTimeImmutable::createFromFormat('Y-m-d', $createVendorDto->registrationCertificateDate);
 
         $vendor = new Vendor();
-        $vendor->setTitle($title);
-        $vendor->setAddress($vendorAddress);
-        $vendor->setInn($inn);
-        $vendor->setRegistrationAuthority($registrationAuthority);
+        $vendor->setTitle($createVendorDto->title);
+        $vendor->setAddress($createVendorDto->address);
+        $vendor->setInn($createVendorDto->inn);
+        $vendor->setRegistrationAuthority($createVendorDto->registrationAuthority);
         $vendor->setRegistrationDate($registraionDate);
         $vendor->setRegistrationCertificateDate($registrationCertificateDate);
         $vendor->setUser($user);
-
-        $errors = $this->validator->validate($vendor);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
         $entityManager->persist($vendor);
 
         $user->setRoles([Role::ROLE_VENDOR->value]);
@@ -116,29 +91,18 @@ class VendorService
      * 
      * @return void
      */
-    public function patchCurrentVendor(Request $request): void
+    public function patchCurrentVendor(PatchVendorDto $patchVendorDto): void
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        $this->vendorValidator->isVendorValidForPatch($decoded);
 
         $userPhone = $this->security->getUser()->getUserIdentifier();
         $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
 
         $vendor = $user->getVendor();
-        $vendor->setTitle($decoded->title);
-        $vendor->setAddress($decoded->address);
-        $vendor->setInn($decoded->inn);
-        $vendor->setRegistrationAuthority($decoded->registrationAuthority);
-
-        $errors = $this->validator->validate($vendor);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
+        $vendor->setTitle($patchVendorDto->title);
+        $vendor->setAddress($patchVendorDto->address);
+        $vendor->setInn($patchVendorDto->inn);
+        $vendor->setRegistrationAuthority($patchVendorDto->registrationAuthority);
 
         $entityManager->persist($vendor);
         $entityManager->flush();

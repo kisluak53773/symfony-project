@@ -7,10 +7,8 @@ namespace App\Services;
 use Symfony\Component\HttpFoundation\Request;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Services\Uploader\ProductImageUploader;
-use App\Services\Validator\ProductValidator;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use App\Repository\ProductRepository;
 use Knp\Component\Pager\PaginatorInterface;
 use App\Entity\Product;
@@ -22,19 +20,18 @@ use App\Entity\VendorProduct;
 use App\Enum\Role;
 use App\Services\Exception\Request\BadRequsetException;
 use App\Services\Exception\Request\ServerErrorException;
+use App\DTO\Product\CreateProductDto;
+use App\DTO\Product\ProductSearchParamsDto;
 
 class ProductService
 {
     public function __construct(
         private ManagerRegistry $registry,
         private ProductImageUploader $uploader,
-        private ProductValidator $productValidator,
         private Security $security,
-        private ValidatorInterface $validator,
         private PaginatorInterface $paginator,
         private ProductRepository $productRepository
-    ) {
-    }
+    ) {}
 
     /**
      * Summary of addWithVendor
@@ -45,22 +42,18 @@ class ProductService
      * 
      * @return int
      */
-    public function addWithVendor(Request $request): int
+    public function addWithVendor(Request $request, CreateProductDto $createProductDto): int
     {
         $entityManager = $this->registry->getManager();
         $user = $this->security->getUser();
 
-        $this->productValidator->isProductWithVendorValid($request);
-
-        $producerId = $request->request->get('producerId');
-        $producer = $entityManager->getRepository(Producer::class)->find($producerId);
+        $producer = $entityManager->getRepository(Producer::class)->find($createProductDto->producerId);
 
         if (!isset($producer)) {
             throw new BadRequsetException('Such producer does not exist');
         }
 
-        $typeId = $request->request->get('typeId');
-        $type = $entityManager->getRepository(Type::class)->find($typeId);
+        $type = $entityManager->getRepository(Type::class)->find($createProductDto->typeId);
 
         if (!isset($type)) {
             throw new BadRequsetException('Such type does not exist');
@@ -75,44 +68,27 @@ class ProductService
         }
 
         $product = new Product();
-        $product->setTitle($request->request->get('title'));
-        $product->setDescription($request->request->get('description'));
-        $product->setCompound($request->request->get('compound'));
-        $product->setStorageConditions($request->request->get('storageConditions'));
-        $product->setWeight($request->request->get('weight'));
+        $product->setTitle($createProductDto->title);
+        $product->setDescription($createProductDto->description);
+        $product->setCompound($createProductDto->compound);
+        $product->setStorageConditions($createProductDto->storageConditions);
+        $product->setWeight($createProductDto->weight);
         $product->setImage($imagePath);
         $product->setType($type);
         $product->setProducer($producer);
-
-        $errors = $this->validator->validate($product);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
         $entityManager->persist($product);
 
-        if (isset($user) && in_array(Role::ROLE_VENDOR->value, $user->getRoles())) {
+        if (isset($user) && in_array(Role::ROLE_VENDOR->value, $user->getRoles()) && isset($createProductDto->quantity)) {
             $userPhone = $user->getUserIdentifier();
             $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
 
             $vendorProduct = new VendorProduct();
             $vendorProduct->setVendor($user->getVendor());
             $vendorProduct->setProduct($product);
-            $vendorProduct->setPrice($request->request->get('price'));
+            $vendorProduct->setPrice($createProductDto->price);
 
-            if ($request->request->has('quantity')) {
-                $vendorProduct->setQuantity($request->request->get('quantity'));
-            }
-
-            $errors = $this->validator->validate($vendorProduct);
-
-            if (count($errors) > 0) {
-                $errorsString = (string) $errors;
-
-                throw new BadRequsetException($errorsString);
+            if ($createProductDto->quantity) {
+                $vendorProduct->setQuantity($createProductDto->quantity);
             }
 
             $entityManager->persist($vendorProduct);
@@ -129,14 +105,14 @@ class ProductService
      * 
      * @return array
      */
-    public function list(Request $request): array
+    public function list(ProductSearchParamsDto $productSearchParamsDto): array
     {
-        $querryBuilder = $this->productRepository->searchByTitle($request);
+        $querryBuilder = $this->productRepository->searchByTitle($productSearchParamsDto);
 
         $pagination = $this->paginator->paginate(
             $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->getInt('limit', 5)
+            $productSearchParamsDto->page,
+            $productSearchParamsDto->limit
         );
 
         $products = $pagination->getItems();
@@ -161,7 +137,7 @@ class ProductService
      * 
      * @return array
      */
-    public function getProductsVendorDoesNotSell(Request $request): array
+    public function getProductsVendorDoesNotSell(ProductSearchParamsDto $productSearchParamsDto): array
     {
         $entityMnager = $this->registry->getManager();
 
@@ -169,12 +145,12 @@ class ProductService
         $user = $entityMnager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
 
         $vendorId = $user->getVendor()->getId();
-        $querryBuilder = $this->productRepository->searchByTitle($request, $vendorId);
+        $querryBuilder = $this->productRepository->searchByTitle($productSearchParamsDto, $vendorId);
 
         $pagination = $this->paginator->paginate(
             $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->getInt('limit', 5),
+            $productSearchParamsDto->page,
+            $productSearchParamsDto->limit
         );
 
         $products = $pagination->getItems();

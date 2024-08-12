@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -11,20 +13,22 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Services\ProductService;
 use App\Services\Exception\Request\RequestException;
 use Symfony\Component\HttpFoundation\Request;
+use App\DTO\Product\CreateProductDto;
+use App\DTO\Product\ProductSearchParamsDto;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 
 #[Route('/api/product', name: 'api_product_')]
 class ProductController extends AbstractController
 {
-    public function __construct(private ProductService $productService)
-    {
-    }
+    public function __construct(private ProductService $productService) {}
 
     #[Route('/create', name: 'add', methods: 'post')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function addWithVendor(Request $request): JsonResponse
+    public function addWithVendor(Request $request, #[MapRequestPayload] CreateProductDto $createProductDto): JsonResponse
     {
         try {
-            $id = $this->productService->addWithVendor($request);
+            $id = $this->productService->addWithVendor($request, $createProductDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -33,10 +37,10 @@ class ProductController extends AbstractController
     }
 
     #[Route(name: 'list', methods: ['GET'])]
-    public function list(Request $request): JsonResponse
+    public function list(#[MapQueryString] ProductSearchParamsDto $productSearchParamsDto): JsonResponse
     {
         try {
-            $response = $this->productService->list($request);
+            $response = $this->productService->list($productSearchParamsDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -49,10 +53,11 @@ class ProductController extends AbstractController
 
     #[Route('/vendor', name: 'get_products_vendor_does_not_sell', methods: 'get')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function getProductsVendorDoesNotSell(Request $request): JsonResponse
-    {
+    public function getProductsVendorDoesNotSell(
+        #[MapQueryString] ProductSearchParamsDto $productSearchParamsDto
+    ): JsonResponse {
         try {
-            $response = $this->productService->getProductsVendorDoesNotSell($request);
+            $response = $this->productService->getProductsVendorDoesNotSell($productSearchParamsDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

@@ -6,26 +6,23 @@ namespace App\Services;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use App\Entity\User;
 use App\Entity\Cart;
-use App\Services\Validator\CartValidator;
 use App\Services\Exception\Request\BadRequsetException;
 use Doctrine\Common\Collections\Collection;
 use App\Entity\CartProduct;
 use App\Entity\VendorProduct;
 use App\Services\Exception\Request\NotFoundException;
+use App\DTO\Cart\AddToCartDto;
+use App\DTO\Cart\IncreaseDto;
+use App\DTO\Cart\DecreaseDto;
 
 class CartService
 {
     public function __construct(
         private ManagerRegistry $registry,
         private Security $security,
-        private ValidatorInterface $validator,
-        private CartValidator $cartValidator
-    ) {
-    }
+    ) {}
 
     /**
      * @throws \App\Services\Exception\Request\BadRequsetException
@@ -73,16 +70,13 @@ class CartService
      * 
      * @return array
      */
-    public function addToCart(Request $request): array
+    public function addToCart(AddToCartDto $addToCartDto): array
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
 
-        $this->cartValidator->isValidToAddToCart($decoded);
-
-        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($decoded->vendorProductId);
-        $qunatity = $vendorProduct->getQuantity() > $decoded->quantity ?
-            $decoded->quantity : $vendorProduct->getQuantity();
+        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($addToCartDto->vendorProductId);
+        $qunatity = $vendorProduct->getQuantity() > $addToCartDto->quantity ?
+            $addToCartDto->quantity : $vendorProduct->getQuantity();
 
         if (!isset($vendorProduct) || $vendorProduct->getQuantity() === 0) {
             throw new BadRequsetException('No such item in stock');
@@ -110,15 +104,6 @@ class CartService
         $cartProduct->setCart($cart);
         $cartProduct->setVendorProduct($vendorProduct);
         $cartProduct->setQuantity($qunatity);
-
-        $errors = $this->validator->validate($cartProduct);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
         $vendorProduct->decreaseQuantity($qunatity);
 
         $entityManager->persist($cartProduct);
@@ -137,14 +122,11 @@ class CartService
      * 
      * @return int
      */
-    public function increaseProductAmount(Request $request): int
+    public function increaseProductAmount(IncreaseDto $increaseDto): int
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
 
-        $this->cartValidator->isValidToDecreaseAmounInCart($decoded);
-
-        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($decoded->vendorProductId);
+        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($increaseDto->vendorProductId);
 
         if (!isset($vendorProduct) || $vendorProduct->getQuantity() === 0) {
             throw new BadRequsetException('No such item in stock');
@@ -156,8 +138,8 @@ class CartService
             throw new NotFoundException('No such product in cart');
         }
 
-        $quantity = $vendorProduct->getQuantity() > $decoded->quantity ?
-            $decoded->quantity : $vendorProduct->getQuantity();
+        $quantity = $vendorProduct->getQuantity() > $increaseDto->quantity ?
+            $increaseDto->quantity : $vendorProduct->getQuantity();
 
         $cartProduct->increaseQuantity($quantity);
         $vendorProduct->decreaseQuantity($quantity);
@@ -177,14 +159,11 @@ class CartService
      * 
      * @return void
      */
-    public function decreaseProductAmount(Request $request): void
+    public function decreaseProductAmount(DecreaseDto $decreaseDto): void
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
 
-        $this->cartValidator->isValidToDecreaseAmounInCart($decoded);
-
-        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($decoded->vendorProductId);
+        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($decreaseDto->vendorProductId);
 
         if (!isset($vendorProduct)) {
             throw new NotFoundException('This vendor does not sell this item');
@@ -196,9 +175,9 @@ class CartService
             throw new NotFoundException('No such product in cart');
         }
 
-        if ($cartProduct->getQuantity() > $decoded->quantity) {
-            $cartProduct->decreaseQuantity($decoded->quantity);
-            $vendorProduct->increaseQuantity($decoded->quantity);
+        if ($cartProduct->getQuantity() > $decreaseDto->quantity) {
+            $cartProduct->decreaseQuantity($decreaseDto->quantity);
+            $vendorProduct->increaseQuantity($decreaseDto->quantity);
 
             $entityManager->persist($cartProduct);
             $entityManager->persist($vendorProduct);

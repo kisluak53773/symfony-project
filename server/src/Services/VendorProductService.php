@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Symfony\Component\HttpFoundation\Request;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Knp\Component\Pager\PaginatorInterface;
 use App\Repository\VendorProductRepository;
-use App\Services\Validator\VendorProductValidator;
 use App\Enum\Role;
 use App\Entity\User;
 use App\Entity\VendorProduct;
@@ -18,18 +15,18 @@ use App\Entity\Product;
 use App\Entity\Vendor;
 use App\Services\Exception\Request\BadRequsetException;
 use App\Services\Exception\Request\NotFoundException;
+use App\DTO\VendorProduct\CreateVendorProductDto;
+use App\DTO\VendorProduct\PatchVendorProduct;
+use App\DTO\PaginationQueryDto;
 
 class VendorProductService
 {
     public function __construct(
         private ManagerRegistry $registry,
         private Security $security,
-        private ValidatorInterface $validator,
         private PaginatorInterface $paginator,
         private VendorProductRepository $vendorProductRepository,
-        private VendorProductValidator $vendorProductValidator
-    ) {
-    }
+    ) {}
 
     /**
      * Summary of add
@@ -40,26 +37,21 @@ class VendorProductService
      * 
      * @return int
      */
-    public function add(Request $request): int
+    public function add(CreateVendorProductDto $createVendorProductDto): int
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
         $user = $this->security->getUser();
-
-        if (!isset($decoded->productId) || !isset($decoded->price)) {
-            throw new BadRequsetException();
-        }
 
         if (isset($user) && in_array(Role::ROLE_VENDOR->value, $user->getRoles())) {
             $userPhone = $user->getUserIdentifier();
             $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
             $vendor = $user->getVendor();
         } else {
-            if (!isset($decoded->vendorId)) {
+            if (!isset($createVendorProductDto->vendorId)) {
                 throw new BadRequsetException();
             }
 
-            $vendorId = $decoded->vendorId;
+            $vendorId = $createVendorProductDto->vendorId;
             $vendor = $entityManager->getRepository(Vendor::class)->find($vendorId);
 
             if (!isset($vendor)) {
@@ -67,7 +59,7 @@ class VendorProductService
             }
         }
 
-        $productId = $decoded->productId;
+        $productId = $createVendorProductDto->productId;
         $product = $entityManager->getRepository(Product::class)->find($productId);
 
         if (!isset($product)) {
@@ -75,20 +67,12 @@ class VendorProductService
         }
 
         $vendorProduct = new VendorProduct();
-        $vendorProduct->setPrice($decoded->price);
+        $vendorProduct->setPrice($createVendorProductDto->price);
         $vendorProduct->setVendor($vendor);
         $vendorProduct->setProduct($product);
 
         if (isset($decoded->quantity)) {
-            $vendorProduct->setQuantity($decoded->quantity);
-        }
-
-        $errors = $this->validator->validate($vendorProduct);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
+            $vendorProduct->setQuantity($createVendorProductDto->quantity);
         }
 
         $entityManager->persist($vendorProduct);
@@ -104,7 +88,7 @@ class VendorProductService
      * 
      * @return array
      */
-    public function get(Request $request): array
+    public function get(PaginationQueryDto $paginationQueryDto): array
     {
         $entityManager = $this->registry->getManager();
         $user = $this->security->getUser();
@@ -116,8 +100,8 @@ class VendorProductService
 
         $pagination = $this->paginator->paginate(
             $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->getInt('limit', 5)
+            $paginationQueryDto->page,
+            $paginationQueryDto->limit
         );
 
         $vendorProducts = $pagination->getItems();
@@ -145,24 +129,13 @@ class VendorProductService
      * 
      * @return void
      */
-    public function patchVendorProdut(int $id, Request $request): void
+    public function patchVendorProdut(int $id, PatchVendorProduct $patchVendorProduct): void
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        $this->vendorProductValidator->validateVendorToPatch($decoded);
 
         $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($id);
-        $vendorProduct->setPrice($decoded->price);
-        $vendorProduct->setQuantity($decoded->quantity);
-
-        $errors = $this->validator->validate($vendorProduct);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
+        $vendorProduct->setPrice($patchVendorProduct->price);
+        $vendorProduct->setQuantity($patchVendorProduct->quantity);
 
         $entityManager->persist($vendorProduct);
         $entityManager->flush();

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entity;
 
 use App\Repository\UserRepository;
@@ -10,7 +12,6 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 use DateTime;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
@@ -26,35 +27,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 180, nullable: true)]
     #[Groups(['current_user'])]
-    #[Assert\Email(
-        message: 'The email is not a valid email.',
-    )]
     private ?string $email = null;
 
     #[ORM\Column(length: 30)]
     #[Groups(['current_user'])]
-    #[Assert\Length(
-        min: 1,
-        max: 30,
-        minMessage: 'Phone must not be so short',
-        maxMessage: 'Phone should not be so long',
-    )]
     private ?string $phone = null;
 
     #[ORM\Column(length: 180, name: 'full_name', nullable: true)]
     #[Groups(['current_user'])]
-    #[Assert\Length(
-        max: 180,
-        maxMessage: 'Full name  should not be so long',
-    )]
     private ?string $fullName = null;
 
     #[ORM\Column(length: 180, nullable: true)]
     #[Groups(['current_user'])]
-    #[Assert\Length(
-        max: 180,
-        maxMessage: 'Address should not be so long',
-    )]
     private ?string $address = null;
 
     /**
@@ -62,14 +46,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\Column]
     #[Groups(['current_user'])]
-    #[Assert\NotBlank]
     private array $roles = [];
 
     /**
      * @var string The hashed password
      */
     #[ORM\Column]
-    #[Assert\NotBlank]
     private ?string $password = null;
 
     #[ORM\Column(length: 180, name: 'created_at')]

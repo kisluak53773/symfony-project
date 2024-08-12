@@ -16,8 +16,7 @@ class FavoriteService
     public function __construct(
         private ManagerRegistry $registry,
         private Security $security
-    ) {
-    }
+    ) {}
 
     /**
      * Summary of addToFavorite
@@ -38,12 +37,9 @@ class FavoriteService
 
         $userPhone = $this->security->getUser()->getUserIdentifier();
         $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-
         $user->addFavorite($product);
-        $product->addUser($user);
 
         $entityManager->persist($user);
-        $entityManager->persist($product);
         $entityManager->flush();
     }
 
@@ -84,12 +80,9 @@ class FavoriteService
 
         $userPhone = $this->security->getUser()->getUserIdentifier();
         $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-
         $user->removeFavorite($product);
-        $product->removeUser($user);
 
         $entityManager->persist($user);
-        $entityManager->persist($product);
         $entityManager->flush();
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entity;
 
 use App\Repository\ProducerRepository;
@@ -7,7 +9,6 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProducerRepository::class)]
 class Producer
@@ -20,32 +21,14 @@ class Producer
 
     #[ORM\Column(length: 40)]
     #[Groups(['product_list', 'vendor_producer', 'vendor_does_not_sell', 'elastica'])]
-    #[Assert\Length(
-        min: 2,
-        max: 40,
-        minMessage: 'Title must not be so short',
-        maxMessage: 'Title should not be so long',
-    )]
     private ?string $title = null;
 
     #[ORM\Column(length: 40)]
     #[Groups(['product_list', 'vendor_producer', 'vendor_does_not_sell', 'elastica'])]
-    #[Assert\Length(
-        min: 2,
-        max: 40,
-        minMessage: 'Country of origin should not be so short',
-        maxMessage: 'Country of origin should not be so long',
-    )]
     private ?string $country = null;
 
     #[ORM\Column(length: 100)]
     #[Groups(['product_list', 'vendor_producer', 'vendor_does_not_sell', 'elastica'])]
-    #[Assert\Length(
-        min: 2,
-        max: 100,
-        minMessage: 'Address should not be so short',
-        maxMessage: 'Address should not be so long',
-    )]
     private ?string $address = null;
 
     /**

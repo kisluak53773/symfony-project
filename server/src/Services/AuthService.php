@@ -5,48 +5,38 @@ declare(strict_types=1);
 namespace App\Services;
 
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use App\Enum\Role;
 use App\Entity\User;
 use App\Entity\Cart;
 use App\Services\Exception\Request\BadRequsetException;
 use App\Services\Exception\Request\NotFoundException;
 use App\Entity\Vendor;
-use App\Services\Validator\VendorValidator;
-use App\Services\Validator\UserValidator;
 use DateTimeImmutable;
+use App\DTO\Auth\RegisterDto;
+use App\DTO\Auth\RegisterVendorDto;
 
 class AuthService
 {
     public function __construct(
         private  ManagerRegistry $registry,
         private  UserPasswordHasherInterface $passwordHasher,
-        private  ValidatorInterface $validator,
-        private VendorValidator $vendorValidator,
-        private  UserValidator $userValidator,
     ) {}
 
     /**
      * Summary of register
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\Auth\RegisterDto $registerDto
      * 
      * @throws \App\Services\Exception\Request\BadRequsetException
      * 
      * @return void
      */
-    public function register(Request $request): void
+    public function register(RegisterDto $registerDto): void
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
 
-        if (!isset($decoded->password) || !isset($decoded->phone)) {
-            throw new BadRequsetException();
-        }
-
-        $phone = $decoded->phone;
-        $password = $decoded->password;
+        $phone = $registerDto->phone;
+        $password = $registerDto->password;
 
         $userInDb = $entityManager->getRepository(User::class)->findOneBy(['phone' => $phone]);
 
@@ -60,39 +50,22 @@ class AuthService
         $user->setPhone($phone);
         $user->setRoles([Role::ROLE_USER->value]);
 
-        if (isset($decoded->address)) {
-            $user->setAddress($decoded->address);
+        if (isset($registerDto->address)) {
+            $user->setAddress($registerDto->address);
         }
 
-        if (isset($decoded->email)) {
-            $user->setEmail($decoded->email);
+        if (isset($registerDto->email)) {
+            $user->setEmail($registerDto->email);
         }
 
         if (isset($decoded->fullName)) {
-            $user->setFullName($decoded->fullName);
-        }
-
-        $errors = $this->validator->validate($user);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
+            $user->setFullName($registerDto->fullName);
         }
 
         $entityManager->persist($user);
 
         $cart = new Cart();
         $cart->setCustomer($user);
-
-        $errors = $this->validator->validate($cart);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
         $entityManager->persist($cart);
 
         $entityManager->flush();
@@ -106,19 +79,15 @@ class AuthService
      * 
      * @return void
      */
-    public function registerVendor(Request $request): void
+    public function registerVendor(RegisterVendorDto $registerVendorDto): void
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
 
-        $this->userValidator->isUserVendorValid($decoded);
-        $this->vendorValidator->isVendorValid($decoded);
-
-        $phone = $decoded->phone;
-        $password = $decoded->password;
-        $address = $decoded->address;
-        $email = $decoded->email;
-        $fullName = $decoded->fullName;
+        $phone = $registerVendorDto->phone;
+        $password = $registerVendorDto->password;
+        $address = $registerVendorDto->address;
+        $email = $registerVendorDto->email;
+        $fullName = $registerVendorDto->fullName;
 
         $userInDb = $entityManager->getRepository(User::class)->findOneBy(['phone' => $phone]);
 
@@ -126,8 +95,8 @@ class AuthService
             throw new BadRequsetException('User with such phone already exists');
         }
 
-        $registraionDate = DateTimeImmutable::createFromFormat('Y-m-d', $decoded->registrationDate);
-        $registrationCertificateDate = DateTimeImmutable::createFromFormat('Y-m-d', $decoded->registrationCertificateDate);
+        $registraionDate = DateTimeImmutable::createFromFormat('Y-m-d', $registerVendorDto->registrationDate);
+        $registrationCertificateDate = DateTimeImmutable::createFromFormat('Y-m-d', $registerVendorDto->registrationCertificateDate);
 
         $user = new User();
         $hashedPassword = $this->passwordHasher->hashPassword($user, $password);
@@ -137,47 +106,20 @@ class AuthService
         $user->setEmail($email);
         $user->setFullName($fullName);
         $user->setRoles([Role::ROLE_VENDOR->value]);
-
-        $errors = $this->validator->validate($user);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
         $entityManager->persist($user);
 
         $cart = new Cart();
         $cart->setCustomer($user);
-
-        $errors = $this->validator->validate($cart);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
         $entityManager->persist($cart);
 
         $vendor = new Vendor();
-        $vendor->setTitle($decoded->title);
-        $vendor->setAddress($decoded->vendorAddress);
-        $vendor->setInn($decoded->inn);
-        $vendor->setRegistrationAuthority($decoded->registrationAuthority);
+        $vendor->setTitle($registerVendorDto->title);
+        $vendor->setAddress($registerVendorDto->vendorAddress);
+        $vendor->setInn($registerVendorDto->inn);
+        $vendor->setRegistrationAuthority($registerVendorDto->registrationAuthority);
         $vendor->setRegistrationDate($registraionDate);
         $vendor->setRegistrationCertificateDate($registrationCertificateDate);
         $vendor->setUser($user);
-
-        $errors = $this->validator->validate($vendor);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
         $entityManager->persist($vendor);
 
         $entityManager->flush();

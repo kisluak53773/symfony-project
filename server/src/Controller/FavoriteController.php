@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -14,9 +16,7 @@ use App\Services\FavoriteService;
 #[Route('/api/favorite', name: 'api_favorite_')]
 class FavoriteController extends AbstractController
 {
-    public function __construct(private FavoriteService $favoriteService)
-    {
-    }
+    public function __construct(private FavoriteService $favoriteService) {}
 
     #[Route('/{productId<\d+>}', name: 'add_prodct_to_favorite', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
@@ -33,7 +33,7 @@ class FavoriteController extends AbstractController
 
     #[Route(name: 'add', methods: 'get')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function getFavoriteProducts(FavoriteService $favoriteService): JsonResponse
+    public function getFavoriteProducts(): JsonResponse
     {
         try {
             $favoriteProducts = $this->favoriteService->getFavoriteProducts();

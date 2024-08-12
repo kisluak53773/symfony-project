@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -9,20 +11,20 @@ use App\Enum\Role;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Services\AuthService;
 use App\Services\Exception\Request\RequestException;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use App\DTO\Auth\RegisterDto;
+use App\DTO\Auth\RegisterVendorDto;
 
 #[Route('/api/auth', name: 'api_auth_')]
 class AuthController extends AbstractController
 {
-    public function __construct(private AuthService $authService)
-    {
-    }
+    public function __construct(private AuthService $authService) {}
 
     #[Route('/register', name: 'register', methods: 'post')]
-    public function register(Request $request): JsonResponse
+    public function register(#[MapRequestPayload] RegisterDto $registerDto): JsonResponse
     {
         try {
-            $this->authService->register($request);
+            $this->authService->register($registerDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -31,10 +33,10 @@ class AuthController extends AbstractController
     }
 
     #[Route('/register/vendor', name: 'register_vendor', methods: 'post')]
-    public function registerVendor(Request $request): JsonResponse
+    public function registerVendor(#[MapRequestPayload] RegisterVendorDto $RegisterVendorDto): JsonResponse
     {
         try {
-            $this->authService->registerVendor($request);
+            $this->authService->registerVendor($RegisterVendorDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

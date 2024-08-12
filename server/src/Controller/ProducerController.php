@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -10,21 +12,20 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Enum\Role;
 use App\Services\ProducerService;
 use App\Services\Exception\Request\RequestException;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use App\DTO\Producer\CreateProducerDto;
 
 #[Route('/api/producer', name: 'api_producer_')]
 class ProducerController extends AbstractController
 {
-    public function __construct(private ProducerService $producerService)
-    {
-    }
+    public function __construct(private ProducerService $producerService) {}
 
     #[Route(name: 'add', methods: 'post')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function add(Request $request): JsonResponse
+    public function add(#[MapRequestPayload] CreateProducerDto $createProducerDto): JsonResponse
     {
         try {
-            $id = $this->producerService->add($request);
+            $id = $this->producerService->add($createProducerDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

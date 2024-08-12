@@ -5,19 +5,15 @@ declare(strict_types=1);
 namespace App\Services;
 
 use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use App\Services\Exception\Request\BadRequsetException;
 use App\Services\Exception\Request\NotFoundException;
 use App\Entity\Producer;
+use App\DTO\Producer\CreateProducerDto;
 
 class ProducerService
 {
     public function __construct(
         private ManagerRegistry $registry,
-        private ValidatorInterface $validator
-    ) {
-    }
+    ) {}
 
     /**
      * Summary of add
@@ -27,31 +23,14 @@ class ProducerService
      * 
      * @return int
      */
-    public function add(Request $request): int
+    public function add(CreateProducerDto $createProducerDto): int
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        if (!isset($decoded->title) || !isset($decoded->country) || !isset($decoded->address)) {
-            throw new BadRequsetException();
-        }
-
-        $title = $decoded->title;
-        $country = $decoded->country;
-        $address = $decoded->address;
 
         $producer = new Producer();
-        $producer->setTitle($title);
-        $producer->setCountry($country);
-        $producer->setAddress($address);
-
-        $errors = $this->validator->validate($producer);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
+        $producer->setTitle($createProducerDto->title);
+        $producer->setCountry($createProducerDto->country);
+        $producer->setAddress($createProducerDto->address);
 
         $entityManager->persist($producer);
         $entityManager->flush();

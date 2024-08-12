@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -11,20 +13,22 @@ use App\Enum\Role;
 use App\Services\TypeService;
 use App\Services\Exception\Request\RequestException;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use App\DTO\Type\CreatTypeDto;
 
 #[Route('/api/type', name: 'api_type_')]
 class TypeController extends AbstractController
 {
-    public function __construct(private TypeService $typeService)
-    {
-    }
+    public function __construct(private TypeService $typeService) {}
 
     #[Route(name: 'create', methods: 'post')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function add(Request $request): JsonResponse
-    {
+    public function add(
+        Request $request,
+        #[MapRequestPayload] CreatTypeDto $creatTypeDto
+    ): JsonResponse {
         try {
-            $id = $this->typeService->add($request);
+            $id = $this->typeService->add($request, $creatTypeDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

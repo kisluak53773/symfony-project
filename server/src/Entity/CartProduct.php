@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entity;
 
 use App\Repository\CartProductRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: CartProductRepository::class)]
@@ -18,17 +19,14 @@ class CartProduct
 
     #[ORM\ManyToOne(inversedBy: 'cartProducts')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank(message: 'Cart should be present')]
     private ?Cart $cart = null;
 
     #[ORM\Column]
-    #[Assert\NotBlank(message: 'Quanti should be present')]
     #[Groups(['cart_product'])]
     private ?int $quantity = null;
 
     #[ORM\ManyToOne(inversedBy: 'cartProducts')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank(message: 'VendorProduct should be present')]
     private ?VendorProduct $vendorProduct = null;
 
     public function getId(): ?int

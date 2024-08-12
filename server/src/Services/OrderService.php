@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\HttpFoundation\Request;
-use App\Services\Validator\OrderValidator;
 use App\Entity\User;
 use App\Entity\OrderProduct;
 use App\Entity\Order;
@@ -19,18 +16,18 @@ use DateTime;
 use App\Services\Exception\Request\BadRequsetException;
 use App\Services\Exception\Request\NotFoundException;
 use App\Services\Exception\Request\ForbiddenException;
+use App\DTO\Order\CreateOrderDto;
+use App\DTO\Order\PatchOrderDto;
+use App\DTO\PaginationQueryDto;
 
 class OrderService
 {
     public function __construct(
         private ManagerRegistry $registry,
         private Security $security,
-        private OrderValidator $orderValidator,
-        private ValidatorInterface $validator,
         private PaginatorInterface $paginator,
         private OrderRepository $orderRepository,
-    ) {
-    }
+    ) {}
 
     /**
      * Summary of index
@@ -41,34 +38,23 @@ class OrderService
      * 
      * @return void
      */
-    public function index(Request $request): void
+    public function createOrderDto(CreateOrderDto $createOrderDto): void
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        $this->orderValidator->isValidToCreateOrder($decoded);
 
         $userPhone = $this->security->getUser()->getUserIdentifier();
         $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
 
-        $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i', $decoded->deliveryTime);
+        $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i', $createOrderDto->deliveryTime);
 
         $order = new Order();
         $order->setCustomer($user);
-        $order->setPaymentMethod($decoded->paymentMethod);
+        $order->setPaymentMethod($createOrderDto->paymentMethod);
         $order->setDeliveryTime($deliveryDate);
         $order->setOrderStatus(OrderStatus::ORDER_PROCESSED->value);
 
-        if (isset($decoded->comment)) {
-            $order->setComment($decoded->comment);
-        }
-
-        $errors = $this->validator->validate($order);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
+        if (isset($createOrderDto->comment)) {
+            $order->setComment($createOrderDto->comment);
         }
 
         $entityManager->persist($order);
@@ -91,14 +77,6 @@ class OrderService
             $orderProduct->setQuantity($cartProduct->getQuantity());
             $orderProduct->setVendorProduct($cartProduct->getVendorProduct());
 
-            $errors = $this->validator->validate($orderProduct);
-
-            if (count($errors) > 0) {
-                $errorsString = (string) $errors;
-
-                throw new BadRequsetException($errorsString);
-            }
-
             $entityManager->persist($orderProduct);
             $entityManager->remove($cartProduct);
         }
@@ -112,7 +90,7 @@ class OrderService
      * 
      * @return array
      */
-    public function getUserOrders(Request $request): array
+    public function getUserOrders(PaginationQueryDto $paginationQueryDto): array
     {
         $entityManager = $this->registry->getManager();
         $userPhone = $this->security->getUser()->getUserIdentifier();
@@ -122,8 +100,8 @@ class OrderService
 
         $pagination = $this->paginator->paginate(
             $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->getInt('limit', 5)
+            $paginationQueryDto->page,
+            $paginationQueryDto->limit,
         );
 
         $orders = $pagination->getItems();
@@ -150,7 +128,7 @@ class OrderService
      * 
      * @return array
      */
-    public function getVendorOrders(Request $request): array
+    public function getVendorOrders(PaginationQueryDto $paginationQueryDto): array
     {
         $entityManager = $this->registry->getManager();
         $userPhone = $this->security->getUser()->getUserIdentifier();
@@ -165,8 +143,8 @@ class OrderService
 
         $pagination = $this->paginator->paginate(
             $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->getInt('limit', 5)
+            $paginationQueryDto->page,
+            $paginationQueryDto->limit,
         );
 
         $orders = $pagination->getItems();
@@ -207,7 +185,7 @@ class OrderService
         $order = $entityManager->getRepository(Order::class)->find($id);
         $products = $order->getOrderProducts()->getValues();
 
-        $products = array_filter($products, fn ($item) => $item->getVendorProduct()->getVendor()->getId() === $vendor->getId());
+        $products = array_filter($products, fn($item) => $item->getVendorProduct()->getVendor()->getId() === $vendor->getId());
         $response = ['orderData' => $order, 'products' => $products];
 
         return $response;
@@ -219,14 +197,14 @@ class OrderService
      * 
      * @return array
      */
-    public function getAllOrders(Request $request): array
+    public function getAllOrders(PaginationQueryDto $paginationQueryDto): array
     {
         $querryBuilder = $this->orderRepository->createQuerryBuilderForPagination();
 
         $pagination = $this->paginator->paginate(
             $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->getInt('limit', 5)
+            $paginationQueryDto->page,
+            $paginationQueryDto->limit,
         );
 
         $orders = $pagination->getItems();
@@ -255,34 +233,22 @@ class OrderService
      * 
      * @return void
      */
-    public function patchOrder(int $id, Request $request): void
+    public function patchOrder(int $id, PatchOrderDto $patchOrderDto): void
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        $this->orderValidator->isValidToPatchOrder($decoded);
-
         $order = $entityManager->getRepository(Order::class)->find($id);
 
         if (!isset($order)) {
             throw new NotFoundException('Such order does not exist');
         }
 
-        $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i', $decoded->deliveryTime);
+        $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i', $patchOrderDto->deliveryTime);
 
-        $order->setPaymentMethod($decoded->paymentMethod);
-        $order->setOrderStatus($decoded->orderStatus);
+        $order->setPaymentMethod($patchOrderDto->paymentMethod);
+        $order->setOrderStatus($patchOrderDto->orderStatus);
         $order->setDeliveryTime($deliveryDate);
-
-        $errors = $this->validator->validate($order);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
         $entityManager->persist($order);
+
         $entityManager->flush();
     }
 
@@ -310,16 +276,8 @@ class OrderService
         }
 
         $order->setOrderStatus(OrderStatus::ORDER_CANCELED->value);
-
-        $errors = $this->validator->validate($order);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
         $entityManager->persist($order);
+
         $entityManager->flush();
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -10,14 +12,15 @@ use App\Enum\Role;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use App\Services\CartService;
 use App\Services\Exception\Request\RequestException;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use App\DTO\Cart\AddToCartDto;
+use App\DTO\Cart\IncreaseDto;
+use App\DTO\Cart\DecreaseDto;
 
 #[Route('/api/cart', name: 'api_cart_')]
 class CartController extends AbstractController
 {
-    public function __construct(private CartService $cartService)
-    {
-    }
+    public function __construct(private CartService $cartService) {}
 
     #[Route(name: 'create', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
@@ -50,10 +53,10 @@ class CartController extends AbstractController
 
     #[Route('/add', name: 'addToCart', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function addToCart(Request $request): JsonResponse
+    public function addToCart(#[MapRequestPayload] AddToCartDto $addToCartDto): JsonResponse
     {
         try {
-            $response = $this->cartService->addToCart($request);
+            $response = $this->cartService->addToCart($addToCartDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -63,10 +66,10 @@ class CartController extends AbstractController
 
     #[Route('/increase', name: 'increase_amount_of_product_in_cart', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function increaseProductAmount(Request $request): JsonResponse
+    public function increaseProductAmount(#[MapRequestPayload] IncreaseDto $increaseDto): JsonResponse
     {
         try {
-            $quantity = $this->cartService->increaseProductAmount($request);
+            $quantity = $this->cartService->increaseProductAmount($increaseDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -76,10 +79,10 @@ class CartController extends AbstractController
 
     #[Route('/decrease', name: 'decrease_amount_of_product_in_cart', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function decreaseProductAmount(Request $request): JsonResponse
+    public function decreaseProductAmount(#[MapRequestPayload] DecreaseDto $decreaseDto): JsonResponse
     {
         try {
-            $this->cartService->decreaseProductAmount($request);
+            $this->cartService->decreaseProductAmount($decreaseDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

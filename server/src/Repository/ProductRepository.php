@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use App\Entity\Product;
@@ -8,13 +10,13 @@ use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Vendor;
 use Doctrine\ORM\QueryBuilder;
 use FOS\ElasticaBundle\Finder\PaginatedFinderInterface;
-use Symfony\Component\HttpFoundation\Request;
 use Elastica\Query;
 use Elastica\Query\BoolQuery;
 use Elastica\Query\QueryString;
 use FOS\ElasticaBundle\Paginator\PaginatorAdapterInterface;
 use Elastica\Query\Term;
 use Elastica\Query\Nested;
+use App\DTO\Product\ProductSearchParamsDto;
 
 
 /**
@@ -42,18 +44,16 @@ class ProductRepository extends ServiceEntityRepository
             ->setParameter('vendorId', $vendor->getId());;
     }
 
-    public function searchByTitle(Request $request, int $vendorId = null): PaginatorAdapterInterface
-    {
-        $title = $request->query->get('title', '');
-        $priceSort = $request->query->get('priceSort', 'asc');
-        $typesArray = $request->query->all('types');
-        $producersArray = $request->query->all('producers');
+    public function searchByTitle(
+        ProductSearchParamsDto $productSearchParamsDto,
+        int $vendorId = null,
+    ): PaginatorAdapterInterface {
         $query = new Query();
         $boolQuery = new BoolQuery();
 
-        if ($title) {
+        if ($productSearchParamsDto->title) {
             $queryString = new QueryString();
-            $queryString->setQuery('*' . $title . '*');
+            $queryString->setQuery('*' . $productSearchParamsDto->title . '*');
             $queryString->setDefaultField('title');
 
             $boolQuery->addMust($queryString);
@@ -72,18 +72,18 @@ class ProductRepository extends ServiceEntityRepository
             $boolQuery->addFilter($nestedQuery);
         }
 
-        if (count($typesArray) > 0) {
+        if (count($productSearchParamsDto->types) > 0) {
             $typesBool = new BoolQuery();
-            foreach ($typesArray as $type) {
+            foreach ($productSearchParamsDto->types as $type) {
                 $typesTerm = new Term(['typeId' => $type]);
                 $typesBool->addShould($typesTerm);
             }
             $boolQuery->addFilter($typesBool);
         }
 
-        if (count($producersArray) > 0) {
+        if (count($productSearchParamsDto->types) > 0) {
             $producersBool = new BoolQuery();
-            foreach ($producersArray as $producer) {
+            foreach ($productSearchParamsDto->types as $producer) {
                 $producerTerm = new Term(['typeId' => $producer]);
                 $producersBool->addShould($producerTerm);
             }
@@ -92,10 +92,10 @@ class ProductRepository extends ServiceEntityRepository
 
         $query->setQuery($boolQuery);
 
-        if ($priceSort) {
+        if (isset($productSearchParamsDto->priceSort)) {
             $query->setSort([
                 'vendorProducts.price' => [
-                    'order' => $priceSort,
+                    'order' => $productSearchParamsDto->priceSort,
                     'nested' => [
                         'path' => 'vendorProducts',
                     ],

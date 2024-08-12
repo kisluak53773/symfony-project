@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entity;
 
 use App\Repository\OrderRepository;
@@ -7,12 +9,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Serializer\Annotation\Groups;
 use DateTime;
 use DateTimeImmutable;
-use App\Enum\PaymentMethod;
-use App\Enum\OrderStatus;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
@@ -27,7 +26,6 @@ class Order
 
     #[ORM\ManyToOne(inversedBy: 'orders')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank(message: 'Customer should be present')]
     private ?User $customer = null;
 
     /**
@@ -38,7 +36,6 @@ class Order
     private Collection $orderProducts;
 
     #[ORM\Column(length: 20)]
-    #[Assert\Choice([PaymentMethod::PAYMENT_CASH->value, PaymentMethod::PAYMENT_CARD->value])]
     #[Groups(['orders'])]
     private ?string $paymentMethod = null;
 
@@ -47,21 +44,11 @@ class Order
     private ?\DateTimeInterface $deliveryTime = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Assert\Length(
-        max: 255,
-        maxMessage: 'Comment should not be so long',
-    )]
     #[Groups(['orders'])]
     private ?string $comment = null;
 
     #[ORM\Column(length: 20)]
     #[Groups(['orders'])]
-    #[Assert\Choice([
-        OrderStatus::ORDER_PROCESSED->value,
-        OrderStatus::ORDER_ON_THE_WAY->value,
-        OrderStatus::ORDER_DELIVERED->value,
-        OrderStatus::ORDER_CANCELED->value
-    ])]
     private ?string $orderStatus = null;
 
     #[ORM\Column]

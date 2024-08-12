@@ -6,9 +6,6 @@ namespace App\Services;
 
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use App\Services\Validator\ReviewValidator;
 use App\Entity\User;
 use App\Entity\Review;
 use App\Entity\Product;
@@ -16,14 +13,15 @@ use App\Services\Exception\Request\NotFoundException;
 use Knp\Component\Pager\PaginatorInterface;
 use App\Repository\ReviewRepository;
 use App\Services\Exception\Request\ForbiddenException;
+use App\DTO\Review\CreateReviewDto;
+use App\DTO\Review\PatchReviewDto;
+use App\DTO\PaginationQueryDto;
 
 class ReviewService
 {
     public function __construct(
         private ManagerRegistry $registry,
         private Security $security,
-        private ReviewValidator $reviewValidator,
-        private ValidatorInterface $validator,
         private PaginatorInterface $paginator,
         private ReviewRepository $reviewRepository
     ) {}
@@ -37,16 +35,13 @@ class ReviewService
      * 
      * @return int
      */
-    public function add(Request $request): int
+    public function add(CreateReviewDto $createReviewDto): int
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        $this->reviewValidator->isReviewValid($decoded);
 
         $userPhone = $this->security->getUser()->getUserIdentifier();
         $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-        $product = $entityManager->getRepository(Product::class)->find($decoded->productId);
+        $product = $entityManager->getRepository(Product::class)->find($createReviewDto->productId);
 
         if (!isset($product)) {
             throw new NotFoundException('Product not found');
@@ -55,10 +50,10 @@ class ReviewService
         $review = new Review();
         $review->setClient($user);
         $review->setProduct($product);
-        $review->setRating($decoded->rating);
+        $review->setRating($createReviewDto->rating);
 
-        if (isset($decoded->comment)) {
-            $review->setComment($decoded->comment);
+        if (isset($createReviewDto->comment)) {
+            $review->setComment($createReviewDto->comment);
         }
 
         $entityManager->persist($review);
@@ -76,7 +71,7 @@ class ReviewService
      * 
      * @return array
      */
-    public function getByProductId(int $productId, Request $request): array
+    public function getByProductId(int $productId, PaginationQueryDto $paginationQueryDto): array
     {
         $entityManager = $this->registry->getManager();
         $product = $entityManager->getRepository(Product::class)->find($productId);
@@ -89,8 +84,8 @@ class ReviewService
 
         $pagination = $this->paginator->paginate(
             $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->getInt('limit', 5)
+            $paginationQueryDto->page,
+            $paginationQueryDto->limit
         );
 
         $products = $pagination->getItems();
@@ -120,12 +115,9 @@ class ReviewService
      * 
      * @return void
      */
-    public function patchReview(int $id, Request $request): void
+    public function patchReview(int $id, PatchReviewDto $patchReviewDto): void
     {
         $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        $this->reviewValidator->isReviewValid($decoded);
 
         $review = $entityManager->getRepository(Review::class)->find($id);
 
@@ -140,10 +132,10 @@ class ReviewService
             throw new ForbiddenException('You are not allowd to patch this comment');
         }
 
-        $review->setRating($decoded->rating);
+        $review->setRating($patchReviewDto->rating);
 
-        if (isset($decoded->comment)) {
-            $review->setComment($decoded->comment);
+        if (isset($patchReviewDto->comment)) {
+            $review->setComment($patchReviewDto->comment);
         }
 
         $entityManager->persist($review);
