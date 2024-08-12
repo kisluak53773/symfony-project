@@ -12,11 +12,13 @@ use App\Enum\Role;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Services\ProductService;
 use App\Services\Exception\Request\RequestException;
-use Symfony\Component\HttpFoundation\Request;
 use App\DTO\Product\CreateProductDto;
 use App\DTO\Product\ProductSearchParamsDto;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
+use Symfony\Component\HttpKernel\Attribute\MapUploadedFile;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[Route('/api/product', name: 'api_product_')]
 class ProductController extends AbstractController
@@ -25,10 +27,16 @@ class ProductController extends AbstractController
 
     #[Route('/create', name: 'add', methods: 'post')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function addWithVendor(Request $request, #[MapRequestPayload] CreateProductDto $createProductDto): JsonResponse
-    {
+    public function addWithVendor(
+        #[MapRequestPayload] CreateProductDto $createProductDto,
+        #[MapUploadedFile([
+            new Assert\File(mimeTypes: ['image/png', 'image/jpeg']),
+            new Assert\Image(maxWidth: 3840, maxHeight: 2160),
+        ])]
+        UploadedFile $image
+    ): JsonResponse {
         try {
-            $id = $this->productService->addWithVendor($request, $createProductDto);
+            $id = $this->productService->addWithVendor($image, $createProductDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

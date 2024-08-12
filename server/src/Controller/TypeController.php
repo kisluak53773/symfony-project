@@ -12,9 +12,11 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Enum\Role;
 use App\Services\TypeService;
 use App\Services\Exception\Request\RequestException;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use App\DTO\Type\CreatTypeDto;
+use Symfony\Component\HttpKernel\Attribute\MapUploadedFile;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[Route('/api/type', name: 'api_type_')]
 class TypeController extends AbstractController
@@ -24,11 +26,15 @@ class TypeController extends AbstractController
     #[Route(name: 'create', methods: 'post')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function add(
-        Request $request,
+        #[MapUploadedFile([
+            new Assert\File(mimeTypes: ['image/png', 'image/jpeg']),
+            new Assert\Image(maxWidth: 3840, maxHeight: 2160),
+        ])]
+        UploadedFile $image,
         #[MapRequestPayload] CreatTypeDto $creatTypeDto
     ): JsonResponse {
         try {
-            $id = $this->typeService->add($request, $creatTypeDto);
+            $id = $this->typeService->add($image, $creatTypeDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

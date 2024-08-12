@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Symfony\Component\HttpFoundation\Request;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Services\Uploader\ProductImageUploader;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -22,6 +21,7 @@ use App\Services\Exception\Request\BadRequsetException;
 use App\Services\Exception\Request\ServerErrorException;
 use App\DTO\Product\CreateProductDto;
 use App\DTO\Product\ProductSearchParamsDto;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class ProductService
 {
@@ -42,7 +42,7 @@ class ProductService
      * 
      * @return int
      */
-    public function addWithVendor(Request $request, CreateProductDto $createProductDto): int
+    public function addWithVendor(UploadedFile $image, CreateProductDto $createProductDto): int
     {
         $entityManager = $this->registry->getManager();
         $user = $this->security->getUser();
@@ -58,8 +58,6 @@ class ProductService
         if (!isset($type)) {
             throw new BadRequsetException('Such type does not exist');
         }
-
-        $image = $request->files->get('image');
 
         try {
             $imagePath = $this->uploader->upload($image);

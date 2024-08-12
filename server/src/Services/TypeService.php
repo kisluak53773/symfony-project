@@ -10,8 +10,8 @@ use Doctrine\Persistence\ManagerRegistry;
 use App\Services\Uploader\TypesImageUploader;
 use App\Entity\Type;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
-use Symfony\Component\HttpFoundation\Request;
 use App\DTO\Type\CreatTypeDto;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 class TypeService
 {
@@ -29,21 +29,20 @@ class TypeService
      * 
      * @return int
      */
-    public function add(Request $request, CreatTypeDto $creatTypeDto): int
+    public function add(UploadedFile $image, CreatTypeDto $creatTypeDto): int
     {
         $entityManger = $this->registry->getManager();
 
         $type = new Type();
         $type->setTitle($creatTypeDto->title);
 
-        if ($request->files->has('image')) {
-            try {
-                $imagePath = $this->uploader->upload($request->files->get('image'));
-                $type->setImage($imagePath);
-            } catch (FileException $e) {
-                throw new ServerErrorException($e->getMessage());
-            }
+        try {
+            $imagePath = $this->uploader->upload($image);
+        } catch (FileException $e) {
+            throw new ServerErrorException($e->getMessage());
         }
+
+        $type->setImage($imagePath);
 
         $entityManger->persist($type);
         $entityManger->flush();
