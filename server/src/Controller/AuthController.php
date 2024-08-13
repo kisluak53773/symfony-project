@@ -32,18 +32,6 @@ class AuthController extends AbstractController
         return $this->json(['message' => 'Registered succsessfully'], 201);
     }
 
-    #[Route('/register/vendor', name: 'register_vendor', methods: 'post')]
-    public function registerVendor(#[MapRequestPayload] RegisterVendorDto $RegisterVendorDto): JsonResponse
-    {
-        try {
-            $this->authService->registerVendor($RegisterVendorDto);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
-        }
-
-        return $this->json(['message' => 'Vendor created'], 201);
-    }
-
     #[Route('/{id}', name: 'delete', methods: 'delete', requirements: ['id' => '\d+'])]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function delete(int $id): JsonResponse

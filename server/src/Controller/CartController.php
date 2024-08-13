@@ -56,7 +56,7 @@ class CartController extends AbstractController
     public function addToCart(#[MapRequestPayload] AddToCartDto $addToCartDto): JsonResponse
     {
         try {
-            $response = $this->cartService->addToCart($addToCartDto);
+            $response = $this->cartService->add($addToCartDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -69,7 +69,7 @@ class CartController extends AbstractController
     public function increaseProductAmount(#[MapRequestPayload] IncreaseDto $increaseDto): JsonResponse
     {
         try {
-            $quantity = $this->cartService->increaseProductAmount($increaseDto);
+            $quantity = $this->cartService->increase($increaseDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }
@@ -82,7 +82,7 @@ class CartController extends AbstractController
     public function decreaseProductAmount(#[MapRequestPayload] DecreaseDto $decreaseDto): JsonResponse
     {
         try {
-            $this->cartService->decreaseProductAmount($decreaseDto);
+            $this->cartService->decrease($decreaseDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

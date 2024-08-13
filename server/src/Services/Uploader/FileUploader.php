@@ -7,15 +7,14 @@ namespace App\Services\Uploader;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\String\Slugger\SluggerInterface;
-use App\Services\Contract\FileUploaderInterface;
+use App\Contract\FileUploaderInterface;
 
 class FileUploader implements FileUploaderInterface
 {
     public function __construct(
         private string $targetDirectory,
         private SluggerInterface $slugger,
-    ) {
-    }
+    ) {}
 
     /**
      * Summary of upload

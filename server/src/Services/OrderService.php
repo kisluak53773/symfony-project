@@ -4,14 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Symfony\Bundle\SecurityBundle\Security;
-use App\Entity\User;
-use App\Entity\OrderProduct;
-use App\Entity\Order;
-use App\Enum\OrderStatus;
 use Knp\Component\Pager\PaginatorInterface;
-use App\Repository\OrderRepository;
-use DateTime;
 use App\Services\Exception\Request\BadRequsetException;
 use App\Services\Exception\Request\NotFoundException;
 use App\Services\Exception\Request\ForbiddenException;
@@ -19,14 +12,26 @@ use App\DTO\Order\CreateOrderDto;
 use App\DTO\Order\PatchOrderDto;
 use App\DTO\PaginationQueryDto;
 use Doctrine\ORM\EntityManagerInterface;
+use App\Contract\Repository\OrderRepositoryInterface;
+use App\Contract\Repository\UserRepositoryInterface;
+use App\Contract\Repository\OrderProductRepositoryInteface;
 
 class OrderService
 {
+    /**
+     * Summary of __construct
+     * @param \Doctrine\ORM\EntityManagerInterface $entityManager
+     * @param \Knp\Component\Pager\PaginatorInterface $paginator
+     * @param \App\Repository\OrderRepository $orderRepository
+     * @param \App\Repository\UserRepository $userRepository
+     * @param \App\Repository\OrderProductRepository $orderProductRepository
+     */
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private Security $security,
         private PaginatorInterface $paginator,
-        private OrderRepository $orderRepository,
+        private OrderRepositoryInterface $orderRepository,
+        private UserRepositoryInterface $userRepository,
+        private OrderProductRepositoryInteface $orderProductRepository,
     ) {}
 
     /**
@@ -38,47 +43,23 @@ class OrderService
      * 
      * @return void
      */
-    public function createOrderDto(CreateOrderDto $createOrderDto): void
+    public function createOrder(CreateOrderDto $createOrderDto): void
     {
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-
-        $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i', $createOrderDto->deliveryTime);
-
-        $order = new Order();
-        $order->setCustomer($user);
-        $order->setPaymentMethod($createOrderDto->paymentMethod);
-        $order->setDeliveryTime($deliveryDate);
-        $order->setOrderStatus(OrderStatus::ORDER_PROCESSED->value);
-
-        if (isset($createOrderDto->comment)) {
-            $order->setComment($createOrderDto->comment);
-        }
-
-        $this->entityManager->persist($order);
-
+        $user = $this->userRepository->getCurrentUser();
         $cart = $user->getCart();
 
         if (!isset($cart)) {
             throw new NotFoundException('You do not have a cart');
         }
 
+        $order = $this->orderRepository->create($createOrderDto, $user);
         $cartProducts = $cart->getCartProducts()->getValues();
 
         if (count($cartProducts) === 0) {
             throw new BadRequsetException('Your cart is empty');
         }
 
-        foreach ($cartProducts as $cartProduct) {
-            $orderProduct = new OrderProduct();
-            $orderProduct->setOrderEntity($order);
-            $orderProduct->setQuantity($cartProduct->getQuantity());
-            $orderProduct->setVendorProduct($cartProduct->getVendorProduct());
-
-            $this->entityManager->persist($orderProduct);
-            $this->entityManager->remove($cartProduct);
-        }
-
+        $this->orderProductRepository->addManyProducts($cartProducts, $order);
         $this->entityManager->flush();
     }
 
@@ -90,9 +71,7 @@ class OrderService
      */
     public function getUserOrders(PaginationQueryDto $paginationQueryDto): array
     {
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-
+        $user = $this->userRepository->getCurrentUser();
         $querryBuilder = $this->orderRepository->getAllOrdersBelonignToUser($user);
 
         $pagination = $this->paginator->paginate(
@@ -127,8 +106,7 @@ class OrderService
      */
     public function getVendorOrders(PaginationQueryDto $paginationQueryDto): array
     {
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
 
         if (!isset($vendor)) {
@@ -169,15 +147,14 @@ class OrderService
      */
     public function getVendorOrderById(int $id): array
     {
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
 
         if (!isset($vendor)) {
             throw new NotFoundException('Vendor data is not found');
         }
 
-        $order = $this->entityManager->getRepository(Order::class)->find($id);
+        $order = $this->orderRepository->find($id);
         $products = $order->getOrderProducts()->getValues();
 
         $products = array_filter($products, fn($item) => $item->getVendorProduct()->getVendor()->getId() === $vendor->getId());
@@ -230,19 +207,13 @@ class OrderService
      */
     public function patchOrder(int $id, PatchOrderDto $patchOrderDto): void
     {
-        $order = $this->entityManager->getRepository(Order::class)->find($id);
+        $order = $this->orderRepository->find($id);
 
         if (!isset($order)) {
             throw new NotFoundException('Such order does not exist');
         }
 
-        $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i', $patchOrderDto->deliveryTime);
-
-        $order->setPaymentMethod($patchOrderDto->paymentMethod);
-        $order->setOrderStatus($patchOrderDto->orderStatus);
-        $order->setDeliveryTime($deliveryDate);
-        $this->entityManager->persist($order);
-
+        $this->orderRepository->patch($patchOrderDto, $order);
         $this->entityManager->flush();
     }
 
@@ -258,19 +229,17 @@ class OrderService
      */
     public function cancelOrder(int $id): void
     {
-        $order = $this->entityManager->getRepository(Order::class)->find($id);
+        $order = $this->orderRepository->find($id);
 
         if (!isset($order)) {
             throw new NotFoundException('Such order does not exist');
         }
 
-        if ($this->security->getUser()->getUserIdentifier() !== $order->getCustomer()->getUserIdentifier()) {
+        if ($this->userRepository->getCurrentUser()->getUserIdentifier() !== $order->getCustomer()->getUserIdentifier()) {
             throw new ForbiddenException('You can not cancel this order');
         }
 
-        $order->setOrderStatus(OrderStatus::ORDER_CANCELED->value);
-        $this->entityManager->persist($order);
-
+        $this->orderRepository->cancel($order);
         $this->entityManager->flush();
     }
 }

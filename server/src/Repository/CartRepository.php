@@ -7,39 +7,26 @@ namespace App\Repository;
 use App\Entity\Cart;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use App\Entity\User;
+use App\Contract\Repository\CartRepositoryInterface;
 
 /**
  * @extends ServiceEntityRepository<Cart>
  */
-class CartRepository extends ServiceEntityRepository
+class CartRepository extends ServiceEntityRepository implements CartRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Cart::class);
     }
 
-    //    /**
-    //     * @return Cart[] Returns an array of Cart objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('c.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function create(User $user): Cart
+    {
+        $cart = new Cart();
+        $cart->setCustomer($user);
 
-    //    public function findOneBySomeField($value): ?Cart
-    //    {
-    //        return $this->createQueryBuilder('c')
-    //            ->andWhere('c.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        $this->getEntityManager()->persist($user);
+
+        return $cart;
+    }
 }

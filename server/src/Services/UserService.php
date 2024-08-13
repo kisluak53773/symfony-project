@@ -4,19 +4,22 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Core\User\UserInterface;
-use App\Entity\User;
-use App\Services\Exception\Request\NotFoundException;
 use App\Services\Exception\Request\BadRequsetException;
 use App\DTO\User\PatchUserDto;
 use Doctrine\ORM\EntityManagerInterface;
+use App\Contract\Repository\UserRepositoryInterface;
 
 class UserService
 {
+    /**
+     * Summary of __construct
+     * @param \Doctrine\ORM\EntityManagerInterface $entityManager
+     * @param \App\Repository\UserRepository $userRepository
+     */
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private Security $security,
+        private UserRepositoryInterface $userRepository,
     ) {}
 
     /**
@@ -27,13 +30,7 @@ class UserService
      */
     public function getCurrentUser(): UserInterface
     {
-        $user = $this->security->getUser();
-
-        if (!isset($user)) {
-            throw new NotFoundException('User not found');
-        }
-
-        return $user;
+        return $this->userRepository->getCurrentUser();
     }
 
     /**
@@ -46,34 +43,18 @@ class UserService
      */
     public function patchCurrentUser(PatchUserDto $patchUserDto): void
     {
-        $user = $this->security->getUser();
+        $user = $this->userRepository->getCurrentUser();
         $userPhone = $user->getUserIdentifier();
 
         if ($patchUserDto->phone !== $userPhone) {
-            $existingUser = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $patchUserDto->phone]);
+            $existingUser = $this->userRepository->findOneBy(['phone' => $patchUserDto->phone]);
 
             if (isset($existingUser)) {
                 throw new BadRequsetException('User with such phone already exists');
             }
         }
 
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-
-        $user->setPhone($patchUserDto->phone);
-
-        if (isset($patchUserDto->address)) {
-            $user->setAddress($patchUserDto->address);
-        }
-
-        if (isset($patchUserDto->email)) {
-            $user->setEmail($patchUserDto->email);
-        }
-
-        if (isset($patchUserDto->fullName)) {
-            $user->setFullName($patchUserDto->fullName);
-        }
-
-        $this->entityManager->persist($user);
+        $this->userRepository->patch($patchUserDto, $user);
         $this->entityManager->flush();
     }
 }

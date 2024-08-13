@@ -7,39 +7,39 @@ namespace App\Repository;
 use App\Entity\Producer;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use App\DTO\Producer\CreateProducerDto;
+use App\Contract\Repository\ProducerRepositoryInterface;
 
 /**
  * @extends ServiceEntityRepository<Producer>
  */
-class ProducerRepository extends ServiceEntityRepository
+class ProducerRepository extends ServiceEntityRepository implements ProducerRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Producer::class);
     }
 
-    //    /**
-    //     * @return Producer[] Returns an array of Producer objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('p.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Summary of create
+     * @param \App\DTO\Producer\CreateProducerDto $createProducerDto
+     * 
+     * @return \App\Entity\Producer
+     */
+    public function create(CreateProducerDto $createProducerDto): Producer
+    {
+        $producer = new Producer();
+        $producer->setTitle($createProducerDto->title);
+        $producer->setCountry($createProducerDto->country);
+        $producer->setAddress($createProducerDto->address);
 
-    //    public function findOneBySomeField($value): ?Producer
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        $this->getEntityManager()->persist($producer);
+
+        return $producer;
+    }
+
+    public function remove(Producer $producer): void
+    {
+        $this->getEntityManager()->remove($producer);
+    }
 }

@@ -4,7 +4,9 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+  products_images: "/images/products/"
   products_directory: "%kernel.project_dir%/public/images/products"
+  types_images: "/images/types/"
   types_directory: "%kernel.project_dir%/public/images/types"
 
 services:
@@ -22,6 +24,8 @@ services:
       - "../src/Entity/"
       - "../src/Kernel.php"
 
+  Doctrine\ORM\EntityManagerInterface $entityManager: "@doctrine.orm.entity_manager"
+
   App\Services\Uploader\ProductImageUploader:
     arguments:
       $targetDirectory: "%products_directory%"
@@ -33,50 +37,6 @@ services:
   App\Repository\ProductRepository:
     arguments:
       - "@fos_elastica.finder.product"
-
-  App\Service\AuthService:
-    arguments:
-      $entityManager: "@doctrine.orm.entity_manager"
-
-  App\Service\CartService:
-    arguments:
-      $entityManager: "@doctrine.orm.entity_manager"
-
-  App\Service\FavoriteService:
-    arguments:
-      $entityManager: "@doctrine.orm.entity_manager"
-
-  App\Service\OrderService:
-    arguments:
-      $entityManager: "@doctrine.orm.entity_manager"
-
-  App\Service\ProducerService:
-    arguments:
-      $entityManager: "@doctrine.orm.entity_manager"
-
-  App\Service\ProductService:
-    arguments:
-      $entityManager: "@doctrine.orm.entity_manager"
-
-  App\Service\ReviewService:
-    arguments:
-      $entityManager: "@doctrine.orm.entity_manager"
-
-  App\Service\TypeService:
-    arguments:
-      $entityManager: "@doctrine.orm.entity_manager"
-
-  App\Service\UserService:
-    arguments:
-      $entityManager: "@doctrine.orm.entity_manager"
-
-  App\Service\VendorProductService:
-    arguments:
-      $entityManager: "@doctrine.orm.entity_manager"
-
-  App\Service\VendorService:
-    arguments:
-      $entityManager: "@doctrine.orm.entity_manager"
 # config/services.yaml
 
 # ...

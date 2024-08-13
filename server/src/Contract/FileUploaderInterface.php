@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services\Contract;
+namespace App\Contract;
 
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 

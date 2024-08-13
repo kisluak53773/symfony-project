@@ -9,17 +9,26 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Vendor;
 use Doctrine\ORM\QueryBuilder;
+use App\Entity\Product;
+use App\DTO\VendorProduct\PatchVendorProduct;
+use App\Contract\Repository\VendorProductRepositoryInterface;
 
 /**
  * @extends ServiceEntityRepository<VendorProduct>
  */
-class VendorProductRepository extends ServiceEntityRepository
+class VendorProductRepository extends ServiceEntityRepository implements VendorProductRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, VendorProduct::class);
     }
 
+    /**
+     * Summary of createQueryBuilderForPaginationWithVendor
+     * @param \App\Entity\Vendor $vendor
+     * 
+     * @return \Doctrine\ORM\QueryBuilder
+     */
     public function createQueryBuilderForPaginationWithVendor(Vendor $vendor): QueryBuilder
     {
         return $this->createQueryBuilder('vp')
@@ -28,28 +37,51 @@ class VendorProductRepository extends ServiceEntityRepository
             ->orderBy('vp.id', 'ASC');
     }
 
-    //    /**
-    //     * @return VendorProduct[] Returns an array of VendorProduct objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('v')
-    //            ->andWhere('v.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('v.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Summary of create
+     * @param \App\Entity\Vendor $vendor
+     * @param \App\Entity\Product $product
+     * @param string $price
+     * @param int $quantity
+     * 
+     * @return \App\Entity\VendorProduct
+     */
+    public function create(
+        Vendor $vendor,
+        Product $product,
+        string $price,
+        int $quantity = null
+    ): VendorProduct {
+        $vendorProduct = new VendorProduct();
+        $vendorProduct->setVendor($vendor);
+        $vendorProduct->setProduct($product);
+        $vendorProduct->setPrice($price);
 
-    //    public function findOneBySomeField($value): ?VendorProduct
-    //    {
-    //        return $this->createQueryBuilder('v')
-    //            ->andWhere('v.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        if ($quantity) {
+            $vendorProduct->setQuantity($quantity);
+        }
+
+        $this->getEntityManager()->persist($vendorProduct);
+
+        return $vendorProduct;
+    }
+
+    public function patch(PatchVendorProduct $patchVendorProduct, VendorProduct $vendorProduct): void
+    {
+        $vendorProduct->setPrice($patchVendorProduct->price);
+        $vendorProduct->setQuantity($patchVendorProduct->quantity);
+
+        $this->getEntityManager()->persist($vendorProduct);
+    }
+
+    /**
+     * Summary of remove
+     * @param \App\Entity\VendorProduct $vendorProduct
+     * 
+     * @return void
+     */
+    public function remove(VendorProduct $vendorProduct): void
+    {
+        $this->getEntityManager()->remove($vendorProduct);
+    }
 }

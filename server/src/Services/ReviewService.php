@@ -4,26 +4,35 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Symfony\Bundle\SecurityBundle\Security;
-use App\Entity\User;
 use App\Entity\Review;
 use App\Entity\Product;
 use App\Services\Exception\Request\NotFoundException;
 use Knp\Component\Pager\PaginatorInterface;
-use App\Repository\ReviewRepository;
 use App\Services\Exception\Request\ForbiddenException;
 use App\DTO\Review\CreateReviewDto;
 use App\DTO\Review\PatchReviewDto;
 use App\DTO\PaginationQueryDto;
 use Doctrine\ORM\EntityManagerInterface;
+use App\Contract\Repository\ReviewRepositoryInterface;
+use App\Contract\Repository\UserRepositoryInterface;
+use App\Contract\Repository\ProductRepositoryInterface;
 
 class ReviewService
 {
+    /**
+     * Summary of __construct
+     * @param \Doctrine\ORM\EntityManagerInterface $entityManager
+     * @param \Knp\Component\Pager\PaginatorInterface $paginator
+     * @param \App\Repository\ReviewRepository $reviewRepository
+     * @param \App\Repository\UserRepository $userRepository
+     * @param \App\Repository\ProductRepository $productRepository
+     */
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private Security $security,
         private PaginatorInterface $paginator,
-        private ReviewRepository $reviewRepository
+        private ReviewRepositoryInterface $reviewRepository,
+        private UserRepositoryInterface $userRepository,
+        private ProductRepositoryInterface $productRepository,
     ) {}
 
     /**
@@ -37,24 +46,14 @@ class ReviewService
      */
     public function add(CreateReviewDto $createReviewDto): int
     {
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->userRepository->getCurrentUser();
         $product = $this->entityManager->getRepository(Product::class)->find($createReviewDto->productId);
 
         if (!isset($product)) {
             throw new NotFoundException('Product not found');
         }
 
-        $review = new Review();
-        $review->setClient($user);
-        $review->setProduct($product);
-        $review->setRating($createReviewDto->rating);
-
-        if (isset($createReviewDto->comment)) {
-            $review->setComment($createReviewDto->comment);
-        }
-
-        $this->entityManager->persist($review);
+        $review = $this->reviewRepository->create($createReviewDto, $user, $product);
         $this->entityManager->flush();
 
         return $review->getId();
@@ -71,7 +70,7 @@ class ReviewService
      */
     public function getByProductId(int $productId, PaginationQueryDto $paginationQueryDto): array
     {
-        $product = $this->entityManager->getRepository(Product::class)->find($productId);
+        $product = $this->productRepository->find($productId);
 
         if (!isset($product)) {
             throw new NotFoundException('Product not found');
@@ -114,26 +113,19 @@ class ReviewService
      */
     public function patchReview(int $id, PatchReviewDto $patchReviewDto): void
     {
-        $review = $this->entityManager->getRepository(Review::class)->find($id);
+        $review = $this->reviewRepository->find($id);
 
         if (!isset($review)) {
             throw new NotFoundException("Such review does not exist");
         }
 
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->userRepository->getCurrentUser();
 
         if ($user->getId() !== $review->getClient()->getId()) {
             throw new ForbiddenException('You are not allowd to patch this comment');
         }
 
-        $review->setRating($patchReviewDto->rating);
-
-        if (isset($patchReviewDto->comment)) {
-            $review->setComment($patchReviewDto->comment);
-        }
-
-        $this->entityManager->persist($review);
+        $this->reviewRepository->patch($patchReviewDto, $review);
         $this->entityManager->flush();
     }
 
@@ -153,7 +145,7 @@ class ReviewService
             throw new NotFoundException('Review not found');
         }
 
-        $this->entityManager->remove($review);
+        $this->reviewRepository->remove($review);
         $this->entityManager->flush();
     }
 }

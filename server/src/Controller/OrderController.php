@@ -28,7 +28,7 @@ class OrderController extends AbstractController
     public function createOrderDto(#[MapRequestPayload] CreateOrderDto $createOrderDto): JsonResponse
     {
         try {
-            $this->orderService->createOrderDto($createOrderDto);
+            $this->orderService->createOrder($createOrderDto);
         } catch (RequestException $e) {
             return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
         }

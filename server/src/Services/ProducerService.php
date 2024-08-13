@@ -5,14 +5,20 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Services\Exception\Request\NotFoundException;
-use App\Entity\Producer;
 use App\DTO\Producer\CreateProducerDto;
 use Doctrine\ORM\EntityManagerInterface;
+use App\Contract\Repository\ProducerRepositoryInterface;
 
 class ProducerService
 {
+    /**
+     * Summary of __construct
+     * @param \Doctrine\ORM\EntityManagerInterface $entityManager
+     * @param \App\Repository\ProducerRepository $producerRepository
+     */
     public function __construct(
         private EntityManagerInterface $entityManager,
+        private ProducerRepositoryInterface $producerRepository,
     ) {}
 
     /**
@@ -25,12 +31,7 @@ class ProducerService
      */
     public function add(CreateProducerDto $createProducerDto): int
     {
-        $producer = new Producer();
-        $producer->setTitle($createProducerDto->title);
-        $producer->setCountry($createProducerDto->country);
-        $producer->setAddress($createProducerDto->address);
-
-        $this->entityManager->persist($producer);
+        $producer = $this->producerRepository->create($createProducerDto);
         $this->entityManager->flush();
 
         return $producer->getId();
@@ -42,7 +43,7 @@ class ProducerService
      */
     public function getForVendor(): array
     {
-        return $this->entityManager->getRepository(Producer::class)->findAll();
+        return $this->producerRepository->findAll();
     }
 
     /**
@@ -55,13 +56,13 @@ class ProducerService
      */
     public function delete(int $id)
     {
-        $producer = $this->entityManager->getRepository(Producer::class)->find($id);
+        $producer = $this->producerRepository->find($id);
 
         if (!isset($producer)) {
             throw new NotFoundException('Producer not found');
         }
 
-        $this->entityManager->remove($producer);
+        $this->producerRepository->remove($producer);
         $this->entityManager->flush();
     }
 }

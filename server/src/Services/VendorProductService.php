@@ -4,28 +4,38 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Symfony\Bundle\SecurityBundle\Security;
 use Knp\Component\Pager\PaginatorInterface;
-use App\Repository\VendorProductRepository;
 use App\Enum\Role;
-use App\Entity\User;
 use App\Entity\VendorProduct;
-use App\Entity\Product;
-use App\Entity\Vendor;
 use App\Services\Exception\Request\BadRequsetException;
 use App\Services\Exception\Request\NotFoundException;
 use App\DTO\VendorProduct\CreateVendorProductDto;
 use App\DTO\VendorProduct\PatchVendorProduct;
 use App\DTO\PaginationQueryDto;
 use Doctrine\ORM\EntityManagerInterface;
+use App\Contract\Repository\VendorProductRepositoryInterface;
+use App\Contract\Repository\UserRepositoryInterface;
+use App\Contract\Repository\VendorRepositoryInterface;
+use App\Contract\Repository\ProductRepositoryInterface;
 
 class VendorProductService
 {
+    /**
+     * Summary of __construct
+     * @param \Doctrine\ORM\EntityManagerInterface $entityManager
+     * @param \Knp\Component\Pager\PaginatorInterface $paginator
+     * @param \App\Repository\VendorProductRepository $vendorProductRepository
+     * @param \App\Repository\UserRepository $userRepository
+     * @param \App\Repository\VendorRepository $vendorRepository
+     * @param \App\Repository\ProductRepository $productRepository
+     */
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private Security $security,
         private PaginatorInterface $paginator,
-        private VendorProductRepository $vendorProductRepository,
+        private VendorProductRepositoryInterface $vendorProductRepository,
+        private UserRepositoryInterface $userRepository,
+        private VendorRepositoryInterface $vendorRepository,
+        private ProductRepositoryInterface $productRepository,
     ) {}
 
     /**
@@ -39,44 +49,35 @@ class VendorProductService
      */
     public function add(CreateVendorProductDto $createVendorProductDto): int
     {
-        $user = $this->security->getUser();
+        $user = $this->userRepository->getCurrentUser();
 
         if (isset($user) && in_array(Role::ROLE_VENDOR->value, $user->getRoles())) {
-            $userPhone = $user->getUserIdentifier();
-            $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
             $vendor = $user->getVendor();
         } else {
             if (!isset($createVendorProductDto->vendorId)) {
                 throw new BadRequsetException();
             }
 
-            $vendorId = $createVendorProductDto->vendorId;
-            $vendor = $this->entityManager->getRepository(Vendor::class)->find($vendorId);
+            $vendor = $this->vendorRepository->find($createVendorProductDto->vendorId);
 
             if (!isset($vendor)) {
                 throw new NotFoundException('Such vendor does not exist');
             }
         }
 
-        $productId = $createVendorProductDto->productId;
-        $product = $this->entityManager->getRepository(Product::class)->find($productId);
+        $product = $this->productRepository->find($createVendorProductDto->productId);
 
         if (!isset($product)) {
             throw new NotFoundException('Such product does not exist');
         }
 
-        $vendorProduct = new VendorProduct();
-        $vendorProduct->setPrice($createVendorProductDto->price);
-        $vendorProduct->setVendor($vendor);
-        $vendorProduct->setProduct($product);
-
-        if (isset($decoded->quantity)) {
-            $vendorProduct->setQuantity($createVendorProductDto->quantity);
-        }
-
-        $this->entityManager->persist($vendorProduct);
+        $vendorProduct = $this->vendorProductRepository->create(
+            $vendor,
+            $product,
+            $createVendorProductDto->price,
+            $createVendorProductDto->quantity
+        );
         $this->entityManager->flush();
-
 
         return $vendorProduct->getId();
     }
@@ -89,9 +90,7 @@ class VendorProductService
      */
     public function get(PaginationQueryDto $paginationQueryDto): array
     {
-        $user = $this->security->getUser();
-
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $user->getUserIdentifier()]);
+        $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
 
         $querryBuilder = $this->vendorProductRepository->createQueryBuilderForPaginationWithVendor($vendor);
@@ -129,11 +128,9 @@ class VendorProductService
      */
     public function patchVendorProdut(int $id, PatchVendorProduct $patchVendorProduct): void
     {
-        $vendorProduct = $this->entityManager->getRepository(VendorProduct::class)->find($id);
-        $vendorProduct->setPrice($patchVendorProduct->price);
-        $vendorProduct->setQuantity($patchVendorProduct->quantity);
+        $vendorProduct = $this->vendorProductRepository->find($id);
+        $this->vendorProductRepository->patch($patchVendorProduct, $vendorProduct);
 
-        $this->entityManager->persist($vendorProduct);
         $this->entityManager->flush();
     }
 
@@ -153,7 +150,7 @@ class VendorProductService
             throw new NotFoundException('Vendor does not sell this product');
         }
 
-        $this->entityManager->remove($vendorProduct);
+        $this->vendorProductRepository->remove($vendorProduct);
         $this->entityManager->flush();
     }
 }

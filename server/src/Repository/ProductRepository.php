@@ -17,24 +17,37 @@ use FOS\ElasticaBundle\Paginator\PaginatorAdapterInterface;
 use Elastica\Query\Term;
 use Elastica\Query\Nested;
 use App\DTO\Product\ProductSearchParamsDto;
-
+use App\DTO\Product\CreateProductDto;
+use App\Entity\Producer;
+use App\Entity\Type;
+use App\Contract\Repository\ProductRepositoryInterface;
 
 /**
  * @extends ServiceEntityRepository<Product>
  */
-class ProductRepository extends ServiceEntityRepository
+class ProductRepository extends ServiceEntityRepository implements ProductRepositoryInterface
 {
     public function __construct(private PaginatedFinderInterface $productFinder, ManagerRegistry $registry)
     {
         parent::__construct($registry, Product::class);
     }
 
+    /**
+     * Summary of createQueryBuilderForPagination
+     * @return \Doctrine\ORM\QueryBuilder
+     */
     public function createQueryBuilderForPagination(): QueryBuilder
     {
         return $this->createQueryBuilder('p')
             ->orderBy('p.id', 'ASC');
     }
 
+    /**
+     * Summary of findAllProductsExcludingVendor
+     * @param \App\Entity\Vendor $vendor
+     * 
+     * @return \Doctrine\ORM\QueryBuilder
+     */
     public function findAllProductsExcludingVendor(Vendor $vendor): QueryBuilder
     {
         return $this->createQueryBuilder('p')
@@ -44,6 +57,13 @@ class ProductRepository extends ServiceEntityRepository
             ->setParameter('vendorId', $vendor->getId());;
     }
 
+    /**
+     * Summary of searchByTitle
+     * @param \App\DTO\Product\ProductSearchParamsDto $productSearchParamsDto
+     * @param int $vendorId
+     * 
+     * @return \FOS\ElasticaBundle\Paginator\PaginatorAdapterInterface
+     */
     public function searchByTitle(
         ProductSearchParamsDto $productSearchParamsDto,
         int $vendorId = null,
@@ -108,28 +128,37 @@ class ProductRepository extends ServiceEntityRepository
         return $results;
     }
 
-    //    /**
-    //     * @return Product[] Returns an array of Product objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('p.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Summary of create
+     * @param \App\DTO\Product\CreateProductDto $createProductDto
+     * @param \App\Entity\Type $type
+     * @param \App\Entity\Producer $producer
+     * @param string $imagePath
+     * 
+     * @return \App\Entity\Product
+     */
+    public function create(
+        CreateProductDto $createProductDto,
+        Type $type,
+        Producer $producer,
+        string $imagePath
+    ): Product {
+        $product = new Product();
+        $product->setTitle($createProductDto->title);
+        $product->setDescription($createProductDto->description);
+        $product->setCompound($createProductDto->compound);
+        $product->setStorageConditions($createProductDto->storageConditions);
+        $product->setWeight($createProductDto->weight);
+        $product->setImage($imagePath);
+        $product->setType($type);
+        $product->setProducer($producer);
+        $this->getEntityManager()->persist($product);
 
-    //    public function findOneBySomeField($value): ?Product
-    //    {
-    //        return $this->createQueryBuilder('p')
-    //            ->andWhere('p.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        return $product;
+    }
+
+    public function remove(Product $product): void
+    {
+        $this->getEntityManager()->remove($product);
+    }
 }

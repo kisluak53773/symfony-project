@@ -4,21 +4,26 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Symfony\Bundle\SecurityBundle\Security;
 use App\Services\Exception\Request\NotFoundException;
-use App\Entity\User;
 use App\Entity\Vendor;
-use DateTimeImmutable;
-use App\Enum\Role;
 use App\DTO\Vendor\CreateVendorDto;
 use App\DTO\Vendor\PatchVendorDto;
 use Doctrine\ORM\EntityManagerInterface;
+use App\Contract\Repository\UserRepositoryInterface;
+use App\Contract\Repository\VendorRepositoryInterface;
 
 class VendorService
 {
+    /**
+     * Summary of __construct
+     * @param \Doctrine\ORM\EntityManagerInterface $entityManager
+     * @param \App\Repository\UserRepository $userRepository
+     * @param \App\Repository\VendorRepository $vendorRepository
+     */
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private Security $security,
+        private UserRepositoryInterface $userRepository,
+        private VendorRepositoryInterface $vendorRepository,
     ) {}
 
     /**
@@ -33,28 +38,13 @@ class VendorService
     public function add(CreateVendorDto $createVendorDto): int
     {
         $userId = $createVendorDto->userId;
-        $user = $this->entityManager->getRepository(User::class)->find($userId);
+        $user = $this->userRepository->find($userId);
 
         if (!isset($user)) {
             throw new NotFoundException('Such user does not exist');
         }
 
-        $registraionDate = DateTimeImmutable::createFromFormat('Y-m-d', $createVendorDto->registrationDate);
-        $registrationCertificateDate = DateTimeImmutable::createFromFormat('Y-m-d', $createVendorDto->registrationCertificateDate);
-
-        $vendor = new Vendor();
-        $vendor->setTitle($createVendorDto->title);
-        $vendor->setAddress($createVendorDto->address);
-        $vendor->setInn($createVendorDto->inn);
-        $vendor->setRegistrationAuthority($createVendorDto->registrationAuthority);
-        $vendor->setRegistrationDate($registraionDate);
-        $vendor->setRegistrationCertificateDate($registrationCertificateDate);
-        $vendor->setUser($user);
-        $this->entityManager->persist($vendor);
-
-        $user->setRoles([Role::ROLE_VENDOR->value]);
-        $this->entityManager->persist($user);
-
+        $vendor = $this->vendorRepository->create($createVendorDto, $user);
         $this->entityManager->flush();
 
         return $vendor->getId();
@@ -68,9 +58,7 @@ class VendorService
      */
     public function getCurrentVendor(): Vendor
     {
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
 
         if (!isset($vendor)) {
@@ -90,16 +78,10 @@ class VendorService
      */
     public function patchCurrentVendor(PatchVendorDto $patchVendorDto): void
     {
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-
+        $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
-        $vendor->setTitle($patchVendorDto->title);
-        $vendor->setAddress($patchVendorDto->address);
-        $vendor->setInn($patchVendorDto->inn);
-        $vendor->setRegistrationAuthority($patchVendorDto->registrationAuthority);
 
-        $this->entityManager->persist($vendor);
+        $this->vendorRepository->patch($patchVendorDto, $vendor);
         $this->entityManager->flush();
     }
 
@@ -113,13 +95,13 @@ class VendorService
      */
     public function delete(int $id): void
     {
-        $vendor = $this->entityManager->getRepository(Vendor::class)->find($id);
+        $vendor = $this->vendorRepository->find($id);
 
         if (!isset($vendor)) {
             throw new NotFoundException('No such vendor exist');
         }
 
-        $this->entityManager->remove($vendor);
+        $this->vendorRepository->remove($vendor);
         $this->entityManager->flush();
     }
 }

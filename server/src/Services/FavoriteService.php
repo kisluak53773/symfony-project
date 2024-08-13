@@ -4,18 +4,25 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Symfony\Bundle\SecurityBundle\Security;
 use App\Entity\Product;
-use App\Entity\User;
 use App\Services\Exception\Request\NotFoundException;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
+use App\Contract\Repository\UserRepositoryInterface;
+use App\Contract\Repository\ProductRepositoryInterface;
 
 class FavoriteService
 {
+    /**
+     * Summary of __construct
+     * @param \Doctrine\ORM\EntityManagerInterface $entityManager
+     * @param \App\Repository\UserRepository $userRepository
+     * @param \App\Repository\ProductRepository $productRepository
+     */
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private Security $security
+        private UserRepositoryInterface $userRepository,
+        private ProductRepositoryInterface $productRepository,
     ) {}
 
     /**
@@ -28,17 +35,13 @@ class FavoriteService
      */
     public function addToFavorite(int $pruductId): void
     {
-        $product = $this->entityManager->getRepository(Product::class)->find($pruductId);
+        $product = $this->productRepository->find($pruductId);
 
         if (!isset($product)) {
             throw new NotFoundException();
         }
 
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-        $user->addFavorite($product);
-
-        $this->entityManager->persist($user);
+        $this->userRepository->addProductToFavorite($product);
         $this->entityManager->flush();
     }
 
@@ -49,12 +52,7 @@ class FavoriteService
      */
     public function getFavoriteProducts(): Collection
     {
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-
-        if (!isset($user)) {
-            throw new NotFoundException();
-        }
+        $user = $this->userRepository->getCurrentUser();
 
         return $user->getFavorite();
     }
@@ -69,17 +67,13 @@ class FavoriteService
      */
     public function deleteFromFavorite(int $pruductId): void
     {
-        $product = $this->entityManager->getRepository(Product::class)->find($pruductId);
+        $product = $this->productRepository->find($pruductId);
 
         if (!isset($product)) {
             throw new NotFoundException();
         }
 
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-        $user->removeFavorite($product);
-
-        $this->entityManager->persist($user);
+        $this->userRepository->removeProductFromFavorite($product);
         $this->entityManager->flush();
     }
 }
