@@ -24,8 +24,14 @@ class ProductSearchParamsDto extends PaginationQueryDto
 
         public readonly string $priceSort = 'asc',
 
+        /**
+         * @var string[]
+         */
         public readonly array $types = [],
 
+        /**
+         * @var string[]
+         */
         public readonly array $producers = [],
     ) {}
 }

@@ -18,6 +18,7 @@ use App\Services\Exception\WrongData\CartAlreadyExistsException;
 use App\Services\Exception\WrongData\NoProductInStockException;
 use App\Services\Exception\NotFound\NoProductInCartException;
 use App\Services\Exception\WrongData\CartIsEmptyException;
+use App\Entity\CartProduct;
 
 class CartService implements CartServiceInterface
 {
@@ -59,7 +60,7 @@ class CartService implements CartServiceInterface
 
     /**
      * Summary of getProductsCart
-     * @return \Doctrine\Common\Collections\Collection
+     * @return Collection<int, CartProduct>
      */
     public function getProductsCart(): Collection
     {

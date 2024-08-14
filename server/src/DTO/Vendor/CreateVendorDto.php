@@ -46,11 +46,11 @@ class CreateVendorDto
         public readonly string $registrationAuthority,
 
         #[Assert\NotBlank(message: 'Registration date should be present')]
-        #[Assert\Date('Wrong format for registration rate ')]
+        #[Assert\Date(message: 'Wrong format for registration rate ')]
         public readonly string $registrationDate,
 
         #[Assert\NotBlank(message: 'Registration date should be present')]
-        #[Assert\Date('Wrong format for registration cetificat date ')]
+        #[Assert\Date(message: 'Wrong format for registration cetificat date ')]
         public readonly string $registrationCertificateDate,
 
         #[Assert\NotBlank(message: 'User id should be present')]

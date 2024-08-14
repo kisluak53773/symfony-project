@@ -11,6 +11,7 @@ use App\Contract\Repository\TypeRepositoryInterface;
 use App\Contract\Service\TypeServiceInterface;
 use App\Services\Exception\NotFound\TypeNotFoundException;
 use App\Contract\FileUploaderInterface;
+use App\Entity\Type;
 
 class TypeService implements TypeServiceInterface
 {
@@ -45,7 +46,7 @@ class TypeService implements TypeServiceInterface
 
     /**
      * Summary of get
-     * @return array
+     * @return Type[]
      */
     public function get(): array
     {

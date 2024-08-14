@@ -90,7 +90,7 @@ class VendorProductService implements VendorProductServiceInterface
      * Summary of get
      * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
-     * @return array
+     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
      */
     public function get(PaginationQueryDto $paginationQueryDto): array
     {

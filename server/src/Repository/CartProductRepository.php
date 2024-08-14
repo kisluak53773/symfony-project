@@ -109,6 +109,7 @@ class CartProductRepository extends ServiceEntityRepository implements CartProdu
     /**
      * Summary of removeAll
      * @param CartProduct[] $cartProducts
+     * 
      * @return void
      */
     public function removeAll(array $cartProducts): void

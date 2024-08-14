@@ -42,8 +42,10 @@ class OrderProductRepository extends ServiceEntityRepository implements OrderPro
     }
 
     /**
-     * Summary of removeAll
-     * @param CartProduct[] $cartProducts
+     * Add many CartProducts to the Order
+     * @param CartProduct[] $cartProducts Array of CartProduct objects
+     * @param Order $order The Order entity
+     * 
      * @return void
      */
     public function addManyProducts(array $cartProducts, Order $order): void

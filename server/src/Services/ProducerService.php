@@ -8,6 +8,7 @@ use App\DTO\Producer\CreateProducerDto;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\ProducerRepositoryInterface;
 use App\Contract\Service\ProducerServiceInterface;
+use App\Entity\Producer;
 use App\Services\Exception\NotFound\ProducerNotFoundException;
 
 class ProducerService implements ProducerServiceInterface
@@ -38,7 +39,7 @@ class ProducerService implements ProducerServiceInterface
 
     /**
      * Summary of getForVendor
-     * @return array
+     * @return Producer[]
      */
     public function getForVendor(): array
     {

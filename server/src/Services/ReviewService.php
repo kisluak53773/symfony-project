@@ -67,7 +67,7 @@ class ReviewService implements ReviewServiceInterface
      * 
      * @throws \App\Services\Exception\NotFound\ProductNotFoundException
      * 
-     * @return array
+     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
      */
     public function getByProductId(int $productId, PaginationQueryDto $paginationQueryDto): array
     {

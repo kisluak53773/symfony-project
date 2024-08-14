@@ -29,5 +29,11 @@ interface CartProductRepositoryInterface
         VendorProduct $vendorProduct,
     ): void;
 
+    /**
+     * Summary of removeAll
+     * @param CartProduct[] $cartProducts
+     * 
+     * @return void
+     */
     public function removeAll(array $cartProducts): void;
 }

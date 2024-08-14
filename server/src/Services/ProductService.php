@@ -86,7 +86,7 @@ class ProductService implements ProductServiceIntrrafce
      * Summary of list
      * @param \Symfony\Component\HttpFoundation\Request $request
      * 
-     * @return array
+     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
      */
     public function list(ProductSearchParamsDto $productSearchParamsDto): array
     {
@@ -100,7 +100,7 @@ class ProductService implements ProductServiceIntrrafce
      * Summary of getProductsVendorDoesNotSell
      * @param \Symfony\Component\HttpFoundation\Request $request
      * 
-     * @return array
+     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
      */
     public function getProductsVendorDoesNotSell(ProductSearchParamsDto $productSearchParamsDto): array
     {

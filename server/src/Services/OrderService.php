@@ -13,6 +13,7 @@ use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\OrderProductRepositoryInteface;
 use App\Contract\Service\OrderServiceInterface;
 use App\Contract\PaginationHandlerInterface;
+use App\Entity\Order;
 use App\Services\Exception\WrongData\CartIsEmptyException;
 use App\Services\Exception\NotFound\OrderNotFoundException;
 use App\Services\Exception\Access\CanNotCancelOrderException;
@@ -62,7 +63,7 @@ class OrderService implements OrderServiceInterface
      * Summary of getUserOrders
      * @param \Symfony\Component\HttpFoundation\Request $request
      * 
-     * @return array
+     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
      */
     public function getUserOrders(PaginationQueryDto $paginationQueryDto): array
     {
@@ -77,7 +78,7 @@ class OrderService implements OrderServiceInterface
      * Summary of getVendorOrders
      * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
-     * @return array
+     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
      */
     public function getVendorOrders(PaginationQueryDto $paginationQueryDto): array
     {
@@ -93,7 +94,7 @@ class OrderService implements OrderServiceInterface
      * Summary of getVendorOrderById
      * @param int $id
      * 
-     * @return array
+     * @return array{orderData: Order, products: array}
      */
     public function getVendorOrderById(int $id): array
     {
@@ -112,7 +113,7 @@ class OrderService implements OrderServiceInterface
      * Summary of getAllOrders
      * @param \Symfony\Component\HttpFoundation\Request $request
      * 
-     * @return array
+     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
      */
     public function getAllOrders(PaginationQueryDto $paginationQueryDto): array
     {
