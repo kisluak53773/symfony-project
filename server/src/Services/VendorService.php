@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Services\Exception\Request\NotFoundException;
 use App\Entity\Vendor;
 use App\DTO\Vendor\CreateVendorDto;
 use App\DTO\Vendor\PatchVendorDto;
@@ -12,6 +11,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\VendorRepositoryInterface;
 use App\Contract\Service\VendorServiceInterface;
+use App\Services\Exception\NotFound\UserNotFoundException;
+use App\Services\Exception\NotFound\VendorNotFoundException;
 
 class VendorService implements VendorServiceInterface
 {
@@ -29,10 +30,9 @@ class VendorService implements VendorServiceInterface
 
     /**
      * Summary of add
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\Vendor\CreateVendorDto $createVendorDto
      * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\UserNotFoundException
      * 
      * @return int
      */
@@ -42,7 +42,7 @@ class VendorService implements VendorServiceInterface
         $user = $this->userRepository->find($userId);
 
         if (!isset($user)) {
-            throw new NotFoundException('Such user does not exist');
+            throw new UserNotFoundException($userId);
         }
 
         $vendor = $this->vendorRepository->create($createVendorDto, $user);
@@ -53,7 +53,7 @@ class VendorService implements VendorServiceInterface
 
     /**
      * Summary of getCurrentVendor
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\VendorNotFoundException
      * 
      * @return \App\Entity\Vendor
      */
@@ -63,7 +63,7 @@ class VendorService implements VendorServiceInterface
         $vendor = $user->getVendor();
 
         if (!isset($vendor)) {
-            throw new NotFoundException();
+            throw new VendorNotFoundException(1);
         }
 
         return $vendor;
@@ -90,7 +90,7 @@ class VendorService implements VendorServiceInterface
      * Summary of delete
      * @param int $id
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\VendorNotFoundException
      * 
      * @return void
      */
@@ -99,7 +99,7 @@ class VendorService implements VendorServiceInterface
         $vendor = $this->vendorRepository->find($id);
 
         if (!isset($vendor)) {
-            throw new NotFoundException('No such vendor exist');
+            throw new VendorNotFoundException($id);
         }
 
         $this->vendorRepository->remove($vendor);

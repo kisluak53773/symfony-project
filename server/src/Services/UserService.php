@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Services;
 
 use Symfony\Component\Security\Core\User\UserInterface;
-use App\Services\Exception\Request\BadRequsetException;
 use App\DTO\User\PatchUserDto;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Service\UserServiceInterface;
+use App\Services\Exception\WrongData\UserAlreadyExistsException;
 
 class UserService implements UserServiceInterface
 {
@@ -24,9 +24,7 @@ class UserService implements UserServiceInterface
     ) {}
 
     /**
-     * Summary of index
-     * @throws \App\Services\Exception\Request\NotFoundException
-     * 
+     * Summary of getCurrentUser
      * @return \Symfony\Component\Security\Core\User\UserInterface
      */
     public function getCurrentUser(): UserInterface
@@ -36,9 +34,9 @@ class UserService implements UserServiceInterface
 
     /**
      * Summary of patchCurrentUser
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\User\PatchUserDto $patchUserDto
      * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @throws \App\Services\Exception\WrongData\UserAlreadyExistsException
      * 
      * @return void
      */
@@ -51,7 +49,7 @@ class UserService implements UserServiceInterface
             $existingUser = $this->userRepository->findOneBy(['phone' => $patchUserDto->phone]);
 
             if (isset($existingUser)) {
-                throw new BadRequsetException('User with such phone already exists');
+                throw new UserAlreadyExistsException($patchUserDto->phone);
             }
         }
 

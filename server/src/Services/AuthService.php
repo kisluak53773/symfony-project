@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Services;
 
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use App\Services\Exception\Request\BadRequsetException;
 use App\DTO\Auth\RegisterDto;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\CartRepositoryInterface;
 use App\Contract\Service\AuthServiceInterface;
+use App\Services\Exception\WrongData\UserAlreadyExistsException;
 
 class AuthService implements AuthServiceInterface
 {
@@ -32,7 +32,7 @@ class AuthService implements AuthServiceInterface
      * Summary of register
      * @param \App\DTO\Auth\RegisterDto $registerDto
      * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @throws \App\Services\Exception\WrongData\UserAlreadyExistsException
      * 
      * @return void
      */
@@ -41,7 +41,7 @@ class AuthService implements AuthServiceInterface
         $userInDb = $this->userRepository->findOneBy(['phone' => $registerDto->phone]);
 
         if (isset($userInDb)) {
-            throw new BadRequsetException('User with such phone already exists');
+            throw new UserAlreadyExistsException($registerDto->phone);
         }
 
         $user = $this->userRepository->registerUser($registerDto);

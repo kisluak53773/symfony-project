@@ -10,13 +10,17 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Enum\Role;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use App\Services\Exception\Request\RequestException;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use App\DTO\Order\CreateOrderDto;
 use App\DTO\Order\PatchOrderDto;
 use App\DTO\PaginationQueryDto;
 use App\Contract\Service\OrderServiceInterface;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use App\Services\Exception\NotFound\NotFoundException;
+use App\Services\Exception\WrongData\WrongDataException;
+use App\Services\Exception\Access\AccessForbiddenException;
 
 #[Route('/api/order', name: 'api_order_')]
 class OrderController extends AbstractController
@@ -25,15 +29,19 @@ class OrderController extends AbstractController
 
     #[Route(name: 'add', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function createOrderDto(#[MapRequestPayload] CreateOrderDto $createOrderDto): JsonResponse
+    public function createOrder(#[MapRequestPayload] CreateOrderDto $createOrderDto): JsonResponse
     {
         try {
             $this->orderService->createOrder($createOrderDto);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json(['message' => 'order created'], 200);
+        return $this->json(['message' => 'order created'], Response::HTTP_CREATED);
     }
 
     #[Route('/current', name: 'get_orders_of_current_user', methods: 'get')]
@@ -43,8 +51,12 @@ class OrderController extends AbstractController
     ): JsonResponse {
         try {
             $response = $this->orderService->getUserOrders($paginationQueryDto);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
         return $this->json(
@@ -59,8 +71,12 @@ class OrderController extends AbstractController
     {
         try {
             $response = $this->orderService->getVendorOrders($paginationQueryDto);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
         return $this->json(
@@ -75,8 +91,12 @@ class OrderController extends AbstractController
     {
         try {
             $response = $this->orderService->getVendorOrderById($id);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
         return $this->json(
@@ -91,8 +111,12 @@ class OrderController extends AbstractController
     {
         try {
             $response = $this->orderService->getAllOrders($paginationQueryDto);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
         return $this->json(
@@ -107,11 +131,15 @@ class OrderController extends AbstractController
     {
         try {
             $this->orderService->patchOrder($id, $patchOrderDto);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json(['message' => 'Succesfully patched'], 200);
+        return $this->json(['message' => 'Succesfully patched'], Response::HTTP_OK);
     }
 
     #[Route('/customer/{id}', name: 'cancel_order', methods: 'patch', requirements: ['id' => '\d+'])]
@@ -120,10 +148,14 @@ class OrderController extends AbstractController
     {
         try {
             $this->orderService->cancelOrder($id);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json(['message' => 'Succesfully patched'], 200);
+        return $this->json(['message' => 'Succesfully patched'], Response::HTTP_OK);
     }
 }

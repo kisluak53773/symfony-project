@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Services\Exception\Request\NotFoundException;
 use App\DTO\Producer\CreateProducerDto;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\ProducerRepositoryInterface;
 use App\Contract\Service\ProducerServiceInterface;
+use App\Services\Exception\NotFound\ProducerNotFoundException;
 
 class ProducerService implements ProducerServiceInterface
 {
@@ -24,9 +24,7 @@ class ProducerService implements ProducerServiceInterface
 
     /**
      * Summary of add
-     * @param \Symfony\Component\HttpFoundation\Request $request
-     * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @param \App\DTO\Producer\CreateProducerDto $createProducerDto
      * 
      * @return int
      */
@@ -51,7 +49,7 @@ class ProducerService implements ProducerServiceInterface
      * Summary of delete
      * @param int $id
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\ProducerNotFoundException
      * 
      * @return void
      */
@@ -60,7 +58,7 @@ class ProducerService implements ProducerServiceInterface
         $producer = $this->producerRepository->find($id);
 
         if (!isset($producer)) {
-            throw new NotFoundException('Producer not found');
+            throw new ProducerNotFoundException($id);
         }
 
         $this->producerRepository->remove($producer);

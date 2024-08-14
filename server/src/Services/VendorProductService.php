@@ -6,8 +6,6 @@ namespace App\Services;
 
 use App\Enum\Role;
 use App\Entity\VendorProduct;
-use App\Services\Exception\Request\BadRequsetException;
-use App\Services\Exception\Request\NotFoundException;
 use App\DTO\VendorProduct\CreateVendorProductDto;
 use App\DTO\VendorProduct\PatchVendorProductDto;
 use App\DTO\PaginationQueryDto;
@@ -18,6 +16,10 @@ use App\Contract\Repository\VendorRepositoryInterface;
 use App\Contract\Repository\ProductRepositoryInterface;
 use App\Contract\Service\VendorProductServiceInterface;
 use App\Contract\PaginationHandlerInterface;
+use App\Services\Exception\NotFound\VendorNotFoundException;
+use App\Services\Exception\WrongData\VendorIdNotProvidedException;
+use App\Services\Exception\NotFound\ProductNotFoundException;
+use App\Services\Exception\NotFound\VendorProductNotFoundException;
 
 class VendorProductService implements VendorProductServiceInterface
 {
@@ -41,10 +43,11 @@ class VendorProductService implements VendorProductServiceInterface
 
     /**
      * Summary of add
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\VendorProduct\CreateVendorProductDto $createVendorProductDto
      * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\WrongData\VendorIdNotProvidedException
+     * @throws \App\Services\Exception\NotFound\VendorNotFoundException
+     * @throws \App\Services\Exception\NotFound\ProductNotFoundException
      * 
      * @return int
      */
@@ -56,20 +59,20 @@ class VendorProductService implements VendorProductServiceInterface
             $vendor = $user->getVendor();
         } else {
             if (!isset($createVendorProductDto->vendorId)) {
-                throw new BadRequsetException();
+                throw new VendorIdNotProvidedException();
             }
 
             $vendor = $this->vendorRepository->find($createVendorProductDto->vendorId);
 
             if (!isset($vendor)) {
-                throw new NotFoundException('Such vendor does not exist');
+                throw new VendorNotFoundException($createVendorProductDto->vendorId);
             }
         }
 
         $product = $this->productRepository->find($createVendorProductDto->productId);
 
         if (!isset($product)) {
-            throw new NotFoundException('Such product does not exist');
+            throw new ProductNotFoundException($createVendorProductDto->productId);
         }
 
         $vendorProduct = $this->vendorProductRepository->create(
@@ -85,7 +88,7 @@ class VendorProductService implements VendorProductServiceInterface
 
     /**
      * Summary of get
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
      * @return array
      */
@@ -119,7 +122,7 @@ class VendorProductService implements VendorProductServiceInterface
      * Summary of delete
      * @param int $id
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\VendorProductNotFoundException
      * 
      * @return void
      */
@@ -128,7 +131,7 @@ class VendorProductService implements VendorProductServiceInterface
         $vendorProduct = $this->entityManager->getRepository(VendorProduct::class)->find($id);
 
         if (!isset($vendorProduct)) {
-            throw new NotFoundException('Vendor does not sell this product');
+            throw new VendorProductNotFoundException($id);
         }
 
         $this->vendorProductRepository->remove($vendorProduct);

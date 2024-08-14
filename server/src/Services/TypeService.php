@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Services\Exception\Request\NotFoundException;
-use App\Services\Exception\Request\ServerErrorException;
-use App\Services\Uploader\TypesImageUploader;
-use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use App\DTO\Type\CreatTypeDto;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\TypeRepositoryInterface;
 use App\Contract\Service\TypeServiceInterface;
+use App\Services\Exception\NotFound\TypeNotFoundException;
+use App\Contract\FileUploaderInterface;
 
 class TypeService implements TypeServiceInterface
 {
@@ -24,28 +22,20 @@ class TypeService implements TypeServiceInterface
      */
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private TypesImageUploader $uploader,
+        private FileUploaderInterface $uploader,
         private TypeRepositoryInterface $typeRepository
     ) {}
 
     /**
      * Summary of add
-     * @param \Symfony\Component\HttpFoundation\Request $request
-     * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
-     * @throws \App\Services\Exception\Request\ServerErrorException
+     * @param \Symfony\Component\HttpFoundation\File\UploadedFile $image
+     * @param \App\DTO\Type\CreatTypeDto $creatTypeDto
      * 
      * @return int
      */
     public function add(UploadedFile $image, CreatTypeDto $creatTypeDto): int
     {
-
-        try {
-            $imagePath = $this->uploader->upload($image);
-        } catch (FileException $e) {
-            throw new ServerErrorException($e->getMessage());
-        }
-
+        $imagePath = $this->uploader->upload($image);
         $type = $this->typeRepository->create($creatTypeDto, $imagePath);
         $this->entityManager->flush();
 
@@ -66,7 +56,7 @@ class TypeService implements TypeServiceInterface
      * Summary of delete
      * @param int $id
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\TypeNotFoundException
      * 
      * @return void
      */
@@ -75,7 +65,7 @@ class TypeService implements TypeServiceInterface
         $type = $this->typeRepository->find($id);
 
         if (!isset($type)) {
-            throw new NotFoundException('Type not found');
+            throw new TypeNotFoundException($id);
         }
 
         $this->typeRepository->remove($type);

@@ -7,7 +7,6 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use App\Services\Exception\Request\RequestException;
 use App\Enum\Role;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
@@ -17,6 +16,11 @@ use App\DTO\Review\CreateReviewDto;
 use App\DTO\Review\PatchReviewDto;
 use App\DTO\PaginationQueryDto;
 use App\Contract\Service\ReviewServiceInterface;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use App\Services\Exception\NotFound\NotFoundException;
+use App\Services\Exception\WrongData\WrongDataException;
+use App\Services\Exception\Access\AccessForbiddenException;
 
 
 #[Route('/api/review', name: 'api_review_')]
@@ -30,11 +34,15 @@ class ReviewController extends AbstractController
     {
         try {
             $id = $this->reviewService->add($createReviewDto);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json(['message' => 'New review craeted', 'id' => $id], 201);
+        return $this->json(['message' => 'New review craeted', 'id' => $id], Response::HTTP_CREATED);
     }
 
     #[Route('/product/{productId}', name: 'get_reviews_by_product', methods: 'get', requirements: ['productId' => '\d+'])]
@@ -45,8 +53,12 @@ class ReviewController extends AbstractController
     ): JsonResponse {
         try {
             $response = $this->reviewService->getByProductId($productId, $paginationQueryDto);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
         return $this->json(
@@ -61,11 +73,15 @@ class ReviewController extends AbstractController
     {
         try {
             $this->reviewService->patchReview($id, $patchReviewDto);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json(['message' => 'Review patched'], 200);
+        return $this->json(['message' => 'Review patched'], Response::HTTP_OK);
     }
 
     #[Route('/{id}', name: 'delete_review', methods: 'delete', requirements: ['id' => '\d+'])]
@@ -74,10 +90,14 @@ class ReviewController extends AbstractController
     {
         try {
             $this->reviewService->deleteReview($id);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json(['message' => 'Review deleted'], 200);
+        return $this->json(['message' => 'Review deleted'], Response::HTTP_OK);
     }
 }

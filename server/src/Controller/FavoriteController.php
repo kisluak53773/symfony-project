@@ -10,8 +10,12 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use App\Enum\Role;
-use App\Services\Exception\Request\RequestException;
 use App\Contract\Service\FavoriteServiceInterface;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use App\Services\Exception\NotFound\NotFoundException;
+use App\Services\Exception\WrongData\WrongDataException;
+use App\Services\Exception\Access\AccessForbiddenException;
 
 #[Route('/api/favorite', name: 'api_favorite_')]
 class FavoriteController extends AbstractController
@@ -24,11 +28,15 @@ class FavoriteController extends AbstractController
     {
         try {
             $this->favoriteService->addToFavorite($productId);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json(['message' => 'Product added to favorite'], 200);
+        return $this->json(['message' => 'Product added to favorite'], Response::HTTP_OK);
     }
 
     #[Route(name: 'add', methods: 'get')]
@@ -37,8 +45,12 @@ class FavoriteController extends AbstractController
     {
         try {
             $favoriteProducts = $this->favoriteService->getFavoriteProducts();
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
         return $this->json(
@@ -53,10 +65,14 @@ class FavoriteController extends AbstractController
     {
         try {
             $this->favoriteService->deleteFromFavorite($productId);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json(['message' => 'Product added to favorite'], 200);
+        return $this->json(['message' => 'Product added to favorite'], Response::HTTP_OK);
     }
 }

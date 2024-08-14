@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Services\Exception\Request\BadRequsetException;
-use App\Services\Exception\Request\NotFoundException;
-use App\Services\Exception\Request\ForbiddenException;
 use App\DTO\Order\CreateOrderDto;
 use App\DTO\Order\PatchOrderDto;
 use App\DTO\PaginationQueryDto;
@@ -16,6 +13,9 @@ use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\OrderProductRepositoryInteface;
 use App\Contract\Service\OrderServiceInterface;
 use App\Contract\PaginationHandlerInterface;
+use App\Services\Exception\WrongData\CartIsEmptyException;
+use App\Services\Exception\NotFound\OrderNotFoundException;
+use App\Services\Exception\Access\CanNotCancelOrderException;
 
 class OrderService implements OrderServiceInterface
 {
@@ -36,11 +36,10 @@ class OrderService implements OrderServiceInterface
     ) {}
 
     /**
-     * Summary of index
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * Summary of createOrder
+     * @param \App\DTO\Order\CreateOrderDto $createOrderDto
      * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\WrongData\CartIsEmptyException
      * 
      * @return void
      */
@@ -48,16 +47,11 @@ class OrderService implements OrderServiceInterface
     {
         $user = $this->userRepository->getCurrentUser();
         $cart = $user->getCart();
-
-        if (!isset($cart)) {
-            throw new NotFoundException('You do not have a cart');
-        }
-
         $order = $this->orderRepository->create($createOrderDto, $user);
         $cartProducts = $cart->getCartProducts()->getValues();
 
         if (count($cartProducts) === 0) {
-            throw new BadRequsetException('Your cart is empty');
+            throw new CartIsEmptyException();
         }
 
         $this->orderProductRepository->addManyProducts($cartProducts, $order);
@@ -81,9 +75,7 @@ class OrderService implements OrderServiceInterface
 
     /**
      * Summary of getVendorOrders
-     * @param \Symfony\Component\HttpFoundation\Request $request
-     * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
      * @return array
      */
@@ -91,11 +83,6 @@ class OrderService implements OrderServiceInterface
     {
         $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
-
-        if (!isset($vendor)) {
-            throw new NotFoundException('Vendor data is not found');
-        }
-
         $querryBuilder = $this->orderRepository->createQuerryBuilderForVendorAndPagination($vendor);
         $response = $this->paginationHandler->handlePagination($querryBuilder, $paginationQueryDto);
 
@@ -106,19 +93,12 @@ class OrderService implements OrderServiceInterface
      * Summary of getVendorOrderById
      * @param int $id
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
-     * 
      * @return array
      */
     public function getVendorOrderById(int $id): array
     {
         $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
-
-        if (!isset($vendor)) {
-            throw new NotFoundException('Vendor data is not found');
-        }
-
         $order = $this->orderRepository->find($id);
         $products = $order->getOrderProducts()->getValues();
 
@@ -145,10 +125,9 @@ class OrderService implements OrderServiceInterface
     /**
      * Summary of patchOrder
      * @param int $id
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\Order\PatchOrderDto $patchOrderDto
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @throws \App\Services\Exception\NotFound\OrderNotFoundException
      * 
      * @return void
      */
@@ -157,7 +136,7 @@ class OrderService implements OrderServiceInterface
         $order = $this->orderRepository->find($id);
 
         if (!isset($order)) {
-            throw new NotFoundException('Such order does not exist');
+            throw new OrderNotFoundException($id);
         }
 
         $this->orderRepository->patch($patchOrderDto, $order);
@@ -168,9 +147,8 @@ class OrderService implements OrderServiceInterface
      * Summary of cancelOrder
      * @param int $id
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
-     * @throws \App\Services\Exception\Request\ForbiddenException
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @throws \App\Services\Exception\NotFound\OrderNotFoundException
+     * @throws \App\Services\Exception\Access\CanNotCancelOrderException
      * 
      * @return void
      */
@@ -179,11 +157,11 @@ class OrderService implements OrderServiceInterface
         $order = $this->orderRepository->find($id);
 
         if (!isset($order)) {
-            throw new NotFoundException('Such order does not exist');
+            throw new OrderNotFoundException($id);
         }
 
         if ($this->userRepository->getCurrentUser()->getUserIdentifier() !== $order->getCustomer()->getUserIdentifier()) {
-            throw new ForbiddenException('You can not cancel this order');
+            throw new CanNotCancelOrderException($id);
         }
 
         $this->orderRepository->cancel($order);

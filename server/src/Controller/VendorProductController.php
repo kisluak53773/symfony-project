@@ -10,13 +10,17 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use App\Enum\Role;
-use App\Services\Exception\Request\RequestException;
 use App\DTO\VendorProduct\CreateVendorProductDto;
 use App\DTO\VendorProduct\PatchVendorProductDto;
 use App\DTO\PaginationQueryDto;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use App\Contract\Service\VendorProductServiceInterface;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use App\Services\Exception\NotFound\NotFoundException;
+use App\Services\Exception\WrongData\WrongDataException;
+use App\Services\Exception\Access\AccessForbiddenException;
 
 #[Route('/api/vendorProduct', name: 'api_vendorProduct_')]
 class VendorProductController extends AbstractController
@@ -29,12 +33,16 @@ class VendorProductController extends AbstractController
     {
         try {
             $id = $this->vendorProductService->add($createVendorProductDto);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
 
-        return $this->json(['message' => 'vendor now sells this product', 'id' => $id], 201);
+        return $this->json(['message' => 'vendor now sells this product', 'id' => $id], Response::HTTP_OK);
     }
 
     #[Route('/vendor', name: 'get_for_vendor', methods: 'get')]
@@ -44,8 +52,12 @@ class VendorProductController extends AbstractController
     ): JsonResponse {
         try {
             $response = $this->vendorProductService->get($paginationQueryDto);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
         return $this->json(
@@ -62,11 +74,15 @@ class VendorProductController extends AbstractController
     ): JsonResponse {
         try {
             $this->vendorProductService->patchVendorProdut($id, $patchVendorProduct);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json(['message' => 'Updated successfully'], 200);
+        return $this->json(['message' => 'Updated successfully'], Response::HTTP_OK);
     }
 
     #[Route('/{id}', name: 'delete', methods: 'delete', requirements: ['id' => '\d+'])]
@@ -75,10 +91,14 @@ class VendorProductController extends AbstractController
     {
         try {
             $this->vendorProductService->delete($id);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json(['message' => 'deleted sucseffully'], 204);
+        return $this->json(['message' => 'deleted sucseffully'], Response::HTTP_OK);
     }
 }

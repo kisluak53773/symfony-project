@@ -6,8 +6,6 @@ namespace App\Services;
 
 use App\Entity\Review;
 use App\Entity\Product;
-use App\Services\Exception\Request\NotFoundException;
-use App\Services\Exception\Request\ForbiddenException;
 use App\DTO\Review\CreateReviewDto;
 use App\DTO\Review\PatchReviewDto;
 use App\DTO\PaginationQueryDto;
@@ -17,6 +15,9 @@ use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\ProductRepositoryInterface;
 use App\Contract\Service\ReviewServiceInterface;
 use App\Contract\PaginationHandlerInterface;
+use App\Services\Exception\NotFound\ProductNotFoundException;
+use App\Services\Exception\NotFound\ReviewNotFoundException;
+use App\Services\Exception\Access\NotAllowedToPatchReviewException;
 
 class ReviewService implements ReviewServiceInterface
 {
@@ -38,10 +39,9 @@ class ReviewService implements ReviewServiceInterface
 
     /**
      * Summary of add
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\Review\CreateReviewDto $createReviewDto
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @throws \App\Services\Exception\NotFound\ProductNotFoundException
      * 
      * @return int
      */
@@ -51,7 +51,7 @@ class ReviewService implements ReviewServiceInterface
         $product = $this->entityManager->getRepository(Product::class)->find($createReviewDto->productId);
 
         if (!isset($product)) {
-            throw new NotFoundException('Product not found');
+            throw new ProductNotFoundException($createReviewDto->productId);
         }
 
         $review = $this->reviewRepository->create($createReviewDto, $user, $product);
@@ -63,9 +63,9 @@ class ReviewService implements ReviewServiceInterface
     /**
      * Summary of getByProductId
      * @param int $productId
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\ProductNotFoundException
      * 
      * @return array
      */
@@ -74,7 +74,7 @@ class ReviewService implements ReviewServiceInterface
         $product = $this->productRepository->find($productId);
 
         if (!isset($product)) {
-            throw new NotFoundException('Product not found');
+            throw new ProductNotFoundException($productId);
         }
 
         $querryBuilder = $this->reviewRepository->findReviewsByProduct($product);
@@ -84,13 +84,12 @@ class ReviewService implements ReviewServiceInterface
     }
 
     /**
-     * Summary of pathcComment
+     * Summary of patchReview
      * @param int $id
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\Review\PatchReviewDto $patchReviewDto
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
-     * @throws \App\Services\Exception\Request\ForbiddenException
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @throws \App\Services\Exception\NotFound\ReviewNotFoundException
+     * @throws \App\Services\Exception\Access\NotAllowedToPatchReviewException
      * 
      * @return void
      */
@@ -99,13 +98,13 @@ class ReviewService implements ReviewServiceInterface
         $review = $this->reviewRepository->find($id);
 
         if (!isset($review)) {
-            throw new NotFoundException("Such review does not exist");
+            throw new ReviewNotFoundException($id);
         }
 
         $user = $this->userRepository->getCurrentUser();
 
         if ($user->getId() !== $review->getClient()->getId()) {
-            throw new ForbiddenException('You are not allowd to patch this comment');
+            throw new NotAllowedToPatchReviewException();
         }
 
         $this->reviewRepository->patch($patchReviewDto, $review);
@@ -116,7 +115,7 @@ class ReviewService implements ReviewServiceInterface
      * Summary of deleteReview
      * @param int $id
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\ReviewNotFoundException
      * 
      * @return void
      */
@@ -125,7 +124,7 @@ class ReviewService implements ReviewServiceInterface
         $review = $this->entityManager->getRepository(Review::class)->find($id);
 
         if (!isset($review)) {
-            throw new NotFoundException('Review not found');
+            throw new ReviewNotFoundException($id);
         }
 
         $this->reviewRepository->remove($review);

@@ -26,6 +26,10 @@ services:
 
   Doctrine\ORM\EntityManagerInterface $entityManager: "@doctrine.orm.entity_manager"
 
+  App\EventListener\ExceptionListener:
+    tags:
+      - { name: kernel.event_listener, event: kernel.exception }
+
   Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface:
     alias: Symfony\Bundle\SecurityBundle\Security
 
@@ -36,6 +40,14 @@ services:
   App\Services\Uploader\TypesImageUploader:
     arguments:
       $targetDirectory: "%types_directory%"
+
+  App\Services\ProductService:
+    arguments:
+      $uploader: '@App\Services\Uploader\ProductImageUploader'
+
+  App\Services\TypeService:
+    arguments:
+      $uploader: '@App\Services\Uploader\TypesImageUploader'
 
   App\Repository\ProductRepository:
     arguments:

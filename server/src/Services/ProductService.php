@@ -4,12 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Services\Uploader\ProductImageUploader;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use App\Enum\Role;
-use App\Services\Exception\Request\BadRequsetException;
-use App\Services\Exception\Request\ServerErrorException;
 use App\DTO\Product\CreateProductDto;
 use App\DTO\Product\ProductSearchParamsDto;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -21,6 +16,10 @@ use App\Contract\Repository\TypeRepositoryInterface;
 use App\Contract\Repository\VendorProductRepositoryInterface;
 use App\Contract\Service\ProductServiceIntrrafce;
 use App\Contract\PaginationHandlerInterface;
+use App\Services\Exception\NotFound\TypeNotFoundException;
+use App\Services\Exception\NotFound\ProducerNotFoundException;
+use App\Services\Exception\NotFound\ProductNotFoundException;
+use App\Contract\FileUploaderInterface;
 
 class ProductService implements ProductServiceIntrrafce
 {
@@ -37,7 +36,7 @@ class ProductService implements ProductServiceIntrrafce
      */
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private ProductImageUploader $uploader,
+        private FileUploaderInterface $uploader,
         private PaginationHandlerInterface $paginationHandler,
         private ProductRepositoryInterface $productRepository,
         private ProducerRepositoryInterface $producerRepository,
@@ -48,10 +47,11 @@ class ProductService implements ProductServiceIntrrafce
 
     /**
      * Summary of addWithVendor
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \Symfony\Component\HttpFoundation\File\UploadedFile $image
+     * @param \App\DTO\Product\CreateProductDto $createProductDto
      * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
-     * @throws \App\Services\Exception\Request\ServerErrorException
+     * @throws \App\Services\Exception\NotFound\ProducerNotFoundException
+     * @throws \App\Services\Exception\NotFound\TypeNotFoundException
      * 
      * @return int
      */
@@ -61,21 +61,16 @@ class ProductService implements ProductServiceIntrrafce
         $producer = $this->producerRepository->find($createProductDto->producerId);
 
         if (!isset($producer)) {
-            throw new BadRequsetException('Such producer does not exist');
+            throw new ProducerNotFoundException($createProductDto->producerId);
         }
 
         $type = $this->typeRepository->find($createProductDto->typeId);
 
         if (!isset($type)) {
-            throw new BadRequsetException('Such type does not exist');
+            throw new TypeNotFoundException($createProductDto->typeId);
         }
 
-        try {
-            $imagePath = $this->uploader->upload($image);
-        } catch (FileException $e) {
-            throw new ServerErrorException($e->getMessage());
-        }
-
+        $imagePath = $this->uploader->upload($image);
         $product = $this->productRepository->create($createProductDto, $type, $producer, $imagePath);
 
         if (isset($user) && in_array(Role::ROLE_VENDOR->value, $user->getRoles()) && isset($createProductDto->price)) {
@@ -122,7 +117,7 @@ class ProductService implements ProductServiceIntrrafce
      * Summary of delete
      * @param int $id
      * 
-     * @throws \Symfony\Component\HttpKernel\Exception\NotFoundHttpException
+     * @throws \App\Services\Exception\NotFound\ProductNotFoundException
      * 
      * @return void
      */
@@ -131,7 +126,7 @@ class ProductService implements ProductServiceIntrrafce
         $product = $this->productRepository->find($id);
 
         if (!isset($product)) {
-            throw new NotFoundHttpException('No such product exist');
+            throw new ProductNotFoundException($id);
         }
 
         $this->producerRepository->remove($product);

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Exception\NotFound;
 
-class UserNotFoundException extends NotFoundException
+class VendorNotFoundException extends NotFoundException
 {
     public function __construct(int $id)
     {
-        parent::__construct("User with id $id not found");
+        parent::__construct("Vendor with id $id not found");
     }
 }

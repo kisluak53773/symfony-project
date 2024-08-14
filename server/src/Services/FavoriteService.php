@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Entity\Product;
-use App\Services\Exception\Request\NotFoundException;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\ProductRepositoryInterface;
 use App\Contract\Service\FavoriteServiceInterface;
+use App\Services\Exception\NotFound\ProductNotFoundException;
 
 class FavoriteService implements FavoriteServiceInterface
 {
@@ -30,7 +30,7 @@ class FavoriteService implements FavoriteServiceInterface
      * Summary of addToFavorite
      * @param int $pruductId
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\ProductNotFoundException
      * 
      * @return void
      */
@@ -39,7 +39,7 @@ class FavoriteService implements FavoriteServiceInterface
         $product = $this->productRepository->find($pruductId);
 
         if (!isset($product)) {
-            throw new NotFoundException();
+            throw new ProductNotFoundException($pruductId);
         }
 
         $this->userRepository->addProductToFavorite($product);
@@ -47,8 +47,6 @@ class FavoriteService implements FavoriteServiceInterface
     }
 
     /**
-     * @throws \App\Services\Exception\Request\NotFoundException
-     * 
      * @return Collection<int, Product>
      */
     public function getFavoriteProducts(): Collection
@@ -62,7 +60,7 @@ class FavoriteService implements FavoriteServiceInterface
      * Summary of deleteFromFavorite
      * @param int $pruductId
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\ProductNotFoundException
      * 
      * @return void
      */
@@ -71,7 +69,7 @@ class FavoriteService implements FavoriteServiceInterface
         $product = $this->productRepository->find($pruductId);
 
         if (!isset($product)) {
-            throw new NotFoundException();
+            throw new ProductNotFoundException($pruductId);
         }
 
         $this->userRepository->removeProductFromFavorite($product);
