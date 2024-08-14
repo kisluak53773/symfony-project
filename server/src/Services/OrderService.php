@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Knp\Component\Pager\PaginatorInterface;
 use App\Services\Exception\Request\BadRequsetException;
 use App\Services\Exception\Request\NotFoundException;
 use App\Services\Exception\Request\ForbiddenException;
@@ -16,20 +15,21 @@ use App\Contract\Repository\OrderRepositoryInterface;
 use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\OrderProductRepositoryInteface;
 use App\Contract\Service\OrderServiceInterface;
+use App\Contract\PaginationHandlerInterface;
 
 class OrderService implements OrderServiceInterface
 {
     /**
      * Summary of __construct
      * @param \Doctrine\ORM\EntityManagerInterface $entityManager
-     * @param \Knp\Component\Pager\PaginatorInterface $paginator
+     * @param \App\Services\PaginationHandler $paginationHandler
      * @param \App\Repository\OrderRepository $orderRepository
      * @param \App\Repository\UserRepository $userRepository
      * @param \App\Repository\OrderProductRepository $orderProductRepository
      */
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private PaginatorInterface $paginator,
+        private PaginationHandlerInterface $paginationHandler,
         private OrderRepositoryInterface $orderRepository,
         private UserRepositoryInterface $userRepository,
         private OrderProductRepositoryInteface $orderProductRepository,
@@ -74,25 +74,7 @@ class OrderService implements OrderServiceInterface
     {
         $user = $this->userRepository->getCurrentUser();
         $querryBuilder = $this->orderRepository->getAllOrdersBelonignToUser($user);
-
-        $pagination = $this->paginator->paginate(
-            $querryBuilder,
-            $paginationQueryDto->page,
-            $paginationQueryDto->limit,
-        );
-
-        $orders = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $orders,
-        ];
+        $response = $this->paginationHandler->handlePagination($querryBuilder, $paginationQueryDto);
 
         return $response;
     }
@@ -115,25 +97,7 @@ class OrderService implements OrderServiceInterface
         }
 
         $querryBuilder = $this->orderRepository->createQuerryBuilderForVendorAndPagination($vendor);
-
-        $pagination = $this->paginator->paginate(
-            $querryBuilder,
-            $paginationQueryDto->page,
-            $paginationQueryDto->limit,
-        );
-
-        $orders = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $orders,
-        ];
+        $response = $this->paginationHandler->handlePagination($querryBuilder, $paginationQueryDto);
 
         return $response;
     }
@@ -173,25 +137,7 @@ class OrderService implements OrderServiceInterface
     public function getAllOrders(PaginationQueryDto $paginationQueryDto): array
     {
         $querryBuilder = $this->orderRepository->createQuerryBuilderForPagination();
-
-        $pagination = $this->paginator->paginate(
-            $querryBuilder,
-            $paginationQueryDto->page,
-            $paginationQueryDto->limit,
-        );
-
-        $orders = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $orders,
-        ];
+        $response = $this->paginationHandler->handlePagination($querryBuilder, $paginationQueryDto);
 
         return $response;
     }

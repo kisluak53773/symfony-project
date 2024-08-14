@@ -6,7 +6,6 @@ namespace App\Services;
 
 use App\Services\Uploader\ProductImageUploader;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use App\Enum\Role;
 use App\Services\Exception\Request\BadRequsetException;
@@ -21,6 +20,7 @@ use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\TypeRepositoryInterface;
 use App\Contract\Repository\VendorProductRepositoryInterface;
 use App\Contract\Service\ProductServiceIntrrafce;
+use App\Contract\PaginationHandlerInterface;
 
 class ProductService implements ProductServiceIntrrafce
 {
@@ -28,7 +28,7 @@ class ProductService implements ProductServiceIntrrafce
      * Summary of __construct
      * @param \Doctrine\ORM\EntityManagerInterface $entityManager
      * @param \App\Services\Uploader\ProductImageUploader $uploader
-     * @param \Knp\Component\Pager\PaginatorInterface $paginator
+     * @param \App\Services\PaginationHandler $paginationHandler
      * @param \App\Repository\ProductRepository $productRepository
      * @param \App\Repository\ProducerRepository $producerRepository
      * @param \App\Repository\UserRepository $userRepository
@@ -38,7 +38,7 @@ class ProductService implements ProductServiceIntrrafce
     public function __construct(
         private EntityManagerInterface $entityManager,
         private ProductImageUploader $uploader,
-        private PaginatorInterface $paginator,
+        private PaginationHandlerInterface $paginationHandler,
         private ProductRepositoryInterface $productRepository,
         private ProducerRepositoryInterface $producerRepository,
         private UserRepositoryInterface $userRepository,
@@ -96,25 +96,7 @@ class ProductService implements ProductServiceIntrrafce
     public function list(ProductSearchParamsDto $productSearchParamsDto): array
     {
         $querryBuilder = $this->productRepository->searchByTitle($productSearchParamsDto);
-
-        $pagination = $this->paginator->paginate(
-            $querryBuilder,
-            $productSearchParamsDto->page,
-            $productSearchParamsDto->limit
-        );
-
-        $products = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $products,
-        ];
+        $response = $this->paginationHandler->handlePagination($querryBuilder, $productSearchParamsDto);
 
         return $response;
     }
@@ -129,26 +111,9 @@ class ProductService implements ProductServiceIntrrafce
     {
         $user = $this->userRepository->getCurrentUser();
         $vendorId = $user->getVendor()->getId();
+
         $querryBuilder = $this->productRepository->searchByTitle($productSearchParamsDto, $vendorId);
-
-        $pagination = $this->paginator->paginate(
-            $querryBuilder,
-            $productSearchParamsDto->page,
-            $productSearchParamsDto->limit
-        );
-
-        $products = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $products,
-        ];
+        $response = $this->paginationHandler->handlePagination($querryBuilder, $productSearchParamsDto);
 
         return $response;
     }

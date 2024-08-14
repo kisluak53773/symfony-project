@@ -7,7 +7,6 @@ namespace App\Services;
 use App\Entity\Review;
 use App\Entity\Product;
 use App\Services\Exception\Request\NotFoundException;
-use Knp\Component\Pager\PaginatorInterface;
 use App\Services\Exception\Request\ForbiddenException;
 use App\DTO\Review\CreateReviewDto;
 use App\DTO\Review\PatchReviewDto;
@@ -17,20 +16,21 @@ use App\Contract\Repository\ReviewRepositoryInterface;
 use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\ProductRepositoryInterface;
 use App\Contract\Service\ReviewServiceInterface;
+use App\Contract\PaginationHandlerInterface;
 
 class ReviewService implements ReviewServiceInterface
 {
     /**
      * Summary of __construct
      * @param \Doctrine\ORM\EntityManagerInterface $entityManager
-     * @param \Knp\Component\Pager\PaginatorInterface $paginator
+     * @param \App\Services\PaginationHandler $paginationHandler
      * @param \App\Repository\ReviewRepository $reviewRepository
      * @param \App\Repository\UserRepository $userRepository
      * @param \App\Repository\ProductRepository $productRepository
      */
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private PaginatorInterface $paginator,
+        private PaginationHandlerInterface $paginationHandler,
         private ReviewRepositoryInterface $reviewRepository,
         private UserRepositoryInterface $userRepository,
         private ProductRepositoryInterface $productRepository,
@@ -78,25 +78,7 @@ class ReviewService implements ReviewServiceInterface
         }
 
         $querryBuilder = $this->reviewRepository->findReviewsByProduct($product);
-
-        $pagination = $this->paginator->paginate(
-            $querryBuilder,
-            $paginationQueryDto->page,
-            $paginationQueryDto->limit
-        );
-
-        $products = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $products,
-        ];
+        $response = $this->paginationHandler->handlePagination($querryBuilder, $paginationQueryDto);
 
         return $response;
     }

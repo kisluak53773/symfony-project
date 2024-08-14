@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Knp\Component\Pager\PaginatorInterface;
 use App\Enum\Role;
 use App\Entity\VendorProduct;
 use App\Services\Exception\Request\BadRequsetException;
@@ -18,13 +17,14 @@ use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\VendorRepositoryInterface;
 use App\Contract\Repository\ProductRepositoryInterface;
 use App\Contract\Service\VendorProductServiceInterface;
+use App\Contract\PaginationHandlerInterface;
 
 class VendorProductService implements VendorProductServiceInterface
 {
     /**
      * Summary of __construct
      * @param \Doctrine\ORM\EntityManagerInterface $entityManager
-     * @param \Knp\Component\Pager\PaginatorInterface $paginator
+     * @param \App\Services\PaginationHandler $paginationHandler
      * @param \App\Repository\VendorProductRepository $vendorProductRepository
      * @param \App\Repository\UserRepository $userRepository
      * @param \App\Repository\VendorRepository $vendorRepository
@@ -32,7 +32,7 @@ class VendorProductService implements VendorProductServiceInterface
      */
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private PaginatorInterface $paginator,
+        private PaginationHandlerInterface $paginationHandler,
         private VendorProductRepositoryInterface $vendorProductRepository,
         private UserRepositoryInterface $userRepository,
         private VendorRepositoryInterface $vendorRepository,
@@ -95,25 +95,7 @@ class VendorProductService implements VendorProductServiceInterface
         $vendor = $user->getVendor();
 
         $querryBuilder = $this->vendorProductRepository->createQueryBuilderForPaginationWithVendor($vendor);
-
-        $pagination = $this->paginator->paginate(
-            $querryBuilder,
-            $paginationQueryDto->page,
-            $paginationQueryDto->limit
-        );
-
-        $vendorProducts = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $vendorProducts,
-        ];
+        $response = $this->paginationHandler->handlePagination($querryBuilder, $paginationQueryDto);
 
         return $response;
     }

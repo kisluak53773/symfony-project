@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace App\DTO\Product;
 
 use Symfony\Component\Validator\Constraints as Assert;
+use App\DTO\PaginationQueryDto;
 
-class ProductSearchParamsDto
+class ProductSearchParamsDto extends PaginationQueryDto
 {
     public function __construct(
         #[Assert\Positive("Page can not be a negative number")]
@@ -26,5 +27,7 @@ class ProductSearchParamsDto
         public readonly array $types,
 
         public readonly array $producers,
-    ) {}
+    ) {
+        parent::__construct($limit, $page);
+    }
 }
