@@ -11,8 +11,9 @@ use App\DTO\Vendor\PatchVendorDto;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\VendorRepositoryInterface;
+use App\Contract\Service\VendorServiceInterface;
 
-class VendorService
+class VendorService implements VendorServiceInterface
 {
     /**
      * Summary of __construct

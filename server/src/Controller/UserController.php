@@ -10,15 +10,15 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use App\Services\UserService;
 use App\Services\Exception\Request\RequestException;
 use App\DTO\User\PatchUserDto;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use App\Contract\Service\UserServiceInterface;
 
 #[Route('/api/user', name: 'api_user_')]
 class UserController extends AbstractController
 {
-    public function __construct(private UserService $userService) {}
+    public function __construct(private UserServiceInterface $userService) {}
 
     #[Route('/current', name: 'get_current', methods: 'get')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]

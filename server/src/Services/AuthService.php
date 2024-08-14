@@ -10,8 +10,9 @@ use App\DTO\Auth\RegisterDto;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\CartRepositoryInterface;
+use App\Contract\Service\AuthServiceInterface;
 
-class AuthService
+class AuthService implements AuthServiceInterface
 {
     /**
      * Summary of __construct

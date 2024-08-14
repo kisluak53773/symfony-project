@@ -9,16 +9,15 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Enum\Role;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use App\Services\AuthService;
 use App\Services\Exception\Request\RequestException;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use App\DTO\Auth\RegisterDto;
-use App\DTO\Auth\RegisterVendorDto;
+use App\Contract\Service\AuthServiceInterface;
 
 #[Route('/api/auth', name: 'api_auth_')]
 class AuthController extends AbstractController
 {
-    public function __construct(private AuthService $authService) {}
+    public function __construct(private AuthServiceInterface $authService) {}
 
     #[Route('/register', name: 'register', methods: 'post')]
     public function register(#[MapRequestPayload] RegisterDto $registerDto): JsonResponse

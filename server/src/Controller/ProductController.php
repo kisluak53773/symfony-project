@@ -10,7 +10,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use App\Enum\Role;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use App\Services\ProductService;
 use App\Services\Exception\Request\RequestException;
 use App\DTO\Product\CreateProductDto;
 use App\DTO\Product\ProductSearchParamsDto;
@@ -19,11 +18,12 @@ use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use Symfony\Component\HttpKernel\Attribute\MapUploadedFile;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Validator\Constraints as Assert;
+use App\Contract\Service\ProductServiceIntrrafce;
 
 #[Route('/api/product', name: 'api_product_')]
 class ProductController extends AbstractController
 {
-    public function __construct(private ProductService $productService) {}
+    public function __construct(private ProductServiceIntrrafce $productService) {}
 
     #[Route('/create', name: 'add', methods: 'post')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]

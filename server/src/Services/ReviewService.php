@@ -16,8 +16,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\ReviewRepositoryInterface;
 use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\ProductRepositoryInterface;
+use App\Contract\Service\ReviewServiceInterface;
 
-class ReviewService
+class ReviewService implements ReviewServiceInterface
 {
     /**
      * Summary of __construct

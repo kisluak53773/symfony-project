@@ -10,7 +10,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Vendor;
 use Doctrine\ORM\QueryBuilder;
 use App\Entity\Product;
-use App\DTO\VendorProduct\PatchVendorProduct;
+use App\DTO\VendorProduct\PatchVendorProductDto;
 use App\Contract\Repository\VendorProductRepositoryInterface;
 
 /**
@@ -66,10 +66,10 @@ class VendorProductRepository extends ServiceEntityRepository implements VendorP
         return $vendorProduct;
     }
 
-    public function patch(PatchVendorProduct $patchVendorProduct, VendorProduct $vendorProduct): void
+    public function patch(PatchVendorProductDto $patchVendorProductDto, VendorProduct $vendorProduct): void
     {
-        $vendorProduct->setPrice($patchVendorProduct->price);
-        $vendorProduct->setQuantity($patchVendorProduct->quantity);
+        $vendorProduct->setPrice($patchVendorProductDto->price);
+        $vendorProduct->setQuantity($patchVendorProductDto->quantity);
 
         $this->getEntityManager()->persist($vendorProduct);
     }

@@ -10,18 +10,18 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use App\Enum\Role;
-use App\Services\VendorProductService;
 use App\Services\Exception\Request\RequestException;
 use App\DTO\VendorProduct\CreateVendorProductDto;
-use App\DTO\VendorProduct\PatchVendorProduct;
+use App\DTO\VendorProduct\PatchVendorProductDto;
 use App\DTO\PaginationQueryDto;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
+use App\Contract\Service\VendorProductServiceInterface;
 
 #[Route('/api/vendorProduct', name: 'api_vendorProduct_')]
 class VendorProductController extends AbstractController
 {
-    public function __construct(private VendorProductService $vendorProductService) {}
+    public function __construct(private VendorProductServiceInterface $vendorProductService) {}
 
     #[Route(name: 'add', methods: 'post')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
@@ -57,7 +57,7 @@ class VendorProductController extends AbstractController
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
     public function patchVendorProdut(
         int $id,
-        #[MapRequestPayload] PatchVendorProduct $patchVendorProduct
+        #[MapRequestPayload] PatchVendorProductDto $patchVendorProduct
     ): JsonResponse {
         try {
             $this->vendorProductService->patchVendorProdut($id, $patchVendorProduct);

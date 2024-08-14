@@ -14,18 +14,27 @@ use App\DTO\Auth\RegisterDto;
 use App\Entity\Product;
 use App\Enum\Role;
 use App\Services\Exception\Request\NotFoundException;
-use Symfony\Bundle\SecurityBundle\Security;
 use App\DTO\User\PatchUserDto;
 use App\Contract\Repository\UserRepositoryInterface;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 
 /**
  * @extends ServiceEntityRepository<User>
  */
 class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface, UserRepositoryInterface
 {
-    private Security $security;
+    /**
+     * Summary of security
+     * @var \Symfony\Bundle\SecurityBundle\Security
+     */
+    private AuthorizationCheckerInterface $security;
 
-    public function __construct(ManagerRegistry $registry, Security $security)
+    /**
+     * Summary of __construct
+     * @param \Doctrine\Persistence\ManagerRegistry $registry
+     * @param \Symfony\Bundle\SecurityBundle\Security $security
+     */
+    public function __construct(ManagerRegistry $registry, AuthorizationCheckerInterface $security)
     {
         parent::__construct($registry, User::class);
 

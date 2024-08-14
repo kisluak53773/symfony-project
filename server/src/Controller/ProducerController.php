@@ -10,15 +10,15 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Enum\Role;
-use App\Services\ProducerService;
 use App\Services\Exception\Request\RequestException;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use App\DTO\Producer\CreateProducerDto;
+use App\Contract\Service\ProducerServiceInterface;
 
 #[Route('/api/producer', name: 'api_producer_')]
 class ProducerController extends AbstractController
 {
-    public function __construct(private ProducerService $producerService) {}
+    public function __construct(private ProducerServiceInterface $producerService) {}
 
     #[Route(name: 'add', methods: 'post')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]

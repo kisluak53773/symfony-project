@@ -12,8 +12,9 @@ use App\DTO\Type\CreatTypeDto;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\TypeRepositoryInterface;
+use App\Contract\Service\TypeServiceInterface;
 
-class TypeService
+class TypeService implements TypeServiceInterface
 {
     /**
      * Summary of __construct

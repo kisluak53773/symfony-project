@@ -9,8 +9,9 @@ use App\Services\Exception\Request\BadRequsetException;
 use App\DTO\User\PatchUserDto;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\UserRepositoryInterface;
+use App\Contract\Service\UserServiceInterface;
 
-class UserService
+class UserService implements UserServiceInterface
 {
     /**
      * Summary of __construct

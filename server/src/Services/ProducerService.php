@@ -8,8 +8,9 @@ use App\Services\Exception\Request\NotFoundException;
 use App\DTO\Producer\CreateProducerDto;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\ProducerRepositoryInterface;
+use App\Contract\Service\ProducerServiceInterface;
 
-class ProducerService
+class ProducerService implements ProducerServiceInterface
 {
     /**
      * Summary of __construct
@@ -54,7 +55,7 @@ class ProducerService
      * 
      * @return void
      */
-    public function delete(int $id)
+    public function delete(int $id): void
     {
         $producer = $this->producerRepository->find($id);
 

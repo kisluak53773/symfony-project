@@ -15,8 +15,9 @@ use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\OrderRepositoryInterface;
 use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\OrderProductRepositoryInteface;
+use App\Contract\Service\OrderServiceInterface;
 
-class OrderService
+class OrderService implements OrderServiceInterface
 {
     /**
      * Summary of __construct

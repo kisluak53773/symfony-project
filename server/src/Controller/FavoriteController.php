@@ -11,12 +11,12 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use App\Enum\Role;
 use App\Services\Exception\Request\RequestException;
-use App\Services\FavoriteService;
+use App\Contract\Service\FavoriteServiceInterface;
 
 #[Route('/api/favorite', name: 'api_favorite_')]
 class FavoriteController extends AbstractController
 {
-    public function __construct(private FavoriteService $favoriteService) {}
+    public function __construct(private FavoriteServiceInterface $favoriteService) {}
 
     #[Route('/{productId}', name: 'add_prodct_to_favorite', methods: 'post', requirements: ['productId' => '\d+'])]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]

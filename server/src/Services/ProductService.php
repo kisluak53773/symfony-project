@@ -20,8 +20,9 @@ use App\Contract\Repository\ProducerRepositoryInterface;
 use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\TypeRepositoryInterface;
 use App\Contract\Repository\VendorProductRepositoryInterface;
+use App\Contract\Service\ProductServiceIntrrafce;
 
-class ProductService
+class ProductService implements ProductServiceIntrrafce
 {
     /**
      * Summary of __construct

@@ -7,7 +7,6 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
-use App\Services\ReviewService;
 use App\Services\Exception\Request\RequestException;
 use App\Enum\Role;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
@@ -17,12 +16,13 @@ use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use App\DTO\Review\CreateReviewDto;
 use App\DTO\Review\PatchReviewDto;
 use App\DTO\PaginationQueryDto;
+use App\Contract\Service\ReviewServiceInterface;
 
 
 #[Route('/api/review', name: 'api_review_')]
 class ReviewController extends AbstractController
 {
-    public function __construct(private ReviewService $reviewService) {}
+    public function __construct(private ReviewServiceInterface $reviewService) {}
 
     #[Route(name: 'add_review', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]

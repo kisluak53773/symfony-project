@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Contract\Repository;
 
 use App\Entity\Product;
-use App\DTO\VendorProduct\PatchVendorProduct;
+use App\DTO\VendorProduct\PatchVendorProductDto;
 use App\Entity\VendorProduct;
 use App\Entity\Vendor;
 use Doctrine\ORM\QueryBuilder;
@@ -21,7 +21,7 @@ interface VendorProductRepositoryInterface
         int $quantity = null
     ): VendorProduct;
 
-    public function patch(PatchVendorProduct $patchVendorProduct, VendorProduct $vendorProduct): void;
+    public function patch(PatchVendorProductDto $patchVendorProductDto, VendorProduct $vendorProduct): void;
 
     public function remove(VendorProduct $vendorProduct): void;
 }

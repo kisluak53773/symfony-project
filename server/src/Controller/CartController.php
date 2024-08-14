@@ -10,17 +10,17 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Enum\Role;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use App\Services\CartService;
 use App\Services\Exception\Request\RequestException;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use App\DTO\Cart\AddToCartDto;
 use App\DTO\Cart\IncreaseDto;
 use App\DTO\Cart\DecreaseDto;
+use App\Contract\Service\CartServiceInterface;
 
 #[Route('/api/cart', name: 'api_cart_')]
 class CartController extends AbstractController
 {
-    public function __construct(private CartService $cartService) {}
+    public function __construct(private CartServiceInterface $cartService) {}
 
     #[Route(name: 'create', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]

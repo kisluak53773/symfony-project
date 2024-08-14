@@ -10,15 +10,16 @@ use App\Entity\VendorProduct;
 use App\Services\Exception\Request\BadRequsetException;
 use App\Services\Exception\Request\NotFoundException;
 use App\DTO\VendorProduct\CreateVendorProductDto;
-use App\DTO\VendorProduct\PatchVendorProduct;
+use App\DTO\VendorProduct\PatchVendorProductDto;
 use App\DTO\PaginationQueryDto;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\VendorProductRepositoryInterface;
 use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\VendorRepositoryInterface;
 use App\Contract\Repository\ProductRepositoryInterface;
+use App\Contract\Service\VendorProductServiceInterface;
 
-class VendorProductService
+class VendorProductService implements VendorProductServiceInterface
 {
     /**
      * Summary of __construct
@@ -120,16 +121,14 @@ class VendorProductService
     /**
      * Summary of patchVendorProdut
      * @param int $id
-     * @param \Symfony\Component\HttpFoundation\Request $request
-     * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @param \App\DTO\VendorProduct\PatchVendorProductDto $patchVendorProductDto
      * 
      * @return void
      */
-    public function patchVendorProdut(int $id, PatchVendorProduct $patchVendorProduct): void
+    public function patchVendorProdut(int $id, PatchVendorProductDto $patchVendorProductDto): void
     {
         $vendorProduct = $this->vendorProductRepository->find($id);
-        $this->vendorProductRepository->patch($patchVendorProduct, $vendorProduct);
+        $this->vendorProductRepository->patch($patchVendorProductDto, $vendorProduct);
 
         $this->entityManager->flush();
     }

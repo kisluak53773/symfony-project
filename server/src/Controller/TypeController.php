@@ -10,18 +10,18 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Enum\Role;
-use App\Services\TypeService;
 use App\Services\Exception\Request\RequestException;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use App\DTO\Type\CreatTypeDto;
 use Symfony\Component\HttpKernel\Attribute\MapUploadedFile;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Validator\Constraints as Assert;
+use App\Contract\Service\TypeServiceInterface;
 
 #[Route('/api/type', name: 'api_type_')]
 class TypeController extends AbstractController
 {
-    public function __construct(private TypeService $typeService) {}
+    public function __construct(private TypeServiceInterface $typeService) {}
 
     #[Route(name: 'create', methods: 'post')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]

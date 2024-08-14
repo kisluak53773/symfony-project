@@ -10,8 +10,9 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\ProductRepositoryInterface;
+use App\Contract\Service\FavoriteServiceInterface;
 
-class FavoriteService
+class FavoriteService implements FavoriteServiceInterface
 {
     /**
      * Summary of __construct

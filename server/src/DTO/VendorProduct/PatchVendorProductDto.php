@@ -6,7 +6,7 @@ namespace App\DTO\VendorProduct;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-class PatchVendorProduct
+class PatchVendorProductDto
 {
     public function __construct(
         #[Assert\NotBlank(message: 'Price should be present')]

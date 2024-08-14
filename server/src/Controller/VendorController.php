@@ -10,16 +10,16 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use App\Enum\Role;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use App\Services\VendorService;
 use App\Services\Exception\Request\RequestException;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use App\DTO\Vendor\CreateVendorDto;
 use App\DTO\Vendor\PatchVendorDto;
+use App\Contract\Service\VendorServiceInterface;
 
 #[Route('/api/vendor', name: 'api_vendor_')]
 class VendorController extends AbstractController
 {
-    public function __construct(private VendorService $vendorService) {}
+    public function __construct(private VendorServiceInterface $vendorService) {}
 
     #[Route(name: 'add', methods: 'post')]
     public function add(#[MapRequestPayload] CreateVendorDto $createVendorDto): JsonResponse

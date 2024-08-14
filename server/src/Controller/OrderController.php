@@ -10,18 +10,18 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Enum\Role;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use App\Services\OrderService;
 use App\Services\Exception\Request\RequestException;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\HttpKernel\Attribute\MapQueryString;
 use App\DTO\Order\CreateOrderDto;
 use App\DTO\Order\PatchOrderDto;
 use App\DTO\PaginationQueryDto;
+use App\Contract\Service\OrderServiceInterface;
 
 #[Route('/api/order', name: 'api_order_')]
 class OrderController extends AbstractController
 {
-    public function __construct(private OrderService $orderService) {}
+    public function __construct(private OrderServiceInterface $orderService) {}
 
     #[Route(name: 'add', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]

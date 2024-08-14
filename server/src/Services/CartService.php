@@ -17,8 +17,9 @@ use App\Contract\Repository\CartRepositoryInterface;
 use App\Contract\Repository\UserRepositoryInterface;
 use App\Contract\Repository\VendorProductRepositoryInterface;
 use App\Contract\Repository\CartProductRepositoryInterface;
+use App\Contract\Service\CartServiceInterface;
 
-class CartService
+class CartService implements CartServiceInterface
 {
     /**
      * Summary of __construct
