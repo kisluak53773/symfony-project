@@ -22,6 +22,6 @@ class CreateOrderDto
             max: 255,
             maxMessage: 'Comment should not be so long',
         )]
-        public readonly string $comment,
+        public readonly ?string $comment,
     ) {}
 }

@@ -60,9 +60,9 @@ class CreateProductDto
         #[Assert\NotBlank(message: 'Type id should be present')]
         public readonly int $typeId,
 
-        public readonly string $price,
+        public readonly ?string $price,
 
         #[Assert\PositiveOrZero(message: 'Quantity can not be negative')]
-        public readonly int $quantity,
+        public readonly ?int $quantity,
     ) {}
 }

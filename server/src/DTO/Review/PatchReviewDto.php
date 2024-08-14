@@ -17,6 +17,6 @@ class PatchReviewDto
             max: 400,
             maxMessage: 'Comment should not be so long',
         )]
-        public readonly string $comment,
+        public readonly ?string $comment,
     ) {}
 }

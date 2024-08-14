@@ -10,10 +10,10 @@ use App\DTO\PaginationQueryDto;
 class ProductSearchParamsDto extends PaginationQueryDto
 {
     public function __construct(
-        #[Assert\Positive("Page can not be a negative number")]
+        #[Assert\Positive(message: "Page can not be a negative number")]
         public readonly int $limit = 5,
 
-        #[Assert\Positive("Page can not be a negative number")]
+        #[Assert\Positive(message: "Page can not be a negative number")]
         public readonly int $page = 1,
 
         #[Assert\Length(
@@ -22,12 +22,10 @@ class ProductSearchParamsDto extends PaginationQueryDto
         )]
         public readonly string $title = '',
 
-        public readonly string $priceSort,
+        public readonly string $priceSort = 'asc',
 
-        public readonly array $types,
+        public readonly array $types = [],
 
-        public readonly array $producers,
-    ) {
-        parent::__construct($limit, $page);
-    }
+        public readonly array $producers = [],
+    ) {}
 }

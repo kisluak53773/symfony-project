@@ -15,9 +15,9 @@ class CreateVendorProductDto
         #[Assert\NotBlank(message: 'Product Id should be present')]
         public readonly int $productId,
 
-        public readonly int $vendorId,
+        public readonly ?int $vendorId,
 
         #[Assert\PositiveOrZero(message: 'Quantity can not be negative')]
-        public readonly int $quantity,
+        public readonly ?int $quantity,
     ) {}
 }

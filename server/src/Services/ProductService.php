@@ -78,7 +78,7 @@ class ProductService implements ProductServiceIntrrafce
 
         $product = $this->productRepository->create($createProductDto, $type, $producer, $imagePath);
 
-        if (isset($user) && in_array(Role::ROLE_VENDOR->value, $user->getRoles()) && isset($createProductDto->quantity)) {
+        if (isset($user) && in_array(Role::ROLE_VENDOR->value, $user->getRoles()) && isset($createProductDto->price)) {
             $this->vendorProductRepository->create($user->getVendor(), $product, $createProductDto->price, $createProductDto->quantity);
         }
 

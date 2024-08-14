@@ -41,7 +41,7 @@ class ReviewController extends AbstractController
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function getByProductId(
         int $productId,
-        #[MapQueryString] PaginationQueryDto $paginationQueryDto
+        #[MapQueryString] PaginationQueryDto $paginationQueryDto = new PaginationQueryDto()
     ): JsonResponse {
         try {
             $response = $this->reviewService->getByProductId($productId, $paginationQueryDto);

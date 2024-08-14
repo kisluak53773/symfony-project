@@ -26,7 +26,8 @@ services:
 
   Doctrine\ORM\EntityManagerInterface $entityManager: "@doctrine.orm.entity_manager"
 
-  Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface $security: "@Symfony\Bundle\SecurityBundle\Security"
+  Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface:
+    alias: Symfony\Bundle\SecurityBundle\Security
 
   App\Services\Uploader\ProductImageUploader:
     arguments:

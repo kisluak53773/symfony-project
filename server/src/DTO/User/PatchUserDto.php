@@ -21,18 +21,18 @@ class PatchUserDto
         #[Assert\Email(
             message: 'The email is not a valid email.',
         )]
-        public readonly string $email,
+        public readonly ?string $email,
 
         #[Assert\Length(
             max: 180,
             maxMessage: 'Full name  should not be so long',
         )]
-        public readonly string $fullName,
+        public readonly ?string $fullName,
 
         #[Assert\Length(
             max: 180,
             maxMessage: 'Address should not be so long',
         )]
-        public readonly string $address,
+        public readonly ?string $address,
     ) {}
 }

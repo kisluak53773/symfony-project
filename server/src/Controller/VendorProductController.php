@@ -39,8 +39,9 @@ class VendorProductController extends AbstractController
 
     #[Route('/vendor', name: 'get_for_vendor', methods: 'get')]
     #[IsGranted(Role::ROLE_VENDOR->value, message: 'You are not allowed to access this route.')]
-    public function get(#[MapQueryString] PaginationQueryDto $paginationQueryDto): JsonResponse
-    {
+    public function get(
+        #[MapQueryString] PaginationQueryDto $paginationQueryDto = new PaginationQueryDto()
+    ): JsonResponse {
         try {
             $response = $this->vendorProductService->get($paginationQueryDto);
         } catch (RequestException $e) {

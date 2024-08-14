@@ -38,8 +38,9 @@ class OrderController extends AbstractController
 
     #[Route('/current', name: 'get_orders_of_current_user', methods: 'get')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function getUserOrders(#[MapQueryString] PaginationQueryDto $paginationQueryDto): JsonResponse
-    {
+    public function getUserOrders(
+        #[MapQueryString] PaginationQueryDto $paginationQueryDto = new PaginationQueryDto()
+    ): JsonResponse {
         try {
             $response = $this->orderService->getUserOrders($paginationQueryDto);
         } catch (RequestException $e) {
