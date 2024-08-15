@@ -77,7 +77,7 @@ class CartController extends AbstractController
             throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json($response['responseMessage'], $response['statucCode']);
+        return $this->json($response['responseMessage'], $response['statusCode']);
     }
 
     #[Route('/increase', name: 'increase_amount_of_product_in_cart', methods: 'post')]

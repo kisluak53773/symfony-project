@@ -83,7 +83,7 @@ class CartProductRepository extends ServiceEntityRepository implements CartProdu
             $this->getEntityManager()->persist($cartProduct);
             $this->getEntityManager()->persist($vendorProduct);
         } else {
-            $vendorProduct->increaseQuantity($cartProduct->getQuantity());
+            $vendorProduct->increaseQuantity($cartProduct->getQuantity() ? $cartProduct->getQuantity() : 0);
 
             $this->getEntityManager()->persist($vendorProduct);
             $this->getEntityManager()->remove($cartProduct);
@@ -101,7 +101,7 @@ class CartProductRepository extends ServiceEntityRepository implements CartProdu
         CartProduct $cartProduct,
         VendorProduct $vendorProduct,
     ): void {
-        $vendorProduct->increaseQuantity($cartProduct->getQuantity());
+        $vendorProduct->increaseQuantity($cartProduct->getQuantity() ? $cartProduct->getQuantity() : 0);
         $this->getEntityManager()->persist($vendorProduct);
         $this->getEntityManager()->remove($cartProduct);
     }
@@ -115,7 +115,12 @@ class CartProductRepository extends ServiceEntityRepository implements CartProdu
     public function removeAll(array $cartProducts): void
     {
         foreach ($cartProducts as $cartProduct) {
-            $this->removeOne($cartProduct, $cartProduct->getVendorProduct());
+            $vendorProduct = $cartProduct->getVendorProduct();
+            if ($vendorProduct instanceof VendorProduct) {
+                $this->remove($cartProduct, $vendorProduct);
+            } else {
+                throw new \InvalidArgumentException('Expected instance of VendorProduct, got something else.');
+            }
         }
     }
 }

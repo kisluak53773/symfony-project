@@ -20,6 +20,8 @@ use App\Services\Exception\NotFound\TypeNotFoundException;
 use App\Services\Exception\NotFound\ProducerNotFoundException;
 use App\Services\Exception\NotFound\ProductNotFoundException;
 use App\Contract\FileUploaderInterface;
+use App\Entity\Product;
+use App\Services\Exception\NotFound\VendorNotFoundException;
 
 class ProductService implements ProductServiceIntrrafce
 {
@@ -27,7 +29,7 @@ class ProductService implements ProductServiceIntrrafce
      * Summary of __construct
      * @param \Doctrine\ORM\EntityManagerInterface $entityManager
      * @param \App\Services\Uploader\ProductImageUploader $uploader
-     * @param \App\Services\PaginationHandler $paginationHandler
+     * @param \App\Contract\PaginationHandlerInterface<Product> $paginationHandler
      * @param \App\Repository\ProductRepository $productRepository
      * @param \App\Repository\ProducerRepository $producerRepository
      * @param \App\Repository\UserRepository $userRepository
@@ -52,6 +54,7 @@ class ProductService implements ProductServiceIntrrafce
      * 
      * @throws \App\Services\Exception\NotFound\ProducerNotFoundException
      * @throws \App\Services\Exception\NotFound\TypeNotFoundException
+     * @throws \App\Services\Exception\NotFound\VendorNotFoundException
      * 
      * @return int
      */
@@ -73,20 +76,31 @@ class ProductService implements ProductServiceIntrrafce
         $imagePath = $this->uploader->upload($image);
         $product = $this->productRepository->create($createProductDto, $type, $producer, $imagePath);
 
-        if (isset($user) && in_array(Role::ROLE_VENDOR->value, $user->getRoles()) && isset($createProductDto->price)) {
-            $this->vendorProductRepository->create($user->getVendor(), $product, $createProductDto->price, $createProductDto->quantity);
+        if (in_array(Role::ROLE_VENDOR->value, $user->getRoles()) && isset($createProductDto->price)) {
+            $vendor = $user->getVendor();
+
+            if (!$vendor) {
+                throw new VendorNotFoundException();
+            }
+
+            $this->vendorProductRepository->create($vendor, $product, $createProductDto->price, $createProductDto->quantity);
         }
 
         $this->entityManager->flush();
 
-        return $product->getId();
+        return $product->getId() ?? 0;
     }
 
     /**
      * Summary of list
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\Product\ProductSearchParamsDto $productSearchParamsDto
      * 
-     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: iterable<int, mixed>
+     * }
      */
     public function list(ProductSearchParamsDto $productSearchParamsDto): array
     {
@@ -98,16 +112,25 @@ class ProductService implements ProductServiceIntrrafce
 
     /**
      * Summary of getProductsVendorDoesNotSell
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\Product\ProductSearchParamsDto $productSearchParamsDto
      * 
-     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: iterable<int, mixed>
+     * }
      */
     public function getProductsVendorDoesNotSell(ProductSearchParamsDto $productSearchParamsDto): array
     {
         $user = $this->userRepository->getCurrentUser();
-        $vendorId = $user->getVendor()->getId();
+        $vendor = $user->getVendor();
 
-        $querryBuilder = $this->productRepository->searchByTitle($productSearchParamsDto, $vendorId);
+        if (!$vendor) {
+            throw new VendorNotFoundException();
+        }
+
+        $querryBuilder = $this->productRepository->searchByTitle($productSearchParamsDto, $vendor->getId());
         $response = $this->paginationHandler->handlePagination($querryBuilder, $productSearchParamsDto);
 
         return $response;
@@ -129,7 +152,7 @@ class ProductService implements ProductServiceIntrrafce
             throw new ProductNotFoundException($id);
         }
 
-        $this->producerRepository->remove($product);
+        $this->productRepository->remove($product);
         $this->entityManager->flush();
     }
 }

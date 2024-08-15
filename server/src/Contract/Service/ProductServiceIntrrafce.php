@@ -7,6 +7,7 @@ namespace App\Contract\Service;
 use App\DTO\Product\CreateProductDto;
 use App\DTO\Product\ProductSearchParamsDto;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use App\Entity\Product;
 
 interface ProductServiceIntrrafce
 {
@@ -16,7 +17,12 @@ interface ProductServiceIntrrafce
      * Summary of list
      * @param \App\DTO\Product\ProductSearchParamsDto $productSearchParamsDto
      * 
-     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: array<Product>
+     * }
      */
     public function list(ProductSearchParamsDto $productSearchParamsDto): array;
 
@@ -24,7 +30,12 @@ interface ProductServiceIntrrafce
      * Summary of getProductsVendorDoesNotSell
      * @param \App\DTO\Product\ProductSearchParamsDto $productSearchParamsDto
      * 
-     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: array<Product>
+     * }
      */
     public function getProductsVendorDoesNotSell(ProductSearchParamsDto $productSearchParamsDto): array;
 

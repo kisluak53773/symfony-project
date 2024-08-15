@@ -8,5 +8,8 @@ use Exception;
 
 class NotFoundException extends Exception
 {
-    protected $message = 'Default not found exception';
+    public function __construct(string $message = 'Default not found exception', int $code = 0, Exception $previous = null)
+    {
+        parent::__construct($message, $code, $previous);
+    }
 }

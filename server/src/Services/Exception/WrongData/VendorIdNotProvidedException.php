@@ -6,5 +6,8 @@ namespace App\Services\Exception\WrongData;
 
 class VendorIdNotProvidedException extends WrongDataException
 {
-    protected $message = 'Vendor id is not provided';
+    public function __construct()
+    {
+        parent::__construct('Vendor id is not provided');
+    }
 }

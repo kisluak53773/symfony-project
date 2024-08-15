@@ -213,13 +213,13 @@ class Product
     #[Groups(['product_list', 'vendor_products', 'elastica'])]
     public function getTypeId(): ?int
     {
-        return $this->type->getId();
+        return $this->type?->getId();
     }
 
     #[Groups(['product_list', 'vendor_products', 'elastica'])]
     public function getProducerId(): ?int
     {
-        return $this->producer->getId();
+        return $this->producer?->getId();
     }
 
     /**

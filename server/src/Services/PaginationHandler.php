@@ -9,13 +9,17 @@ use App\DTO\PaginationQueryDto;
 use Knp\Component\Pager\Pagination\PaginationInterface;
 use App\Contract\PaginationHandlerInterface;
 
+/**
+ * @template T
+ * @implements PaginationHandlerInterface<T>
+ */
 class PaginationHandler implements PaginationHandlerInterface
 {
     public function __construct(private PaginatorInterface $paginator) {}
 
     /**
      * Summary of getSearchResults
-     * @param mixed $querry
+     * @param mixed $querryBuilder
      * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
      * @return PaginationInterface<int, mixed>
@@ -34,9 +38,14 @@ class PaginationHandler implements PaginationHandlerInterface
 
     /**
      * Summary of cunstructResponse
-     * @param \Knp\Component\Pager\Pagination\PaginationInterface $pagination
+     * @param \Knp\Component\Pager\Pagination\PaginationInterface<int, mixed> $pagination
      * 
-     * @return array
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: iterable<int, mixed>
+     * }
      */
     private function cunstructResponse(PaginationInterface $pagination): array
     {
@@ -44,7 +53,7 @@ class PaginationHandler implements PaginationHandlerInterface
         $totalItems = $pagination->getTotalItemCount();
         $itemsPerPage = $pagination->getItemNumberPerPage();
         $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
+        $totalPages = (int)ceil($totalItems / $itemsPerPage);
 
         $response = [
             'total_items' => $totalItems,
@@ -57,11 +66,15 @@ class PaginationHandler implements PaginationHandlerInterface
     }
 
     /**
-     * Summary of handlePagination
      * @param mixed $querryBuilder
-     * @param \App\DTO\PaginationQueryDto $paginationQueryDto
+     * @param PaginationQueryDto $paginationQueryDto
      * 
-     * @return array
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: iterable<int, mixed>
+     * }
      */
     public function handlePagination(mixed $querryBuilder, PaginationQueryDto $paginationQueryDto): array
     {

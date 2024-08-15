@@ -136,8 +136,8 @@ class Review
     }
 
     #[Groups(['product_reviews'])]
-    public function getUserName(): string
+    public function getUserName(): ?string
     {
-        return $this->getClient()->getFullName();
+        return $this->getClient()?->getFullName();
     }
 }

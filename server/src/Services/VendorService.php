@@ -48,7 +48,7 @@ class VendorService implements VendorServiceInterface
         $vendor = $this->vendorRepository->create($createVendorDto, $user);
         $this->entityManager->flush();
 
-        return $vendor->getId();
+        return $vendor->getId() ?? 0;
     }
 
     /**
@@ -71,9 +71,7 @@ class VendorService implements VendorServiceInterface
 
     /**
      * Summary of patchCurrentVendor
-     * @param \Symfony\Component\HttpFoundation\Request $request
-     * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @param \App\DTO\Vendor\PatchVendorDto $patchVendorDto
      * 
      * @return void
      */
@@ -81,6 +79,10 @@ class VendorService implements VendorServiceInterface
     {
         $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
+
+        if (!$vendor) {
+            throw new VendorNotFoundException();
+        }
 
         $this->vendorRepository->patch($patchVendorDto, $vendor);
         $this->entityManager->flush();

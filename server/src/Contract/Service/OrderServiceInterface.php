@@ -8,6 +8,7 @@ use App\DTO\Order\CreateOrderDto;
 use App\DTO\Order\PatchOrderDto;
 use App\DTO\PaginationQueryDto;
 use App\Entity\Order;
+use App\Entity\OrderProduct;
 
 interface OrderServiceInterface
 {
@@ -17,7 +18,12 @@ interface OrderServiceInterface
      * Summary of getUserOrders
      * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
-     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: array<Order>
+     * }
      */
     public function getUserOrders(PaginationQueryDto $paginationQueryDto): array;
 
@@ -25,7 +31,12 @@ interface OrderServiceInterface
      * Summary of getVendorOrders
      * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
-     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: array<Order>
+     * }
      */
     public function getVendorOrders(PaginationQueryDto $paginationQueryDto): array;
 
@@ -33,7 +44,7 @@ interface OrderServiceInterface
      * Summary of getVendorOrderById
      * @param int $id
      * 
-     * @return array{orderData: Order, products: array}
+     * @return array{orderData: Order, products: array<OrderProduct>}
      */
     public function getVendorOrderById(int $id): array;
 
@@ -41,7 +52,12 @@ interface OrderServiceInterface
      * Summary of getAllOrders
      * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
-     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: array<Order>
+     * }
      */
     public function getAllOrders(PaginationQueryDto $paginationQueryDto): array;
 

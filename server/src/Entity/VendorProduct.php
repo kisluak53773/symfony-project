@@ -123,7 +123,7 @@ class VendorProduct
     #[Groups(['product_list', 'elastica'])]
     public function getVendorId(): ?int
     {
-        return $this->vendor->getId();
+        return $this->vendor?->getId();
     }
 
     /**

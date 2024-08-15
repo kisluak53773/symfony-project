@@ -13,6 +13,7 @@ use App\Enum\Role;
 use DateTimeImmutable;
 use App\DTO\Vendor\PatchVendorDto;
 use App\Contract\Repository\VendorRepositoryInterface;
+use App\Services\Exception\WrongData\WrongDateFormmatException;
 
 /**
  * @extends ServiceEntityRepository<Vendor>
@@ -35,6 +36,10 @@ class VendorRepository extends ServiceEntityRepository implements VendorReposito
     {
         $registraionDate = DateTimeImmutable::createFromFormat('Y-m-d', $createVendorDto->registrationDate);
         $registrationCertificateDate = DateTimeImmutable::createFromFormat('Y-m-d', $createVendorDto->registrationCertificateDate);
+
+        if (!$registraionDate || !$registrationCertificateDate) {
+            throw new WrongDateFormmatException();
+        }
 
         $vendor = new Vendor();
         $vendor->setTitle($createVendorDto->title);

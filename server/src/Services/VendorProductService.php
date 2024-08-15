@@ -26,7 +26,7 @@ class VendorProductService implements VendorProductServiceInterface
     /**
      * Summary of __construct
      * @param \Doctrine\ORM\EntityManagerInterface $entityManager
-     * @param \App\Services\PaginationHandler $paginationHandler
+     * @param \App\Contract\PaginationHandlerInterface<VendorProduct> $paginationHandler
      * @param \App\Repository\VendorProductRepository $vendorProductRepository
      * @param \App\Repository\UserRepository $userRepository
      * @param \App\Repository\VendorRepository $vendorRepository
@@ -55,7 +55,7 @@ class VendorProductService implements VendorProductServiceInterface
     {
         $user = $this->userRepository->getCurrentUser();
 
-        if (isset($user) && in_array(Role::ROLE_VENDOR->value, $user->getRoles())) {
+        if (in_array(Role::ROLE_VENDOR->value, $user->getRoles())) {
             $vendor = $user->getVendor();
         } else {
             if (!isset($createVendorProductDto->vendorId)) {
@@ -75,6 +75,10 @@ class VendorProductService implements VendorProductServiceInterface
             throw new ProductNotFoundException($createVendorProductDto->productId);
         }
 
+        if (!$vendor) {
+            throw new VendorNotFoundException();
+        }
+
         $vendorProduct = $this->vendorProductRepository->create(
             $vendor,
             $product,
@@ -83,19 +87,28 @@ class VendorProductService implements VendorProductServiceInterface
         );
         $this->entityManager->flush();
 
-        return $vendorProduct->getId();
+        return $vendorProduct->getId() ?? 0;
     }
 
     /**
      * Summary of get
      * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
-     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: iterable<int, mixed>
+     * }
      */
     public function get(PaginationQueryDto $paginationQueryDto): array
     {
         $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
+
+        if (!$vendor) {
+            throw new VendorNotFoundException();
+        }
 
         $querryBuilder = $this->vendorProductRepository->createQueryBuilderForPaginationWithVendor($vendor);
         $response = $this->paginationHandler->handlePagination($querryBuilder, $paginationQueryDto);
@@ -113,6 +126,11 @@ class VendorProductService implements VendorProductServiceInterface
     public function patchVendorProdut(int $id, PatchVendorProductDto $patchVendorProductDto): void
     {
         $vendorProduct = $this->vendorProductRepository->find($id);
+
+        if (!$vendorProduct) {
+            throw new VendorNotFoundException();
+        }
+
         $this->vendorProductRepository->patch($patchVendorProductDto, $vendorProduct);
 
         $this->entityManager->flush();

@@ -32,7 +32,7 @@ class OrderProductRepository extends ServiceEntityRepository implements OrderPro
     {
         $orderProduct = new OrderProduct();
         $orderProduct->setOrderEntity($order);
-        $orderProduct->setQuantity($cartProduct->getQuantity());
+        $orderProduct->setQuantity($cartProduct->getQuantity() ? $cartProduct->getQuantity() : 0);
         $orderProduct->setVendorProduct($cartProduct->getVendorProduct());
 
         $this->getEntityManager()->persist($orderProduct);

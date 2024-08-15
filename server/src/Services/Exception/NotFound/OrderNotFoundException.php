@@ -6,7 +6,7 @@ namespace App\Services\Exception\NotFound;
 
 class OrderNotFoundException extends NotFoundException
 {
-    public function __construct(int $id)
+    public function __construct(?int $id = null)
     {
         parent::__construct("Order with id $id not found");
     }

@@ -13,10 +13,13 @@ use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 use App\DTO\Auth\RegisterDto;
 use App\Entity\Product;
 use App\Enum\Role;
-use App\Services\Exception\Request\NotFoundException;
 use App\DTO\User\PatchUserDto;
 use App\Contract\Repository\UserRepositoryInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
+use App\Services\Exception\NotFound\UserNotFoundException;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use App\Services\Exception\Access\NotAtuheticatedException;
+use App\Services\Exception\NotFound\UserNotFoundByIdentifierException;
 
 /**
  * @extends ServiceEntityRepository<User>
@@ -28,17 +31,23 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      * @var \Symfony\Bundle\SecurityBundle\Security
      */
     private AuthorizationCheckerInterface $security;
+    private UserPasswordHasherInterface $passwordHasher;
 
     /**
      * Summary of __construct
      * @param \Doctrine\Persistence\ManagerRegistry $registry
      * @param \Symfony\Bundle\SecurityBundle\Security $security
+     * @param \Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface $passwordHasher
      */
-    public function __construct(ManagerRegistry $registry, AuthorizationCheckerInterface $security)
-    {
+    public function __construct(
+        ManagerRegistry $registry,
+        AuthorizationCheckerInterface $security,
+        UserPasswordHasherInterface $passwordHasher
+    ) {
         parent::__construct($registry, User::class);
 
         $this->security = $security;
+        $this->passwordHasher = $passwordHasher;
     }
 
     /**
@@ -75,15 +84,15 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $user->setPhone($registerDto->phone);
         $user->setRoles([Role::ROLE_USER->value]);
 
-        if (isset($userDto->address)) {
+        if (isset($registerDto->address)) {
             $user->setAddress($registerDto->address);
         }
 
-        if (isset($userDto->email)) {
+        if (isset($registerDto->email)) {
             $user->setEmail($registerDto->email);
         }
 
-        if (isset($userDto->fullName)) {
+        if (isset($registerDto->fullName)) {
             $user->setFullName($registerDto->fullName);
         }
 
@@ -96,7 +105,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      * Summary of delete
      * @param int $id
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\UserNotFoundException
      * 
      * @return void
      */
@@ -105,7 +114,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $user = $this->find($id);
 
         if (!isset($user)) {
-            throw new NotFoundException();
+            throw new UserNotFoundException($id);
         }
 
         $user->setRoles([Role::ROLE_DELETED->value]);
@@ -123,7 +132,6 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     {;
         $user = $this->getCurrentUser();
         $user->addFavorite($product);
-
         $this->getEntityManager()->persist($user);
     }
 
@@ -137,18 +145,32 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     {
         $user = $this->getCurrentUser();
         $user->removeFavorite($product);
-
         $this->getEntityManager()->persist($user);
     }
 
     /**
      * Summary of getCurrentUser
+     * @throws \App\Services\Exception\Access\NotAtuheticatedException
+     * @throws \App\Services\Exception\NotFound\UserNotFoundByIdentifierException
+     * 
      * @return \App\Entity\User
      */
     public function getCurrentUser(): User
     {
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        return $this->findOneBy(['phone' => $userPhone]);
+        $user = $this->security->getUser();
+
+        if (!$user) {
+            throw new NotAtuheticatedException();
+        }
+
+        $userPhone = $user->getUserIdentifier();
+        $user = $this->findOneBy(['phone' => $userPhone]);
+
+        if (!$user) {
+            throw new UserNotFoundByIdentifierException();
+        }
+
+        return $user;
     }
 
     /**

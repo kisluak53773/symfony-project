@@ -15,6 +15,7 @@ use DateTime;
 use App\Enum\OrderStatus;
 use App\DTO\Order\PatchOrderDto;
 use App\Contract\Repository\OrderRepositoryInterface;
+use App\Services\Exception\WrongData\WrongDateFormmatException;
 
 /**
  * @extends ServiceEntityRepository<Order>
@@ -62,6 +63,10 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
     {
         $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i', $createOrderDto->deliveryTime);
 
+        if (!$deliveryDate) {
+            throw new WrongDateFormmatException();
+        }
+
         $order = new Order();
         $order->setCustomer($user);
         $order->setPaymentMethod($createOrderDto->paymentMethod);
@@ -89,6 +94,10 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
     {
         $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i', $patchOrderDto->deliveryTime);
 
+        if (!$deliveryDate) {
+            throw new WrongDateFormmatException();
+        }
+
         $order->setPaymentMethod($patchOrderDto->paymentMethod);
         $order->setOrderStatus($patchOrderDto->orderStatus);
         $order->setDeliveryTime($deliveryDate);
@@ -103,7 +112,7 @@ class OrderRepository extends ServiceEntityRepository implements OrderRepository
     public function cancel(Order $order): void
     {
         $order->setOrderStatus(OrderStatus::ORDER_CANCELED->value);
-        $this->entityManager->persist($order);
+        $this->getEntityManager()->persist($order);
     }
 
     /**

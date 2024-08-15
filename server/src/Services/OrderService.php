@@ -17,13 +17,16 @@ use App\Entity\Order;
 use App\Services\Exception\WrongData\CartIsEmptyException;
 use App\Services\Exception\NotFound\OrderNotFoundException;
 use App\Services\Exception\Access\CanNotCancelOrderException;
+use App\Entity\OrderProduct;
+use App\Services\Exception\NotFound\CartNotFoundException;
+use App\Services\Exception\NotFound\VendorNotFoundException;
 
 class OrderService implements OrderServiceInterface
 {
     /**
      * Summary of __construct
      * @param \Doctrine\ORM\EntityManagerInterface $entityManager
-     * @param \App\Services\PaginationHandler $paginationHandler
+     * @param \App\Contract\PaginationHandlerInterface<Order> $paginationHandler
      * @param \App\Repository\OrderRepository $orderRepository
      * @param \App\Repository\UserRepository $userRepository
      * @param \App\Repository\OrderProductRepository $orderProductRepository
@@ -48,6 +51,11 @@ class OrderService implements OrderServiceInterface
     {
         $user = $this->userRepository->getCurrentUser();
         $cart = $user->getCart();
+
+        if (!$cart) {
+            throw new CartNotFoundException();
+        }
+
         $order = $this->orderRepository->create($createOrderDto, $user);
         $cartProducts = $cart->getCartProducts()->getValues();
 
@@ -61,9 +69,14 @@ class OrderService implements OrderServiceInterface
 
     /**
      * Summary of getUserOrders
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
-     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: iterable<int, mixed>
+     * }
      */
     public function getUserOrders(PaginationQueryDto $paginationQueryDto): array
     {
@@ -78,12 +91,22 @@ class OrderService implements OrderServiceInterface
      * Summary of getVendorOrders
      * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
-     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: iterable<int, mixed>
+     * }
      */
     public function getVendorOrders(PaginationQueryDto $paginationQueryDto): array
     {
         $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
+
+        if (!$vendor) {
+            throw new VendorNotFoundException();
+        }
+
         $querryBuilder = $this->orderRepository->createQuerryBuilderForVendorAndPagination($vendor);
         $response = $this->paginationHandler->handlePagination($querryBuilder, $paginationQueryDto);
 
@@ -94,16 +117,25 @@ class OrderService implements OrderServiceInterface
      * Summary of getVendorOrderById
      * @param int $id
      * 
-     * @return array{orderData: Order, products: array}
+     * @return array{orderData: Order, products: array<OrderProduct>}
      */
     public function getVendorOrderById(int $id): array
     {
         $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
-        $order = $this->orderRepository->find($id);
-        $products = $order->getOrderProducts()->getValues();
 
-        $products = array_filter($products, fn($item) => $item->getVendorProduct()->getVendor()->getId() === $vendor->getId());
+        if (!$vendor) {
+            throw new VendorNotFoundException();
+        }
+
+        $order = $this->orderRepository->find($id);
+
+        if (!$order) {
+            throw new OrderNotFoundException();
+        }
+
+        $products = $order->getOrderProducts()->getValues();
+        $products = array_filter($products, fn($item) => $item->getVendorProduct()?->getVendor()?->getId() === $vendor->getId());
         $response = ['orderData' => $order, 'products' => $products];
 
         return $response;
@@ -111,9 +143,14 @@ class OrderService implements OrderServiceInterface
 
     /**
      * Summary of getAllOrders
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
-     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: iterable<int, mixed>
+     * }
      */
     public function getAllOrders(PaginationQueryDto $paginationQueryDto): array
     {
@@ -161,7 +198,10 @@ class OrderService implements OrderServiceInterface
             throw new OrderNotFoundException($id);
         }
 
-        if ($this->userRepository->getCurrentUser()->getUserIdentifier() !== $order->getCustomer()->getUserIdentifier()) {
+        $currentUser = $this->userRepository->getCurrentUser();
+        $orderCustomer = $order->getCustomer();
+
+        if ($orderCustomer === null || $currentUser->getUserIdentifier() !== $orderCustomer->getUserIdentifier()) {
             throw new CanNotCancelOrderException($id);
         }
 

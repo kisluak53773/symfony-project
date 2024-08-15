@@ -8,5 +8,8 @@ use Exception;
 
 class AccessForbiddenException extends Exception
 {
-    protected $message = 'Default forbidden exception';
+    public function __construct(string $message = 'Default forbidden exception', int $code = 0, Exception $previous = null)
+    {
+        parent::__construct($message, $code, $previous);
+    }
 }

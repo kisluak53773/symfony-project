@@ -7,6 +7,7 @@ namespace App\Contract\Service;
 use App\DTO\Review\CreateReviewDto;
 use App\DTO\Review\PatchReviewDto;
 use App\DTO\PaginationQueryDto;
+use App\Entity\Review;
 
 interface ReviewServiceInterface
 {
@@ -18,7 +19,12 @@ interface ReviewServiceInterface
      * @param int $productId
      * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
-     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: array<Review>
+     * }
      */
     public function getByProductId(int $productId, PaginationQueryDto $paginationQueryDto): array;
 

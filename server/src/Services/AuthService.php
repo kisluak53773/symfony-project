@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use App\DTO\Auth\RegisterDto;
 use Doctrine\ORM\EntityManagerInterface;
 use App\Contract\Repository\UserRepositoryInterface;
@@ -17,13 +16,11 @@ class AuthService implements AuthServiceInterface
     /**
      * Summary of __construct
      * @param \Doctrine\ORM\EntityManagerInterface $entityManager
-     * @param \Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface $passwordHasher
      * @param \App\Repository\UserRepository $userRepository
      * @param \App\Repository\CartRepository $cartRepository
      */
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private UserPasswordHasherInterface $passwordHasher,
         private UserRepositoryInterface $userRepository,
         private CartRepositoryInterface $cartRepository,
     ) {}

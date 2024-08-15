@@ -40,7 +40,7 @@ class TypeService implements TypeServiceInterface
         $type = $this->typeRepository->create($creatTypeDto, $imagePath);
         $this->entityManager->flush();
 
-        return $type->getId();
+        return $type->getId() ?? 0;
     }
 
 

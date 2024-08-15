@@ -83,42 +83,48 @@ class CartProduct
     #[Groups(['cart_product'])]
     public function getVendorProductId(): ?int
     {
-        return $this->getVendorProduct()->getId();
+        if ($this->getVendorProduct() !== null) {
+            return $this->getVendorProduct()->getId();
+        }
+        return null;
     }
 
     #[Groups(['cart_product'])]
     public function getPrice(): ?string
     {
-        return $this->getVendorProduct()->getPrice();
+        if ($this->getVendorProduct() !== null) {
+            return $this->getVendorProduct()->getPrice();
+        }
+        return null;
     }
 
     #[Groups(['cart_product'])]
     public function getProductId(): ?int
     {
-        return $this->getVendorProduct()->getProduct()->getId();
+        return $this->getVendorProduct()?->getProduct()?->getId();
     }
 
     #[Groups(['cart_product'])]
     public function getProductImage(): ?string
     {
-        return $this->getVendorProduct()->getProduct()->getImage();
+        return $this->getVendorProduct()?->getProduct()?->getImage();
     }
 
     #[Groups(['cart_product'])]
     public function getProductWeight(): ?string
     {
-        return $this->getVendorProduct()->getProduct()->getWeight();
+        return $this->getVendorProduct()?->getProduct()?->getWeight();
     }
 
     #[Groups(['cart_product'])]
     public function getProductTitle(): ?string
     {
-        return $this->getVendorProduct()->getProduct()->getTitle();
+        return $this->getVendorProduct()?->getProduct()?->getTitle();
     }
 
     #[Groups(['cart_product'])]
     public function getInStock(): ?int
     {
-        return $this->getVendorProduct()->getQuantity();
+        return $this->getVendorProduct()?->getQuantity();
     }
 }

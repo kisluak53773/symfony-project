@@ -19,6 +19,7 @@ use App\Services\Exception\WrongData\NoProductInStockException;
 use App\Services\Exception\NotFound\NoProductInCartException;
 use App\Services\Exception\WrongData\CartIsEmptyException;
 use App\Entity\CartProduct;
+use App\Services\Exception\NotFound\CartNotFoundException;
 
 class CartService implements CartServiceInterface
 {
@@ -65,8 +66,13 @@ class CartService implements CartServiceInterface
     public function getProductsCart(): Collection
     {
         $user = $this->userRepository->getCurrentUser();
+        $cart =  $user->getCart();
 
-        return $user->getCart()->getCartProducts();
+        if (!$cart) {
+            throw new CartNotFoundException();
+        }
+
+        return $cart->getCartProducts();
     }
 
     /**
@@ -75,13 +81,16 @@ class CartService implements CartServiceInterface
      * 
      * @throws \App\Services\Exception\WrongData\NoProductInStockException
      * 
-     * @return array
+     * @return array{
+     *     responseMessage: array{id: int|null, message: string} | string,
+     *     statusCode: int,
+     * }
      */
     public function add(AddToCartDto $addToCartDto): array
     {
         $vendorProduct = $this->vendorProductRepository->find($addToCartDto->vendorProductId);
 
-        if (!isset($vendorProduct) || $vendorProduct->getQuantity() === 0) {
+        if (!isset($vendorProduct) || $vendorProduct->getQuantity() <= 0) {
             throw new NoProductInStockException($addToCartDto->vendorProductId);
         }
 
@@ -94,16 +103,20 @@ class CartService implements CartServiceInterface
             $this->cartProductRepository->increaseProductQunatity($cartProduct, $vendorProduct, $qunatity);
             $this->entityManager->flush();
 
-            return ['responseMessage' => 'Quantity increased', 'statucCode' => 200];
+            return ['responseMessage' => 'Quantity increased', 'statusCode' => 200];
         }
 
         $user = $this->userRepository->getCurrentUser();
         $cart = $user->getCart();
 
+        if (!$cart) {
+            throw new CartNotFoundException();
+        }
+
         $cartProduct = $this->cartProductRepository->create($vendorProduct, $cart, $qunatity);
         $this->entityManager->flush();
 
-        return ['responseMessage' => ['message' => 'Product added to cart', 'id' => $cartProduct->getId()], 'statusCode' => 201];
+        return ['responseMessage' => ['id' => $cartProduct->getId(), 'message' => 'Product added to cart'], 'statusCode' => 201];
     }
 
     /**
@@ -119,7 +132,7 @@ class CartService implements CartServiceInterface
     {
         $vendorProduct = $this->vendorProductRepository->find($increaseDto->vendorProductId);
 
-        if (!isset($vendorProduct) || $vendorProduct->getQuantity() === 0) {
+        if (!isset($vendorProduct) || $vendorProduct->getQuantity() <= 0) {
             throw new NoProductInStockException($increaseDto->vendorProductId);
         }
 
@@ -182,13 +195,13 @@ class CartService implements CartServiceInterface
             throw new NoProductInStockException($vendorProductId);
         }
 
-        $cartProduct = $this->vendorProductRepository->findOneBy(['vendorProduct' => $vendorProduct]);
+        $cartProduct = $this->cartProductRepository->findOneBy(['vendorProduct' => $vendorProduct]);
 
         if (!isset($cartProduct)) {
             throw new NoProductInCartException($vendorProductId);
         }
 
-        $this->cartProductRepository->removeOne($cartProduct, $vendorProduct);
+        $this->cartProductRepository->remove($cartProduct, $vendorProduct);
         $this->entityManager->flush();
     }
 
@@ -201,8 +214,13 @@ class CartService implements CartServiceInterface
     public function removeAllFromCart(): void
     {
         $user = $this->userRepository->getCurrentUser();
+        $cart = $user->getCart();
 
-        $cartProducts = $user->getCart()->getCartProducts()->getValues();
+        if (!$cart) {
+            throw new CartNotFoundException();
+        }
+
+        $cartProducts = $cart->getCartProducts()->getValues();
 
         if (count($cartProducts) === 0) {
             throw new CartIsEmptyException();

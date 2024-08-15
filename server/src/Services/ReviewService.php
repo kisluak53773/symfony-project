@@ -24,7 +24,7 @@ class ReviewService implements ReviewServiceInterface
     /**
      * Summary of __construct
      * @param \Doctrine\ORM\EntityManagerInterface $entityManager
-     * @param \App\Services\PaginationHandler $paginationHandler
+     * @param \App\Contract\PaginationHandlerInterface<Review> $paginationHandler
      * @param \App\Repository\ReviewRepository $reviewRepository
      * @param \App\Repository\UserRepository $userRepository
      * @param \App\Repository\ProductRepository $productRepository
@@ -57,7 +57,7 @@ class ReviewService implements ReviewServiceInterface
         $review = $this->reviewRepository->create($createReviewDto, $user, $product);
         $this->entityManager->flush();
 
-        return $review->getId();
+        return $review->getId() ?? 0;
     }
 
     /**
@@ -67,7 +67,12 @@ class ReviewService implements ReviewServiceInterface
      * 
      * @throws \App\Services\Exception\NotFound\ProductNotFoundException
      * 
-     * @return array{total_items: int, current_page: int, total_pages: int, data: array}
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: iterable<int, mixed>
+     * }
      */
     public function getByProductId(int $productId, PaginationQueryDto $paginationQueryDto): array
     {
@@ -103,7 +108,7 @@ class ReviewService implements ReviewServiceInterface
 
         $user = $this->userRepository->getCurrentUser();
 
-        if ($user->getId() !== $review->getClient()->getId()) {
+        if ($review->getClient() && $user->getId() !== $review->getClient()->getId()) {
             throw new NotAllowedToPatchReviewException();
         }
 

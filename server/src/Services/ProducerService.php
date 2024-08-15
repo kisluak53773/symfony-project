@@ -34,7 +34,7 @@ class ProducerService implements ProducerServiceInterface
         $producer = $this->producerRepository->create($createProducerDto);
         $this->entityManager->flush();
 
-        return $producer->getId();
+        return $producer->getId() ?? 0;
     }
 
     /**

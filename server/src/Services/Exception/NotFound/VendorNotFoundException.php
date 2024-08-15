@@ -6,7 +6,7 @@ namespace App\Services\Exception\NotFound;
 
 class VendorNotFoundException extends NotFoundException
 {
-    public function __construct(int $id)
+    public function __construct(?int $id = null)
     {
         parent::__construct("Vendor with id $id not found");
     }

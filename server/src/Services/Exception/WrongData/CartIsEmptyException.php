@@ -6,5 +6,8 @@ namespace App\Services\Exception\WrongData;
 
 class CartIsEmptyException extends WrongDataException
 {
-    protected $message = 'Your cart is empty';
+    public function __construct()
+    {
+        parent::__construct('Your cart is empty');
+    }
 }

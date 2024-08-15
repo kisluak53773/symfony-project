@@ -6,5 +6,8 @@ namespace App\Services\Exception\Access;
 
 class NotAllowedToPatchReviewException extends AccessForbiddenException
 {
-    protected $message = 'You are not allowd to patch this review';
+    public function __construct()
+    {
+        parent::__construct('You are not allowed to patch this review');
+    }
 }

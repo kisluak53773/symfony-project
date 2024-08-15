@@ -21,6 +21,15 @@ interface CartServiceInterface
      */
     public function getProductsCart(): Collection;
 
+    /**
+     * Summary of add
+     * @param \App\DTO\Cart\AddToCartDto $addToCartDto
+     * 
+     * @return array{
+     *     responseMessage: array{id: int|null, message: string} | string,
+     *     statusCode: int,
+     * }
+     */
     public function add(AddToCartDto $addToCartDto): array;
 
     public function increase(IncreaseDto $increaseDto): int;
