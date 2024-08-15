@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entity;
 
 use App\Repository\OrderRepository;
@@ -7,12 +9,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Serializer\Annotation\Groups;
 use DateTime;
 use DateTimeImmutable;
-use App\Enum\PaymentMethod;
-use App\Enum\OrderStatus;
 
 #[ORM\Entity(repositoryClass: OrderRepository::class)]
 #[ORM\Table(name: '`order`')]
@@ -27,7 +26,6 @@ class Order
 
     #[ORM\ManyToOne(inversedBy: 'orders')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank(message: 'Customer should be present')]
     private ?User $customer = null;
 
     /**
@@ -38,7 +36,6 @@ class Order
     private Collection $orderProducts;
 
     #[ORM\Column(length: 20)]
-    #[Assert\Choice([PaymentMethod::PAYMENT_CASH->value, PaymentMethod::PAYMENT_CARD->value])]
     #[Groups(['orders'])]
     private ?string $paymentMethod = null;
 
@@ -47,21 +44,11 @@ class Order
     private ?\DateTimeInterface $deliveryTime = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Assert\Length(
-        max: 255,
-        maxMessage: 'Comment should not be so long',
-    )]
     #[Groups(['orders'])]
     private ?string $comment = null;
 
     #[ORM\Column(length: 20)]
     #[Groups(['orders'])]
-    #[Assert\Choice([
-        OrderStatus::ORDER_PROCESSED->value,
-        OrderStatus::ORDER_ON_THE_WAY->value,
-        OrderStatus::ORDER_DELIVERED->value,
-        OrderStatus::ORDER_CANCELED->value
-    ])]
     private ?string $orderStatus = null;
 
     #[ORM\Column]
@@ -175,13 +162,13 @@ class Order
     #[Groups(['orders_admin'])]
     public function getCustomerPhone(): ?string
     {
-        return $this->getCustomer()->getPhone();
+        return $this->getCustomer()?->getPhone();
     }
 
     #[Groups(['orders_admin'])]
-    public function getCustomerId(): ?string
+    public function getCustomerId(): ?int
     {
-        return $this->getCustomer()->getId();
+        return $this->getCustomer()?->getId();
     }
 
     public function getCreatedAt(): ?DateTimeImmutable
@@ -227,16 +214,17 @@ class Order
         $products = $this->getOrderProducts()->getValues();
 
         return array_reduce($products, function ($sum, $item) {
-            $quantity = $item->getQuantity();
-            $price = $item->getVendorProduct()->getPrice();
+            $quantity = $item->getQuantity() ?? 0;
+
+            $price = is_numeric($item->getVendorProduct()?->getPrice()) ? (float) $item->getVendorProduct()->getPrice() : 0.0;
 
             return $sum + $quantity * $price;
-        }, 0);
+        }, 0.0);
     }
 
     #[Groups(['orders'])]
     public function getDeliveryAddress(): ?string
     {
-        return $this->getCustomer()->getAddress();
+        return $this->getCustomer()?->getAddress();
     }
 }

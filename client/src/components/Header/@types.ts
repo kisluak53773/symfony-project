@@ -22,3 +22,14 @@ export interface ISearchItemProps {
 export interface IHeaderSearchModalProps {
   setIsModalActive: React.Dispatch<React.SetStateAction<boolean>>;
 }
+
+interface ILinks {
+  id: number;
+  href: string;
+  title: string;
+  img: string;
+}
+
+export interface IHeaderLinksProps {
+  links: ILinks[];
+}

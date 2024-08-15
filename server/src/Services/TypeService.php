@@ -4,99 +4,72 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Services\Exception\Request\NotFoundException;
-use App\Services\Exception\Request\ServerErrorException;
-use App\Services\Exception\Request\BadRequsetException;
-use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\HttpFoundation\Request;
-use App\Services\Uploader\TypesImageUploader;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
+use App\DTO\Type\CreatTypeDto;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Doctrine\ORM\EntityManagerInterface;
+use App\Contract\Repository\TypeRepositoryInterface;
+use App\Contract\Service\TypeServiceInterface;
+use App\Services\Exception\NotFound\TypeNotFoundException;
+use App\Contract\FileUploaderInterface;
 use App\Entity\Type;
-use Symfony\Component\HttpFoundation\File\Exception\FileException;
 
-class TypeService
+class TypeService implements TypeServiceInterface
 {
+    /**
+     * Summary of __construct
+     * @param \Doctrine\ORM\EntityManagerInterface $entityManager
+     * @param \App\Services\Uploader\TypesImageUploader $uploader
+     * @param \App\Repository\TypeRepository $typeRepository
+     */
     public function __construct(
-        private ManagerRegistry $registry,
-        private TypesImageUploader $uploader,
-        private ValidatorInterface $validator
-    ) {
-    }
+        private EntityManagerInterface $entityManager,
+        private FileUploaderInterface $uploader,
+        private TypeRepositoryInterface $typeRepository
+    ) {}
 
     /**
      * Summary of add
-     * @param \Symfony\Component\HttpFoundation\Request $request
-     * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
-     * @throws \App\Services\Exception\Request\ServerErrorException
+     * @param \Symfony\Component\HttpFoundation\File\UploadedFile $image
+     * @param \App\DTO\Type\CreatTypeDto $creatTypeDto
      * 
      * @return int
      */
-    public function add(Request $request): int
+    public function add(UploadedFile $image, CreatTypeDto $creatTypeDto): int
     {
-        $entityManger = $this->registry->getManager();
+        $imagePath = $this->uploader->upload($image);
+        $type = $this->typeRepository->create($creatTypeDto, $imagePath);
+        $this->entityManager->flush();
 
-        if (!$request->request->has('title')) {
-            throw new BadRequsetException();
-        }
-
-        $type = new Type();
-        $type->setTitle($request->request->get('title'));
-
-        if ($request->files->has('image')) {
-            try {
-                $imagePath = $this->uploader->upload($request->files->get('image'));
-                $type->setImage($imagePath);
-            } catch (FileException $e) {
-                throw new ServerErrorException($e->getMessage());
-            }
-        }
-
-        $errors = $this->validator->validate($type);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
-        $entityManger->persist($type);
-        $entityManger->flush();
-
-        return $type->getId();
+        return $type->getId() ?? 0;
     }
 
 
     /**
      * Summary of get
-     * @return array
+     * @return Type[]
      */
     public function get(): array
     {
-        $entityManager = $this->registry->getManager();
-
-        return $entityManager->getRepository(Type::class)->findAll();
+        return $this->typeRepository->findAll();
     }
 
     /**
      * Summary of delete
      * @param int $id
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\TypeNotFoundException
      * 
      * @return void
      */
     public function delete(int $id): void
     {
-        $entityManager = $this->registry->getManager();
-
-        $type = $entityManager->getRepository(Type::class)->find($id);
+        $type = $this->typeRepository->find($id);
 
         if (!isset($type)) {
-            throw new NotFoundException('Type not found');
+            throw new TypeNotFoundException($id);
         }
 
-        $entityManager->remove($type);
-        $entityManager->flush();
+        $this->typeRepository->remove($type);
+        $this->entityManager->flush();
     }
 }

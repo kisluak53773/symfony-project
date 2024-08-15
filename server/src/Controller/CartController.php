@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -8,16 +10,21 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Enum\Role;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use App\Services\CartService;
-use App\Services\Exception\Request\RequestException;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use App\DTO\Cart\AddToCartDto;
+use App\DTO\Cart\IncreaseDto;
+use App\DTO\Cart\DecreaseDto;
+use App\Contract\Service\CartServiceInterface;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use App\Services\Exception\NotFound\NotFoundException;
+use App\Services\Exception\WrongData\WrongDataException;
+use App\Services\Exception\Access\AccessForbiddenException;
 
 #[Route('/api/cart', name: 'api_cart_')]
 class CartController extends AbstractController
 {
-    public function __construct(private CartService $cartService)
-    {
-    }
+    public function __construct(private CartServiceInterface $cartService) {}
 
     #[Route(name: 'create', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
@@ -25,11 +32,15 @@ class CartController extends AbstractController
     {
         try {
             $this->cartService->createCart();
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json(['message' => 'cart created'], 201);
+        return $this->json(['message' => 'cart created'], Response::HTTP_CREATED);
     }
 
     #[Route('/prodcuts', name: 'get_products', methods: 'get')]
@@ -38,8 +49,12 @@ class CartController extends AbstractController
     {
         try {
             $cartProducts = $this->cartService->getProductsCart();
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
         return $this->json(
@@ -50,54 +65,70 @@ class CartController extends AbstractController
 
     #[Route('/add', name: 'addToCart', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function addToCart(Request $request): JsonResponse
+    public function addToCart(#[MapRequestPayload] AddToCartDto $addToCartDto): JsonResponse
     {
         try {
-            $response = $this->cartService->addToCart($request);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+            $response = $this->cartService->add($addToCartDto);
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json($response['responseMessage'], $response['statucCode']);
+        return $this->json($response['responseMessage'], $response['statusCode']);
     }
 
     #[Route('/increase', name: 'increase_amount_of_product_in_cart', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function increaseProductAmount(Request $request): JsonResponse
+    public function increaseProductAmount(#[MapRequestPayload] IncreaseDto $increaseDto): JsonResponse
     {
         try {
-            $quantity = $this->cartService->increaseProductAmount($request);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+            $quantity = $this->cartService->increase($increaseDto);
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json(['message' => 'Quantity increased', 'quantity' => $quantity], 200);
+        return $this->json(['message' => 'Quantity increased', 'quantity' => $quantity], Response::HTTP_OK);
     }
 
     #[Route('/decrease', name: 'decrease_amount_of_product_in_cart', methods: 'post')]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
-    public function decreaseProductAmount(Request $request): JsonResponse
+    public function decreaseProductAmount(#[MapRequestPayload] DecreaseDto $decreaseDto): JsonResponse
     {
         try {
-            $this->cartService->decreaseProductAmount($request);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+            $this->cartService->decrease($decreaseDto);
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json(['message' => 'Decreased successfully'], 200);
+        return $this->json(['message' => 'Decreased successfully'], Response::HTTP_OK);
     }
 
-    #[Route('/remove/{vendorProductId<\d+>}', name: 'remove_from_cart', methods: 'delete')]
+    #[Route('/remove/{vendorProductId}', name: 'remove_from_cart', methods: 'delete', requirements: ['vendorProductId' => '\d+'])]
     #[IsGranted(Role::ROLE_USER->value, message: 'You are not allowed to access this route.')]
     public function removeFromCart(int $vendorProductId): JsonResponse
     {
         try {
             $this->cartService->removeFromCart($vendorProductId);
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json(['message' => 'Deleted sucseffully'], 200);
+        return $this->json(['message' => 'Deleted sucseffully'], Response::HTTP_OK);
     }
 
     #[Route('/removeAll', name: 'remove_all_from_cart', methods: 'delete')]
@@ -106,10 +137,14 @@ class CartController extends AbstractController
     {
         try {
             $this->cartService->removeAllFromCart();
-        } catch (RequestException $e) {
-            return $this->json(['message' => $e->getMessage()], $e->getStatsCode());
+        } catch (NotFoundException $e) {
+            throw new HttpException(Response::HTTP_NOT_FOUND, $e->getMessage());
+        } catch (WrongDataException $e) {
+            throw new HttpException(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        } catch (AccessForbiddenException $e) {
+            throw new HttpException(Response::HTTP_FORBIDDEN, $e->getMessage());
         }
 
-        return $this->json(['message' => 'Deleted sucseffully'], 200);
+        return $this->json(['message' => 'Deleted sucseffully'], Response::HTTP_OK);
     }
 }

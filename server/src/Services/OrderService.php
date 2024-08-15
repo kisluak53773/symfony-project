@@ -4,183 +4,111 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\HttpFoundation\Request;
-use App\Services\Validator\OrderValidator;
-use App\Entity\User;
-use App\Entity\OrderProduct;
+use App\DTO\Order\CreateOrderDto;
+use App\DTO\Order\PatchOrderDto;
+use App\DTO\PaginationQueryDto;
+use Doctrine\ORM\EntityManagerInterface;
+use App\Contract\Repository\OrderRepositoryInterface;
+use App\Contract\Repository\UserRepositoryInterface;
+use App\Contract\Repository\OrderProductRepositoryInteface;
+use App\Contract\Service\OrderServiceInterface;
+use App\Contract\PaginationHandlerInterface;
 use App\Entity\Order;
-use App\Enum\OrderStatus;
-use Knp\Component\Pager\PaginatorInterface;
-use App\Repository\OrderRepository;
-use DateTime;
-use App\Services\Exception\Request\BadRequsetException;
-use App\Services\Exception\Request\NotFoundException;
-use App\Services\Exception\Request\ForbiddenException;
+use App\Services\Exception\WrongData\CartIsEmptyException;
+use App\Services\Exception\NotFound\OrderNotFoundException;
+use App\Services\Exception\Access\CanNotCancelOrderException;
+use App\Entity\OrderProduct;
+use App\Services\Exception\NotFound\CartNotFoundException;
+use App\Services\Exception\NotFound\VendorNotFoundException;
 
-class OrderService
+class OrderService implements OrderServiceInterface
 {
+    /**
+     * Summary of __construct
+     * @param \Doctrine\ORM\EntityManagerInterface $entityManager
+     * @param \App\Contract\PaginationHandlerInterface<Order> $paginationHandler
+     * @param \App\Repository\OrderRepository $orderRepository
+     * @param \App\Repository\UserRepository $userRepository
+     * @param \App\Repository\OrderProductRepository $orderProductRepository
+     */
     public function __construct(
-        private ManagerRegistry $registry,
-        private Security $security,
-        private OrderValidator $orderValidator,
-        private ValidatorInterface $validator,
-        private PaginatorInterface $paginator,
-        private OrderRepository $orderRepository,
-    ) {
-    }
+        private EntityManagerInterface $entityManager,
+        private PaginationHandlerInterface $paginationHandler,
+        private OrderRepositoryInterface $orderRepository,
+        private UserRepositoryInterface $userRepository,
+        private OrderProductRepositoryInteface $orderProductRepository,
+    ) {}
 
     /**
-     * Summary of index
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * Summary of createOrder
+     * @param \App\DTO\Order\CreateOrderDto $createOrderDto
      * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\WrongData\CartIsEmptyException
      * 
      * @return void
      */
-    public function index(Request $request): void
+    public function createOrder(CreateOrderDto $createOrderDto): void
     {
-        $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        $this->orderValidator->isValidToCreateOrder($decoded);
-
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-
-        $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i', $decoded->deliveryTime);
-
-        $order = new Order();
-        $order->setCustomer($user);
-        $order->setPaymentMethod($decoded->paymentMethod);
-        $order->setDeliveryTime($deliveryDate);
-        $order->setOrderStatus(OrderStatus::ORDER_PROCESSED->value);
-
-        if (isset($decoded->comment)) {
-            $order->setComment($decoded->comment);
-        }
-
-        $errors = $this->validator->validate($order);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
-        $entityManager->persist($order);
-
+        $user = $this->userRepository->getCurrentUser();
         $cart = $user->getCart();
 
-        if (!isset($cart)) {
-            throw new NotFoundException('You do not have a cart');
+        if (!$cart) {
+            throw new CartNotFoundException();
         }
 
+        $order = $this->orderRepository->create($createOrderDto, $user);
         $cartProducts = $cart->getCartProducts()->getValues();
 
         if (count($cartProducts) === 0) {
-            throw new BadRequsetException('Your cart is empty');
+            throw new CartIsEmptyException();
         }
 
-        foreach ($cartProducts as $cartProduct) {
-            $orderProduct = new OrderProduct();
-            $orderProduct->setOrderEntity($order);
-            $orderProduct->setQuantity($cartProduct->getQuantity());
-            $orderProduct->setVendorProduct($cartProduct->getVendorProduct());
-
-            $errors = $this->validator->validate($orderProduct);
-
-            if (count($errors) > 0) {
-                $errorsString = (string) $errors;
-
-                throw new BadRequsetException($errorsString);
-            }
-
-            $entityManager->persist($orderProduct);
-            $entityManager->remove($cartProduct);
-        }
-
-        $entityManager->flush();
+        $this->orderProductRepository->addManyProducts($cartProducts, $order);
+        $this->entityManager->flush();
     }
 
     /**
      * Summary of getUserOrders
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
-     * @return array
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: iterable<int, mixed>
+     * }
      */
-    public function getUserOrders(Request $request): array
+    public function getUserOrders(PaginationQueryDto $paginationQueryDto): array
     {
-        $entityManager = $this->registry->getManager();
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-
+        $user = $this->userRepository->getCurrentUser();
         $querryBuilder = $this->orderRepository->getAllOrdersBelonignToUser($user);
-
-        $pagination = $this->paginator->paginate(
-            $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->getInt('limit', 5)
-        );
-
-        $orders = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $orders,
-        ];
+        $response = $this->paginationHandler->handlePagination($querryBuilder, $paginationQueryDto);
 
         return $response;
     }
 
     /**
      * Summary of getVendorOrders
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
-     * 
-     * @return array
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: iterable<int, mixed>
+     * }
      */
-    public function getVendorOrders(Request $request): array
+    public function getVendorOrders(PaginationQueryDto $paginationQueryDto): array
     {
-        $entityManager = $this->registry->getManager();
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
 
-        if (!isset($vendor)) {
-            throw new NotFoundException('Vendor data is not found');
+        if (!$vendor) {
+            throw new VendorNotFoundException();
         }
 
         $querryBuilder = $this->orderRepository->createQuerryBuilderForVendorAndPagination($vendor);
-
-        $pagination = $this->paginator->paginate(
-            $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->getInt('limit', 5)
-        );
-
-        $orders = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $orders,
-        ];
+        $response = $this->paginationHandler->handlePagination($querryBuilder, $paginationQueryDto);
 
         return $response;
     }
@@ -189,25 +117,25 @@ class OrderService
      * Summary of getVendorOrderById
      * @param int $id
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
-     * 
-     * @return array
+     * @return array{orderData: Order, products: array<OrderProduct>}
      */
     public function getVendorOrderById(int $id): array
     {
-        $entityManager = $this->registry->getManager();
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
 
-        if (!isset($vendor)) {
-            throw new NotFoundException('Vendor data is not found');
+        if (!$vendor) {
+            throw new VendorNotFoundException();
         }
 
-        $order = $entityManager->getRepository(Order::class)->find($id);
-        $products = $order->getOrderProducts()->getValues();
+        $order = $this->orderRepository->find($id);
 
-        $products = array_filter($products, fn ($item) => $item->getVendorProduct()->getVendor()->getId() === $vendor->getId());
+        if (!$order) {
+            throw new OrderNotFoundException();
+        }
+
+        $products = $order->getOrderProducts()->getValues();
+        $products = array_filter($products, fn($item) => $item->getVendorProduct()?->getVendor()?->getId() === $vendor->getId());
         $response = ['orderData' => $order, 'products' => $products];
 
         return $response;
@@ -215,32 +143,19 @@ class OrderService
 
     /**
      * Summary of getAllOrders
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
-     * @return array
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: iterable<int, mixed>
+     * }
      */
-    public function getAllOrders(Request $request): array
+    public function getAllOrders(PaginationQueryDto $paginationQueryDto): array
     {
         $querryBuilder = $this->orderRepository->createQuerryBuilderForPagination();
-
-        $pagination = $this->paginator->paginate(
-            $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->getInt('limit', 5)
-        );
-
-        $orders = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $orders,
-        ];
+        $response = $this->paginationHandler->handlePagination($querryBuilder, $paginationQueryDto);
 
         return $response;
     }
@@ -248,78 +163,49 @@ class OrderService
     /**
      * Summary of patchOrder
      * @param int $id
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\Order\PatchOrderDto $patchOrderDto
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @throws \App\Services\Exception\NotFound\OrderNotFoundException
      * 
      * @return void
      */
-    public function patchOrder(int $id, Request $request): void
+    public function patchOrder(int $id, PatchOrderDto $patchOrderDto): void
     {
-        $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        $this->orderValidator->isValidToPatchOrder($decoded);
-
-        $order = $entityManager->getRepository(Order::class)->find($id);
+        $order = $this->orderRepository->find($id);
 
         if (!isset($order)) {
-            throw new NotFoundException('Such order does not exist');
+            throw new OrderNotFoundException($id);
         }
 
-        $deliveryDate = DateTime::createFromFormat('Y-m-d\TH:i', $decoded->deliveryTime);
-
-        $order->setPaymentMethod($decoded->paymentMethod);
-        $order->setOrderStatus($decoded->orderStatus);
-        $order->setDeliveryTime($deliveryDate);
-
-        $errors = $this->validator->validate($order);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
-        $entityManager->persist($order);
-        $entityManager->flush();
+        $this->orderRepository->patch($patchOrderDto, $order);
+        $this->entityManager->flush();
     }
 
     /**
      * Summary of cancelOrder
      * @param int $id
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
-     * @throws \App\Services\Exception\Request\ForbiddenException
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @throws \App\Services\Exception\NotFound\OrderNotFoundException
+     * @throws \App\Services\Exception\Access\CanNotCancelOrderException
      * 
      * @return void
      */
     public function cancelOrder(int $id): void
     {
-        $entityManager = $this->registry->getManager();
-        $order = $entityManager->getRepository(Order::class)->find($id);
+        $order = $this->orderRepository->find($id);
 
         if (!isset($order)) {
-            throw new NotFoundException('Such order does not exist');
+            throw new OrderNotFoundException($id);
         }
 
-        if ($this->security->getUser()->getUserIdentifier() !== $order->getCustomer()->getUserIdentifier()) {
-            throw new ForbiddenException('You can not cancel this order');
+        $currentUser = $this->userRepository->getCurrentUser();
+        $orderCustomer = $order->getCustomer();
+
+        if ($orderCustomer === null || $currentUser->getUserIdentifier() !== $orderCustomer->getUserIdentifier()) {
+            throw new CanNotCancelOrderException($id);
         }
 
-        $order->setOrderStatus(OrderStatus::ORDER_CANCELED->value);
-
-        $errors = $this->validator->validate($order);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
-        $entityManager->persist($order);
-        $entityManager->flush();
+        $this->orderRepository->cancel($order);
+        $this->entityManager->flush();
     }
 }

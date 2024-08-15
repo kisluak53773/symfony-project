@@ -4,7 +4,9 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+  products_images: "/images/products/"
   products_directory: "%kernel.project_dir%/public/images/products"
+  types_images: "/images/types/"
   types_directory: "%kernel.project_dir%/public/images/types"
 
 services:
@@ -22,6 +24,15 @@ services:
       - "../src/Entity/"
       - "../src/Kernel.php"
 
+  Doctrine\ORM\EntityManagerInterface $entityManager: "@doctrine.orm.entity_manager"
+
+  App\EventListener\ExceptionListener:
+    tags:
+      - { name: kernel.event_listener, event: kernel.exception }
+
+  Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface:
+    alias: Symfony\Bundle\SecurityBundle\Security
+
   App\Services\Uploader\ProductImageUploader:
     arguments:
       $targetDirectory: "%products_directory%"
@@ -29,6 +40,14 @@ services:
   App\Services\Uploader\TypesImageUploader:
     arguments:
       $targetDirectory: "%types_directory%"
+
+  App\Services\ProductService:
+    arguments:
+      $uploader: '@App\Services\Uploader\ProductImageUploader'
+
+  App\Services\TypeService:
+    arguments:
+      $uploader: '@App\Services\Uploader\TypesImageUploader'
 
   App\Repository\ProductRepository:
     arguments:

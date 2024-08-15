@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entity;
 
 use App\Repository\OrderProductRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: OrderProductRepository::class)]
@@ -18,17 +19,14 @@ class OrderProduct
 
     #[ORM\ManyToOne(inversedBy: 'orderProducts')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank(message: 'Order should be present')]
     private ?Order $orderEntity = null;
 
     #[ORM\Column]
-    #[Assert\NotBlank(message: 'Quanti should be present')]
     #[Groups(['order_product', 'vendor_order'])]
     private ?int $quantity = null;
 
     #[ORM\ManyToOne(inversedBy: 'orderProducts')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank(message: 'VendorProduct should be present')]
     private ?VendorProduct $vendorProduct = null;
 
     public function getId(): ?int
@@ -75,36 +73,36 @@ class OrderProduct
     #[Groups(['order_product', 'vendor_order'])]
     public function getVendorProductId(): ?int
     {
-        return $this->getVendorProduct()->getId();
+        return $this->getVendorProduct()?->getId();
     }
 
     #[Groups(['order_product', 'vendor_order'])]
     public function getPrice(): ?string
     {
-        return $this->getVendorProduct()->getPrice();
+        return $this->getVendorProduct()?->getPrice();
     }
 
     #[Groups(['order_product', 'vendor_order'])]
     public function getProductId(): ?int
     {
-        return $this->getVendorProduct()->getProduct()->getId();
+        return $this->getVendorProduct()?->getProduct()?->getId();
     }
 
     #[Groups(['order_product', 'vendor_order'])]
     public function getProductImage(): ?string
     {
-        return $this->getVendorProduct()->getProduct()->getImage();
+        return $this->getVendorProduct()?->getProduct()?->getImage();
     }
 
     #[Groups(['order_product', 'vendor_order'])]
     public function getProductWeight(): ?string
     {
-        return $this->getVendorProduct()->getProduct()->getWeight();
+        return $this->getVendorProduct()?->getProduct()?->getWeight();
     }
 
     #[Groups(['order_product', 'vendor_order'])]
     public function getProductTitle(): ?string
     {
-        return $this->getVendorProduct()->getProduct()->getTitle();
+        return $this->getVendorProduct()?->getProduct()?->getTitle();
     }
 }

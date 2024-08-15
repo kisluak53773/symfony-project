@@ -4,105 +4,66 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Symfony\Component\HttpFoundation\Request;
-use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use App\Services\Validator\VendorValidator;
-use App\Services\Exception\Request\BadRequsetException;
-use App\Services\Exception\Request\NotFoundException;
-use App\Entity\User;
 use App\Entity\Vendor;
-use DateTimeImmutable;
-use App\Enum\Role;
+use App\DTO\Vendor\CreateVendorDto;
+use App\DTO\Vendor\PatchVendorDto;
+use Doctrine\ORM\EntityManagerInterface;
+use App\Contract\Repository\UserRepositoryInterface;
+use App\Contract\Repository\VendorRepositoryInterface;
+use App\Contract\Service\VendorServiceInterface;
+use App\Services\Exception\NotFound\UserNotFoundException;
+use App\Services\Exception\NotFound\VendorNotFoundException;
 
-class VendorService
+class VendorService implements VendorServiceInterface
 {
+    /**
+     * Summary of __construct
+     * @param \Doctrine\ORM\EntityManagerInterface $entityManager
+     * @param \App\Repository\UserRepository $userRepository
+     * @param \App\Repository\VendorRepository $vendorRepository
+     */
     public function __construct(
-        private ManagerRegistry $registry,
-        private Security $security,
-        private VendorValidator $vendorValidator,
-        private ValidatorInterface $validator
-    ) {
-    }
+        private EntityManagerInterface $entityManager,
+        private UserRepositoryInterface $userRepository,
+        private VendorRepositoryInterface $vendorRepository,
+    ) {}
 
     /**
      * Summary of add
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\Vendor\CreateVendorDto $createVendorDto
      * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\UserNotFoundException
      * 
      * @return int
      */
-    public function add(Request $request): int
+    public function add(CreateVendorDto $createVendorDto): int
     {
-        $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        $this->vendorValidator->isVendorValid($decoded);
-
-        if (!isset($decoded->userId)) {
-            throw new BadRequsetException();
-        }
-
-        $userId = $decoded->userId;
-        $user = $entityManager->getRepository(User::class)->find($userId);
+        $userId = $createVendorDto->userId;
+        $user = $this->userRepository->find($userId);
 
         if (!isset($user)) {
-            throw new NotFoundException('Such user does not exist');
+            throw new UserNotFoundException($userId);
         }
 
-        $title = $decoded->title;
-        $vendorAddress = $decoded->vendorAddress;
-        $inn = $decoded->inn;
-        $registrationAuthority = $decoded->registrationAuthority;
-        $registraionDate = DateTimeImmutable::createFromFormat('Y-m-d', $decoded->registrationDate);
-        $registrationCertificateDate = DateTimeImmutable::createFromFormat('Y-m-d', $decoded->registrationCertificateDate);
+        $vendor = $this->vendorRepository->create($createVendorDto, $user);
+        $this->entityManager->flush();
 
-        $vendor = new Vendor();
-        $vendor->setTitle($title);
-        $vendor->setAddress($vendorAddress);
-        $vendor->setInn($inn);
-        $vendor->setRegistrationAuthority($registrationAuthority);
-        $vendor->setRegistrationDate($registraionDate);
-        $vendor->setRegistrationCertificateDate($registrationCertificateDate);
-        $vendor->setUser($user);
-
-        $errors = $this->validator->validate($vendor);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
-        $entityManager->persist($vendor);
-
-        $user->setRoles([Role::ROLE_VENDOR->value]);
-        $entityManager->persist($user);
-
-        $entityManager->flush();
-
-        return $vendor->getId();
+        return $vendor->getId() ?? 0;
     }
 
     /**
      * Summary of getCurrentVendor
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\VendorNotFoundException
      * 
      * @return \App\Entity\Vendor
      */
     public function getCurrentVendor(): Vendor
     {
-        $entityManager = $this->registry->getManager();
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
 
         if (!isset($vendor)) {
-            throw new NotFoundException();
+            throw new VendorNotFoundException(1);
         }
 
         return $vendor;
@@ -110,59 +71,40 @@ class VendorService
 
     /**
      * Summary of patchCurrentVendor
-     * @param \Symfony\Component\HttpFoundation\Request $request
-     * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @param \App\DTO\Vendor\PatchVendorDto $patchVendorDto
      * 
      * @return void
      */
-    public function patchCurrentVendor(Request $request): void
+    public function patchCurrentVendor(PatchVendorDto $patchVendorDto): void
     {
-        $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        $this->vendorValidator->isVendorValidForPatch($decoded);
-
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-
+        $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
-        $vendor->setTitle($decoded->title);
-        $vendor->setAddress($decoded->address);
-        $vendor->setInn($decoded->inn);
-        $vendor->setRegistrationAuthority($decoded->registrationAuthority);
 
-        $errors = $this->validator->validate($vendor);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
+        if (!$vendor) {
+            throw new VendorNotFoundException();
         }
 
-        $entityManager->persist($vendor);
-        $entityManager->flush();
+        $this->vendorRepository->patch($patchVendorDto, $vendor);
+        $this->entityManager->flush();
     }
 
     /**
      * Summary of delete
      * @param int $id
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\VendorNotFoundException
      * 
      * @return void
      */
     public function delete(int $id): void
     {
-        $entityManager = $this->registry->getManager();
-
-        $vendor = $entityManager->getRepository(Vendor::class)->find($id);
+        $vendor = $this->vendorRepository->find($id);
 
         if (!isset($vendor)) {
-            throw new NotFoundException('No such vendor exist');
+            throw new VendorNotFoundException($id);
         }
 
-        $entityManager->remove($vendor);
-        $entityManager->flush();
+        $this->vendorRepository->remove($vendor);
+        $this->entityManager->flush();
     }
 }

@@ -1,40 +1,25 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
 import { type IUserInitialState } from "./@types";
 import { type RootState } from "@/store/store";
-import { userService } from "@/services/user";
-import { errorCatch } from "@/services/axios";
 
 const initialState: IUserInitialState = {
-  user: null,
-  error: "",
+  isAuthorized: false,
 };
-
-export const fetchUser = createAsyncThunk("user/fetch", async () => {
-  const user = await userService.getCurrentUser();
-  return user;
-});
 
 export const userSlice = createSlice({
   initialState,
   name: "user",
   reducers: {
     logout: (state) => {
-      state.user = initialState.user;
+      state.isAuthorized = initialState.isAuthorized;
+    },
+    login: (state) => {
+      state.isAuthorized = true;
     },
   },
-  extraReducers: (builder) => {
-    builder.addCase(fetchUser.fulfilled, (state, action) => {
-      state.user = action.payload;
-      state.error = initialState.error;
-    });
-    builder.addCase(fetchUser.rejected, (state, action) => {
-      state.user = initialState.user;
-      state.error = errorCatch(action.error);
-    });
-  },
+  extraReducers: (builder) => {},
 });
 
-export const getUser = (state: RootState) => state.user.user;
-export const getUserError = (state: RootState) => state.user.error;
+export const getIsAuthorized = (state: RootState) => state.user.isAuthorized;
 
-export const { logout } = userSlice.actions;
+export const { logout, login } = userSlice.actions;

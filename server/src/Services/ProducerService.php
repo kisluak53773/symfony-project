@@ -4,91 +4,65 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use App\Services\Exception\Request\BadRequsetException;
-use App\Services\Exception\Request\NotFoundException;
+use App\DTO\Producer\CreateProducerDto;
+use Doctrine\ORM\EntityManagerInterface;
+use App\Contract\Repository\ProducerRepositoryInterface;
+use App\Contract\Service\ProducerServiceInterface;
 use App\Entity\Producer;
+use App\Services\Exception\NotFound\ProducerNotFoundException;
 
-class ProducerService
+class ProducerService implements ProducerServiceInterface
 {
+    /**
+     * Summary of __construct
+     * @param \Doctrine\ORM\EntityManagerInterface $entityManager
+     * @param \App\Repository\ProducerRepository $producerRepository
+     */
     public function __construct(
-        private ManagerRegistry $registry,
-        private ValidatorInterface $validator
-    ) {
-    }
+        private EntityManagerInterface $entityManager,
+        private ProducerRepositoryInterface $producerRepository,
+    ) {}
 
     /**
      * Summary of add
-     * @param \Symfony\Component\HttpFoundation\Request $request
-     * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @param \App\DTO\Producer\CreateProducerDto $createProducerDto
      * 
      * @return int
      */
-    public function add(Request $request): int
+    public function add(CreateProducerDto $createProducerDto): int
     {
-        $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
+        $producer = $this->producerRepository->create($createProducerDto);
+        $this->entityManager->flush();
 
-        if (!isset($decoded->title) || !isset($decoded->country) || !isset($decoded->address)) {
-            throw new BadRequsetException();
-        }
-
-        $title = $decoded->title;
-        $country = $decoded->country;
-        $address = $decoded->address;
-
-        $producer = new Producer();
-        $producer->setTitle($title);
-        $producer->setCountry($country);
-        $producer->setAddress($address);
-
-        $errors = $this->validator->validate($producer);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
-        $entityManager->persist($producer);
-        $entityManager->flush();
-
-        return $producer->getId();
+        return $producer->getId() ?? 0;
     }
 
     /**
      * Summary of getForVendor
-     * @return array
+     * @return Producer[]
      */
     public function getForVendor(): array
     {
-        $entityManager = $this->registry->getManager();
-
-        return $entityManager->getRepository(Producer::class)->findAll();
+        return $this->producerRepository->findAll();
     }
 
     /**
      * Summary of delete
      * @param int $id
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\ProducerNotFoundException
      * 
      * @return void
      */
-    public function delete(int $id)
+    public function delete(int $id): void
     {
-        $entityManager = $this->registry->getManager();
-
-        $producer = $entityManager->getRepository(Producer::class)->find($id);
+        $producer = $this->producerRepository->find($id);
 
         if (!isset($producer)) {
-            throw new NotFoundException('Producer not found');
+            throw new ProducerNotFoundException($id);
         }
 
-        $entityManager->remove($producer);
-        $entityManager->flush();
+        $this->producerRepository->remove($producer);
+        $this->entityManager->flush();
     }
 }

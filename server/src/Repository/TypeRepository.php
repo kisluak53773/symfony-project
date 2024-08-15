@@ -1,43 +1,51 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use App\Entity\Type;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use App\DTO\Type\CreatTypeDto;
+use App\Contract\Repository\TypeRepositoryInterface;
 
 /**
  * @extends ServiceEntityRepository<Type>
  */
-class TypeRepository extends ServiceEntityRepository
+class TypeRepository extends ServiceEntityRepository implements TypeRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Type::class);
     }
 
-    //    /**
-    //     * @return Type[] Returns an array of Type objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('t')
-    //            ->andWhere('t.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('t.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    /**
+     * Summary of create
+     * @param \App\DTO\Type\CreatTypeDto $creatTypeDto
+     * @param string $imagePath
+     * 
+     * @return \App\Entity\Type
+     */
+    public function create(CreatTypeDto $creatTypeDto, string $imagePath): Type
+    {
+        $type = new Type();
+        $type->setTitle($creatTypeDto->title);
+        $type->setImage($imagePath);
 
-    //    public function findOneBySomeField($value): ?Type
-    //    {
-    //        return $this->createQueryBuilder('t')
-    //            ->andWhere('t.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        $this->getEntityManager()->persist($type);
+
+        return $type;
+    }
+
+    /**
+     * Summary of remove
+     * @param \App\Entity\Type $type
+     * 
+     * @return void
+     */
+    public function remove(Type $type): void
+    {
+        $this->getEntityManager()->remove($type);
+    }
 }

@@ -1,0 +1,33 @@
+"use client";
+
+import { ROLES } from "@/constants";
+import { getTokenPayload } from "@/services/tokenDecoder";
+import { useRouter } from "next/router";
+import React, { FC, useEffect } from "react";
+import { RouteItem } from "./RouteItem";
+import { USER_ROUTES } from "@/constants";
+import { useSelector } from "react-redux";
+import { getIsAuthorized } from "@/store/slices/user";
+
+export const UserRouteList: FC = () => {
+  const router = useRouter();
+  const isAuthorized = useSelector(getIsAuthorized);
+
+  useEffect(() => {
+    const tokenPayload = getTokenPayload();
+
+    if (!tokenPayload || !tokenPayload.roles.includes(ROLES.ROLE_USER)) {
+      router.replace("/");
+    }
+  }, [isAuthorized]);
+
+  return (
+    <nav className=" min-h-[87vh] p-[40px]">
+      <ul>
+        {USER_ROUTES.map((item) => (
+          <RouteItem key={item.id} href={item.href} title={item.title} />
+        ))}
+      </ul>
+    </nav>
+  );
+};

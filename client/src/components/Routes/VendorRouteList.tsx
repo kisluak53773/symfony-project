@@ -6,9 +6,12 @@ import { RouteItem } from "./RouteItem";
 import { getTokenPayload } from "@/services/tokenDecoder";
 import { useRouter } from "next/navigation";
 import { ROLES } from "@/constants";
+import { useSelector } from "react-redux";
+import { getIsAuthorized } from "@/store/slices/user";
 
 export const VendorRouteList: FC = () => {
   const router = useRouter();
+  const isAuthorized = useSelector(getIsAuthorized);
 
   useEffect(() => {
     const tokenPayload = getTokenPayload();
@@ -16,7 +19,7 @@ export const VendorRouteList: FC = () => {
     if (!tokenPayload || !tokenPayload.roles.includes(ROLES.ROLE_VENDOR)) {
       router.replace("/");
     }
-  });
+  }, [isAuthorized]);
 
   return (
     <nav className=" min-h-[87vh] p-[40px]">

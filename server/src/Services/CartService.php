@@ -4,266 +4,229 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use App\Entity\User;
-use App\Entity\Cart;
-use App\Services\Validator\CartValidator;
-use App\Services\Exception\Request\BadRequsetException;
 use Doctrine\Common\Collections\Collection;
+use App\DTO\Cart\AddToCartDto;
+use App\DTO\Cart\IncreaseDto;
+use App\DTO\Cart\DecreaseDto;
+use Doctrine\ORM\EntityManagerInterface;
+use App\Contract\Repository\CartRepositoryInterface;
+use App\Contract\Repository\UserRepositoryInterface;
+use App\Contract\Repository\VendorProductRepositoryInterface;
+use App\Contract\Repository\CartProductRepositoryInterface;
+use App\Contract\Service\CartServiceInterface;
+use App\Services\Exception\WrongData\CartAlreadyExistsException;
+use App\Services\Exception\WrongData\NoProductInStockException;
+use App\Services\Exception\NotFound\NoProductInCartException;
+use App\Services\Exception\WrongData\CartIsEmptyException;
 use App\Entity\CartProduct;
-use App\Entity\VendorProduct;
-use App\Services\Exception\Request\NotFoundException;
+use App\Services\Exception\NotFound\CartNotFoundException;
 
-class CartService
+class CartService implements CartServiceInterface
 {
+    /**
+     * Summary of __construct
+     * @param \Doctrine\ORM\EntityManagerInterface $entityManager
+     * @param \App\Repository\CartRepository $cartRepository
+     * @param \App\Repository\UserRepository $userRepository
+     * @param \App\Repository\VendorProductRepository $vendorProductRepository
+     * @param \App\Repository\CartProductRepository $cartProductRepository
+     */
     public function __construct(
-        private ManagerRegistry $registry,
-        private Security $security,
-        private ValidatorInterface $validator,
-        private CartValidator $cartValidator
-    ) {
-    }
+        private EntityManagerInterface $entityManager,
+        private CartRepositoryInterface $cartRepository,
+        private UserRepositoryInterface $userRepository,
+        private VendorProductRepositoryInterface $vendorProductRepository,
+        private CartProductRepositoryInterface $cartProductRepository,
+    ) {}
 
     /**
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * Summary of createCart
+     * @throws \App\Services\Exception\WrongData\CartAlreadyExistsException
      * 
      * @return void
      */
     public function createCart(): void
     {
-        $entityManager = $this->registry->getManager();
-
-        $userPhoen = $this->security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhoen]);
+        $user = $this->userRepository->getCurrentUser();
 
         $cart = $user->getCart();
 
         if (isset($cart)) {
-            throw new BadRequsetException('You already have a cart');
+            throw new CartAlreadyExistsException();
         }
 
-        $cart = new Cart();
-        $cart->setCustomer($user);
-
-        $entityManager->persist($cart);
-        $entityManager->flush();
+        $this->cartRepository->create($user);
+        $this->entityManager->flush();
     }
 
     /**
+     * Summary of getProductsCart
      * @return Collection<int, CartProduct>
      */
     public function getProductsCart(): Collection
     {
-        $entityManager = $this->registry->getManager();
+        $user = $this->userRepository->getCurrentUser();
+        $cart =  $user->getCart();
 
-        $userPhoen = $this->security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhoen]);
+        if (!$cart) {
+            throw new CartNotFoundException();
+        }
 
-        return $user->getCart()->getCartProducts();
+        return $cart->getCartProducts();
     }
 
     /**
-     * Summary of addToCart
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * Summary of add
+     * @param \App\DTO\Cart\AddToCartDto $addToCartDto
      * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @throws \App\Services\Exception\WrongData\NoProductInStockException
      * 
-     * @return array
+     * @return array{
+     *     responseMessage: array{id: int|null, message: string} | string,
+     *     statusCode: int,
+     * }
      */
-    public function addToCart(Request $request): array
+    public function add(AddToCartDto $addToCartDto): array
     {
-        $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
+        $vendorProduct = $this->vendorProductRepository->find($addToCartDto->vendorProductId);
 
-        $this->cartValidator->isValidToAddToCart($decoded);
-
-        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($decoded->vendorProductId);
-        $qunatity = $vendorProduct->getQuantity() > $decoded->quantity ?
-            $decoded->quantity : $vendorProduct->getQuantity();
-
-        if (!isset($vendorProduct) || $vendorProduct->getQuantity() === 0) {
-            throw new BadRequsetException('No such item in stock');
+        if (!isset($vendorProduct) || $vendorProduct->getQuantity() <= 0) {
+            throw new NoProductInStockException($addToCartDto->vendorProductId);
         }
 
-        $cartProduct = $entityManager->getRepository(CartProduct::class)->findOneBy(['vendorProduct' => $vendorProduct]);
+        $cartProduct = $this->cartProductRepository->findOneBy(['vendorProduct' => $vendorProduct]);
+
+        $qunatity = $vendorProduct->getQuantity() > $addToCartDto->quantity ?
+            $addToCartDto->quantity : $vendorProduct->getQuantity();
 
         if (isset($cartProduct)) {
-            $cartProduct->increaseQuantity($qunatity);
-            $vendorProduct->decreaseQuantity($qunatity);
+            $this->cartProductRepository->increaseProductQunatity($cartProduct, $vendorProduct, $qunatity);
+            $this->entityManager->flush();
 
-            $entityManager->persist($cartProduct);
-            $entityManager->persist($vendorProduct);
-            $entityManager->flush();
-
-            return ['responseMessage' => 'Quantity increased', 'statucCode' => 200];
+            return ['responseMessage' => 'Quantity increased', 'statusCode' => 200];
         }
 
-
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->userRepository->getCurrentUser();
         $cart = $user->getCart();
 
-        $cartProduct = new CartProduct();
-        $cartProduct->setCart($cart);
-        $cartProduct->setVendorProduct($vendorProduct);
-        $cartProduct->setQuantity($qunatity);
-
-        $errors = $this->validator->validate($cartProduct);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
+        if (!$cart) {
+            throw new CartNotFoundException();
         }
 
-        $vendorProduct->decreaseQuantity($qunatity);
+        $cartProduct = $this->cartProductRepository->create($vendorProduct, $cart, $qunatity);
+        $this->entityManager->flush();
 
-        $entityManager->persist($cartProduct);
-        $entityManager->persist($vendorProduct);
-        $entityManager->flush();
-
-        return ['responseMessage' => ['message' => 'Product added to cart', 'id' => $cartProduct->getId()], 'statusCode' => 201];
+        return ['responseMessage' => ['id' => $cartProduct->getId(), 'message' => 'Product added to cart'], 'statusCode' => 201];
     }
 
     /**
-     * Summary of increaseProductAmount
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * Summary of increase
+     * @param \App\DTO\Cart\IncreaseDto $increaseDto
      * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\WrongData\NoProductInStockException
+     * @throws \App\Services\Exception\NotFound\NoProductInCartException
      * 
      * @return int
      */
-    public function increaseProductAmount(Request $request): int
+    public function increase(IncreaseDto $increaseDto): int
     {
-        $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
+        $vendorProduct = $this->vendorProductRepository->find($increaseDto->vendorProductId);
 
-        $this->cartValidator->isValidToDecreaseAmounInCart($decoded);
-
-        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($decoded->vendorProductId);
-
-        if (!isset($vendorProduct) || $vendorProduct->getQuantity() === 0) {
-            throw new BadRequsetException('No such item in stock');
+        if (!isset($vendorProduct) || $vendorProduct->getQuantity() <= 0) {
+            throw new NoProductInStockException($increaseDto->vendorProductId);
         }
 
-        $cartProduct = $entityManager->getRepository(CartProduct::class)->findOneBy(['vendorProduct' => $vendorProduct]);
+        $cartProduct = $this->cartProductRepository->findOneBy(['vendorProduct' => $vendorProduct]);
 
         if (!isset($cartProduct)) {
-            throw new NotFoundException('No such product in cart');
+            throw new NoProductInCartException($increaseDto->vendorProductId);
         }
 
-        $quantity = $vendorProduct->getQuantity() > $decoded->quantity ?
-            $decoded->quantity : $vendorProduct->getQuantity();
+        $quantity = $vendorProduct->getQuantity() > $increaseDto->quantity ?
+            $increaseDto->quantity : $vendorProduct->getQuantity();
 
-        $cartProduct->increaseQuantity($quantity);
-        $vendorProduct->decreaseQuantity($quantity);
-
-        $entityManager->persist($cartProduct);
-        $entityManager->persist($vendorProduct);
-        $entityManager->flush();
+        $this->cartProductRepository->increaseProductQunatity($cartProduct, $vendorProduct, $quantity);
+        $this->entityManager->flush();
 
         return $quantity;
     }
 
     /**
-     * Summary of decreaseProductAmount
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * Summary of decrease
+     * @param \App\DTO\Cart\DecreaseDto $decreaseDto
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\WrongData\NoProductInStockException
+     * @throws \App\Services\Exception\NotFound\NoProductInCartException
      * 
      * @return void
      */
-    public function decreaseProductAmount(Request $request): void
+    public function decrease(DecreaseDto $decreaseDto): void
     {
-        $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
-
-        $this->cartValidator->isValidToDecreaseAmounInCart($decoded);
-
-        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($decoded->vendorProductId);
+        $vendorProduct = $this->vendorProductRepository->find($decreaseDto->vendorProductId);
 
         if (!isset($vendorProduct)) {
-            throw new NotFoundException('This vendor does not sell this item');
+            throw new NoProductInStockException($decreaseDto->vendorProductId);
         }
 
-        $cartProduct = $entityManager->getRepository(CartProduct::class)->findOneBy(['vendorProduct' => $vendorProduct]);
+        $cartProduct = $this->cartProductRepository->findOneBy(['vendorProduct' => $vendorProduct]);
 
         if (!isset($cartProduct)) {
-            throw new NotFoundException('No such product in cart');
+            throw new NoProductInCartException($decreaseDto->vendorProductId);
         }
 
-        if ($cartProduct->getQuantity() > $decoded->quantity) {
-            $cartProduct->decreaseQuantity($decoded->quantity);
-            $vendorProduct->increaseQuantity($decoded->quantity);
-
-            $entityManager->persist($cartProduct);
-            $entityManager->persist($vendorProduct);
-        } else {
-            $vendorProduct->increaseQuantity($cartProduct->getQuantity());
-
-            $entityManager->persist($vendorProduct);
-            $entityManager->remove($cartProduct);
-        }
-
-        $entityManager->flush();
+        $this->cartProductRepository->decreaseProductQunatity($cartProduct, $vendorProduct, $decreaseDto->quantity);
+        $this->entityManager->flush();
     }
 
     /**
      * Summary of removeFromCart
      * @param int $vendorProductId
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\WrongData\NoProductInStockException
+     * @throws \App\Services\Exception\NotFound\NoProductInCartException
      * 
      * @return void
      */
     public function removeFromCart(int $vendorProductId): void
     {
-        $entityManager = $this->registry->getManager();
-        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($vendorProductId);
+        $vendorProduct = $this->vendorProductRepository->find($vendorProductId);
 
         if (!isset($vendorProduct)) {
-            throw new NotFoundException('This vendor does not sell this item');;
+            throw new NoProductInStockException($vendorProductId);
         }
 
-        $cartProduct = $entityManager->getRepository(CartProduct::class)->findOneBy(['vendorProduct' => $vendorProduct]);
+        $cartProduct = $this->cartProductRepository->findOneBy(['vendorProduct' => $vendorProduct]);
 
         if (!isset($cartProduct)) {
-            throw new NotFoundException('No such product in cart');
+            throw new NoProductInCartException($vendorProductId);
         }
 
-        $vendorProduct->increaseQuantity($cartProduct->getQuantity());
-
-        $entityManager->persist($vendorProduct);
-        $entityManager->remove($cartProduct);
-        $entityManager->flush();
+        $this->cartProductRepository->remove($cartProduct, $vendorProduct);
+        $this->entityManager->flush();
     }
 
     /**
      * Summary of removeAllFromCart
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @throws \App\Services\Exception\WrongData\CartIsEmptyException
      * 
      * @return void
      */
     public function removeAllFromCart(): void
     {
-        $entityManager = $this->registry->getManager();
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        $user = $this->userRepository->getCurrentUser();
+        $cart = $user->getCart();
 
-        $cartProducts = $user->getCart()->getCartProducts()->getValues();
+        if (!$cart) {
+            throw new CartNotFoundException();
+        }
+
+        $cartProducts = $cart->getCartProducts()->getValues();
 
         if (count($cartProducts) === 0) {
-            throw new BadRequsetException('Your cart is empty');
+            throw new CartIsEmptyException();
         }
 
-        foreach ($cartProducts as $cartProduct) {
-            $entityManager->remove($cartProduct);
-        }
-
-        $entityManager->flush();
+        $this->cartProductRepository->removeAll($cartProducts);
+        $this->entityManager->flush();
     }
 }

@@ -4,134 +4,114 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Symfony\Component\HttpFoundation\Request;
-use Doctrine\Persistence\ManagerRegistry;
-use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Knp\Component\Pager\PaginatorInterface;
-use App\Repository\VendorProductRepository;
-use App\Services\Validator\VendorProductValidator;
 use App\Enum\Role;
-use App\Entity\User;
 use App\Entity\VendorProduct;
-use App\Entity\Product;
-use App\Entity\Vendor;
-use App\Services\Exception\Request\BadRequsetException;
-use App\Services\Exception\Request\NotFoundException;
+use App\DTO\VendorProduct\CreateVendorProductDto;
+use App\DTO\VendorProduct\PatchVendorProductDto;
+use App\DTO\PaginationQueryDto;
+use Doctrine\ORM\EntityManagerInterface;
+use App\Contract\Repository\VendorProductRepositoryInterface;
+use App\Contract\Repository\UserRepositoryInterface;
+use App\Contract\Repository\VendorRepositoryInterface;
+use App\Contract\Repository\ProductRepositoryInterface;
+use App\Contract\Service\VendorProductServiceInterface;
+use App\Contract\PaginationHandlerInterface;
+use App\Services\Exception\NotFound\VendorNotFoundException;
+use App\Services\Exception\WrongData\VendorIdNotProvidedException;
+use App\Services\Exception\NotFound\ProductNotFoundException;
+use App\Services\Exception\NotFound\VendorProductNotFoundException;
 
-class VendorProductService
+class VendorProductService implements VendorProductServiceInterface
 {
+    /**
+     * Summary of __construct
+     * @param \Doctrine\ORM\EntityManagerInterface $entityManager
+     * @param \App\Contract\PaginationHandlerInterface<VendorProduct> $paginationHandler
+     * @param \App\Repository\VendorProductRepository $vendorProductRepository
+     * @param \App\Repository\UserRepository $userRepository
+     * @param \App\Repository\VendorRepository $vendorRepository
+     * @param \App\Repository\ProductRepository $productRepository
+     */
     public function __construct(
-        private ManagerRegistry $registry,
-        private Security $security,
-        private ValidatorInterface $validator,
-        private PaginatorInterface $paginator,
-        private VendorProductRepository $vendorProductRepository,
-        private VendorProductValidator $vendorProductValidator
-    ) {
-    }
+        private EntityManagerInterface $entityManager,
+        private PaginationHandlerInterface $paginationHandler,
+        private VendorProductRepositoryInterface $vendorProductRepository,
+        private UserRepositoryInterface $userRepository,
+        private VendorRepositoryInterface $vendorRepository,
+        private ProductRepositoryInterface $productRepository,
+    ) {}
 
     /**
      * Summary of add
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\VendorProduct\CreateVendorProductDto $createVendorProductDto
      * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\WrongData\VendorIdNotProvidedException
+     * @throws \App\Services\Exception\NotFound\VendorNotFoundException
+     * @throws \App\Services\Exception\NotFound\ProductNotFoundException
      * 
      * @return int
      */
-    public function add(Request $request): int
+    public function add(CreateVendorProductDto $createVendorProductDto): int
     {
-        $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
-        $user = $this->security->getUser();
+        $user = $this->userRepository->getCurrentUser();
 
-        if (!isset($decoded->productId) || !isset($decoded->price)) {
-            throw new BadRequsetException();
-        }
-
-        if (isset($user) && in_array(Role::ROLE_VENDOR->value, $user->getRoles())) {
-            $userPhone = $user->getUserIdentifier();
-            $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        if (in_array(Role::ROLE_VENDOR->value, $user->getRoles())) {
             $vendor = $user->getVendor();
         } else {
-            if (!isset($decoded->vendorId)) {
-                throw new BadRequsetException();
+            if (!isset($createVendorProductDto->vendorId)) {
+                throw new VendorIdNotProvidedException();
             }
 
-            $vendorId = $decoded->vendorId;
-            $vendor = $entityManager->getRepository(Vendor::class)->find($vendorId);
+            $vendor = $this->vendorRepository->find($createVendorProductDto->vendorId);
 
             if (!isset($vendor)) {
-                throw new NotFoundException('Such vendor does not exist');
+                throw new VendorNotFoundException($createVendorProductDto->vendorId);
             }
         }
 
-        $productId = $decoded->productId;
-        $product = $entityManager->getRepository(Product::class)->find($productId);
+        $product = $this->productRepository->find($createVendorProductDto->productId);
 
         if (!isset($product)) {
-            throw new NotFoundException('Such product does not exist');
+            throw new ProductNotFoundException($createVendorProductDto->productId);
         }
 
-        $vendorProduct = new VendorProduct();
-        $vendorProduct->setPrice($decoded->price);
-        $vendorProduct->setVendor($vendor);
-        $vendorProduct->setProduct($product);
-
-        if (isset($decoded->quantity)) {
-            $vendorProduct->setQuantity($decoded->quantity);
+        if (!$vendor) {
+            throw new VendorNotFoundException();
         }
 
-        $errors = $this->validator->validate($vendorProduct);
+        $vendorProduct = $this->vendorProductRepository->create(
+            $vendor,
+            $product,
+            $createVendorProductDto->price,
+            $createVendorProductDto->quantity
+        );
+        $this->entityManager->flush();
 
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
-        $entityManager->persist($vendorProduct);
-        $entityManager->flush();
-
-
-        return $vendorProduct->getId();
+        return $vendorProduct->getId() ?? 0;
     }
 
     /**
      * Summary of get
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\PaginationQueryDto $paginationQueryDto
      * 
-     * @return array
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: iterable<int, mixed>
+     * }
      */
-    public function get(Request $request): array
+    public function get(PaginationQueryDto $paginationQueryDto): array
     {
-        $entityManager = $this->registry->getManager();
-        $user = $this->security->getUser();
-
-        $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $user->getUserIdentifier()]);
+        $user = $this->userRepository->getCurrentUser();
         $vendor = $user->getVendor();
 
+        if (!$vendor) {
+            throw new VendorNotFoundException();
+        }
+
         $querryBuilder = $this->vendorProductRepository->createQueryBuilderForPaginationWithVendor($vendor);
-
-        $pagination = $this->paginator->paginate(
-            $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->getInt('limit', 5)
-        );
-
-        $vendorProducts = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $vendorProducts,
-        ];
+        $response = $this->paginationHandler->handlePagination($querryBuilder, $paginationQueryDto);
 
         return $response;
     }
@@ -139,54 +119,40 @@ class VendorProductService
     /**
      * Summary of patchVendorProdut
      * @param int $id
-     * @param \Symfony\Component\HttpFoundation\Request $request
-     * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
+     * @param \App\DTO\VendorProduct\PatchVendorProductDto $patchVendorProductDto
      * 
      * @return void
      */
-    public function patchVendorProdut(int $id, Request $request): void
+    public function patchVendorProdut(int $id, PatchVendorProductDto $patchVendorProductDto): void
     {
-        $entityManager = $this->registry->getManager();
-        $decoded = json_decode($request->getContent());
+        $vendorProduct = $this->vendorProductRepository->find($id);
 
-        $this->vendorProductValidator->validateVendorToPatch($decoded);
-
-        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($id);
-        $vendorProduct->setPrice($decoded->price);
-        $vendorProduct->setQuantity($decoded->quantity);
-
-        $errors = $this->validator->validate($vendorProduct);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
+        if (!$vendorProduct) {
+            throw new VendorNotFoundException();
         }
 
-        $entityManager->persist($vendorProduct);
-        $entityManager->flush();
+        $this->vendorProductRepository->patch($patchVendorProductDto, $vendorProduct);
+
+        $this->entityManager->flush();
     }
 
     /**
      * Summary of delete
      * @param int $id
      * 
-     * @throws \App\Services\Exception\Request\NotFoundException
+     * @throws \App\Services\Exception\NotFound\VendorProductNotFoundException
      * 
      * @return void
      */
     public function delete(int $id): void
     {
-        $entityManager = $this->registry->getManager();
-
-        $vendorProduct = $entityManager->getRepository(VendorProduct::class)->find($id);
+        $vendorProduct = $this->entityManager->getRepository(VendorProduct::class)->find($id);
 
         if (!isset($vendorProduct)) {
-            throw new NotFoundException('Vendor does not sell this product');
+            throw new VendorProductNotFoundException($id);
         }
 
-        $entityManager->remove($vendorProduct);
-        $entityManager->flush();
+        $this->vendorProductRepository->remove($vendorProduct);
+        $this->entityManager->flush();
     }
 }

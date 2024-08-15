@@ -4,191 +4,134 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use Symfony\Component\HttpFoundation\Request;
-use Doctrine\Persistence\ManagerRegistry;
-use App\Services\Uploader\ProductImageUploader;
-use App\Services\Validator\ProductValidator;
-use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-use App\Repository\ProductRepository;
-use Knp\Component\Pager\PaginatorInterface;
-use App\Entity\Product;
-use Symfony\Component\HttpFoundation\File\Exception\FileException;
-use App\Entity\User;
-use App\Entity\Type;
-use App\Entity\Producer;
-use App\Entity\VendorProduct;
 use App\Enum\Role;
-use App\Services\Exception\Request\BadRequsetException;
-use App\Services\Exception\Request\ServerErrorException;
+use App\DTO\Product\CreateProductDto;
+use App\DTO\Product\ProductSearchParamsDto;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Doctrine\ORM\EntityManagerInterface;
+use App\Contract\Repository\ProductRepositoryInterface;
+use App\Contract\Repository\ProducerRepositoryInterface;
+use App\Contract\Repository\UserRepositoryInterface;
+use App\Contract\Repository\TypeRepositoryInterface;
+use App\Contract\Repository\VendorProductRepositoryInterface;
+use App\Contract\Service\ProductServiceIntrrafce;
+use App\Contract\PaginationHandlerInterface;
+use App\Services\Exception\NotFound\TypeNotFoundException;
+use App\Services\Exception\NotFound\ProducerNotFoundException;
+use App\Services\Exception\NotFound\ProductNotFoundException;
+use App\Contract\FileUploaderInterface;
+use App\Entity\Product;
+use App\Services\Exception\NotFound\VendorNotFoundException;
 
-class ProductService
+class ProductService implements ProductServiceIntrrafce
 {
+    /**
+     * Summary of __construct
+     * @param \Doctrine\ORM\EntityManagerInterface $entityManager
+     * @param \App\Services\Uploader\ProductImageUploader $uploader
+     * @param \App\Contract\PaginationHandlerInterface<Product> $paginationHandler
+     * @param \App\Repository\ProductRepository $productRepository
+     * @param \App\Repository\ProducerRepository $producerRepository
+     * @param \App\Repository\UserRepository $userRepository
+     * @param \App\Repository\TypeRepository $typeRepository
+     * @param \App\Repository\VendorProductRepository $vendorProductRepository
+     */
     public function __construct(
-        private ManagerRegistry $registry,
-        private ProductImageUploader $uploader,
-        private ProductValidator $productValidator,
-        private Security $security,
-        private ValidatorInterface $validator,
-        private PaginatorInterface $paginator,
-        private ProductRepository $productRepository
-    ) {
-    }
+        private EntityManagerInterface $entityManager,
+        private FileUploaderInterface $uploader,
+        private PaginationHandlerInterface $paginationHandler,
+        private ProductRepositoryInterface $productRepository,
+        private ProducerRepositoryInterface $producerRepository,
+        private UserRepositoryInterface $userRepository,
+        private TypeRepositoryInterface $typeRepository,
+        private VendorProductRepositoryInterface $vendorProductRepository,
+    ) {}
 
     /**
      * Summary of addWithVendor
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \Symfony\Component\HttpFoundation\File\UploadedFile $image
+     * @param \App\DTO\Product\CreateProductDto $createProductDto
      * 
-     * @throws \App\Services\Exception\Request\BadRequsetException
-     * @throws \App\Services\Exception\Request\ServerErrorException
+     * @throws \App\Services\Exception\NotFound\ProducerNotFoundException
+     * @throws \App\Services\Exception\NotFound\TypeNotFoundException
+     * @throws \App\Services\Exception\NotFound\VendorNotFoundException
      * 
      * @return int
      */
-    public function addWithVendor(Request $request): int
+    public function addWithVendor(UploadedFile $image, CreateProductDto $createProductDto): int
     {
-        $entityManager = $this->registry->getManager();
-        $user = $this->security->getUser();
-
-        $this->productValidator->isProductWithVendorValid($request);
-
-        $producerId = $request->request->get('producerId');
-        $producer = $entityManager->getRepository(Producer::class)->find($producerId);
+        $user = $this->userRepository->getCurrentUser();
+        $producer = $this->producerRepository->find($createProductDto->producerId);
 
         if (!isset($producer)) {
-            throw new BadRequsetException('Such producer does not exist');
+            throw new ProducerNotFoundException($createProductDto->producerId);
         }
 
-        $typeId = $request->request->get('typeId');
-        $type = $entityManager->getRepository(Type::class)->find($typeId);
+        $type = $this->typeRepository->find($createProductDto->typeId);
 
         if (!isset($type)) {
-            throw new BadRequsetException('Such type does not exist');
+            throw new TypeNotFoundException($createProductDto->typeId);
         }
 
-        $image = $request->files->get('image');
+        $imagePath = $this->uploader->upload($image);
+        $product = $this->productRepository->create($createProductDto, $type, $producer, $imagePath);
 
-        try {
-            $imagePath = $this->uploader->upload($image);
-        } catch (FileException $e) {
-            throw new ServerErrorException($e->getMessage());
-        }
+        if (in_array(Role::ROLE_VENDOR->value, $user->getRoles()) && isset($createProductDto->price)) {
+            $vendor = $user->getVendor();
 
-        $product = new Product();
-        $product->setTitle($request->request->get('title'));
-        $product->setDescription($request->request->get('description'));
-        $product->setCompound($request->request->get('compound'));
-        $product->setStorageConditions($request->request->get('storageConditions'));
-        $product->setWeight($request->request->get('weight'));
-        $product->setImage($imagePath);
-        $product->setType($type);
-        $product->setProducer($producer);
-
-        $errors = $this->validator->validate($product);
-
-        if (count($errors) > 0) {
-            $errorsString = (string) $errors;
-
-            throw new BadRequsetException($errorsString);
-        }
-
-        $entityManager->persist($product);
-
-        if (isset($user) && in_array(Role::ROLE_VENDOR->value, $user->getRoles())) {
-            $userPhone = $user->getUserIdentifier();
-            $user = $entityManager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
-
-            $vendorProduct = new VendorProduct();
-            $vendorProduct->setVendor($user->getVendor());
-            $vendorProduct->setProduct($product);
-            $vendorProduct->setPrice($request->request->get('price'));
-
-            if ($request->request->has('quantity')) {
-                $vendorProduct->setQuantity($request->request->get('quantity'));
+            if (!$vendor) {
+                throw new VendorNotFoundException();
             }
 
-            $errors = $this->validator->validate($vendorProduct);
-
-            if (count($errors) > 0) {
-                $errorsString = (string) $errors;
-
-                throw new BadRequsetException($errorsString);
-            }
-
-            $entityManager->persist($vendorProduct);
+            $this->vendorProductRepository->create($vendor, $product, $createProductDto->price, $createProductDto->quantity);
         }
 
-        $entityManager->flush();
+        $this->entityManager->flush();
 
-        return $product->getId();
+        return $product->getId() ?? 0;
     }
 
     /**
      * Summary of list
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\Product\ProductSearchParamsDto $productSearchParamsDto
      * 
-     * @return array
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: iterable<int, mixed>
+     * }
      */
-    public function list(Request $request): array
+    public function list(ProductSearchParamsDto $productSearchParamsDto): array
     {
-        $querryBuilder = $this->productRepository->searchByTitle($request);
-
-        $pagination = $this->paginator->paginate(
-            $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->getInt('limit', 5)
-        );
-
-        $products = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $products,
-        ];
+        $querryBuilder = $this->productRepository->searchByTitle($productSearchParamsDto);
+        $response = $this->paginationHandler->handlePagination($querryBuilder, $productSearchParamsDto);
 
         return $response;
     }
 
     /**
      * Summary of getProductsVendorDoesNotSell
-     * @param \Symfony\Component\HttpFoundation\Request $request
+     * @param \App\DTO\Product\ProductSearchParamsDto $productSearchParamsDto
      * 
-     * @return array
+     * @return array{
+     *     total_items: int,
+     *     current_page: int,
+     *     total_pages: int,
+     *     data: iterable<int, mixed>
+     * }
      */
-    public function getProductsVendorDoesNotSell(Request $request): array
+    public function getProductsVendorDoesNotSell(ProductSearchParamsDto $productSearchParamsDto): array
     {
-        $entityMnager = $this->registry->getManager();
+        $user = $this->userRepository->getCurrentUser();
+        $vendor = $user->getVendor();
 
-        $userPhone = $this->security->getUser()->getUserIdentifier();
-        $user = $entityMnager->getRepository(User::class)->findOneBy(['phone' => $userPhone]);
+        if (!$vendor) {
+            throw new VendorNotFoundException();
+        }
 
-        $vendorId = $user->getVendor()->getId();
-        $querryBuilder = $this->productRepository->searchByTitle($request, $vendorId);
-
-        $pagination = $this->paginator->paginate(
-            $querryBuilder,
-            $request->query->getInt('page', 1),
-            $request->query->getInt('limit', 5),
-        );
-
-        $products = $pagination->getItems();
-        $totalItems = $pagination->getTotalItemCount();
-        $itemsPerPage = $pagination->getItemNumberPerPage();
-        $currentPage = $pagination->getCurrentPageNumber();
-        $totalPages = ceil($totalItems / $itemsPerPage);
-
-        $response = [
-            'total_items' => $totalItems,
-            'current_page' => $currentPage,
-            'total_pages' => $totalPages,
-            'data' => $products,
-        ];
+        $querryBuilder = $this->productRepository->searchByTitle($productSearchParamsDto, $vendor->getId());
+        $response = $this->paginationHandler->handlePagination($querryBuilder, $productSearchParamsDto);
 
         return $response;
     }
@@ -197,21 +140,19 @@ class ProductService
      * Summary of delete
      * @param int $id
      * 
-     * @throws \Symfony\Component\HttpKernel\Exception\NotFoundHttpException
+     * @throws \App\Services\Exception\NotFound\ProductNotFoundException
      * 
      * @return void
      */
     public function delete(int $id): void
     {
-        $entityManager = $this->registry->getManager();
-
-        $product = $entityManager->getRepository(Product::class)->find($id);
+        $product = $this->productRepository->find($id);
 
         if (!isset($product)) {
-            throw new NotFoundHttpException('No such product exist');
+            throw new ProductNotFoundException($id);
         }
 
-        $entityManager->remove($product);
-        $entityManager->flush();
+        $this->productRepository->remove($product);
+        $this->entityManager->flush();
     }
 }
