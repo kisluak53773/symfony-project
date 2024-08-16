@@ -62,6 +62,12 @@ export const ExistingProductModal: FC<IExistingProductModalProps> = ({
                 {...field}
                 placeholder={fieldData.placeholder}
                 className=" focus:outline-none h-[35px] rounded-sm px-[5px]"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  field.onChange(
+                    fieldData.valueType === "number" ? parseInt(value) : value
+                  );
+                }}
               />
               {error && <div className=" text-red-400">{error.message}</div>}
             </div>

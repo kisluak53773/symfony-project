@@ -12,6 +12,14 @@ import { ProductItem } from "@/components/ProductItem";
 export const MostPopularProducts: FC = () => {
   const [products, setProducts] = useState<IProduct[] | null>(null);
 
+  const handleProductCahange = (product: IProduct) => {
+    if (products) {
+      setProducts(
+        products.map((item) => (item.id === product.id ? product : item))
+      );
+    }
+  };
+
   useEffect(() => {
     (async () => {
       const data = await productService.getProducts({});
@@ -34,7 +42,10 @@ export const MostPopularProducts: FC = () => {
         {products &&
           products.map((item) => (
             <SwiperSlide key={item.id}>
-              <ProductItem product={item} />
+              <ProductItem
+                product={item}
+                handleProductCahange={handleProductCahange}
+              />
             </SwiperSlide>
           ))}
       </Swiper>
