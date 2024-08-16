@@ -16,7 +16,10 @@ class PatchOrderDto
         public readonly string $paymentMethod,
 
         #[Assert\NotBlank(message: 'Delivery time should be present')]
-        #[Assert\DateTime('Wrong format for delivery time ')]
+        #[Assert\DateTime(
+            format: 'Y-m-d\TH:i',
+            message: 'Wrong format for delivery time, the correct format is Y-m-d\TH:i.'
+        )]
         public readonly string $deliveryTime,
 
         #[Assert\NotBlank(message: 'Order status should be present')]

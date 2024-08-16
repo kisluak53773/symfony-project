@@ -92,7 +92,7 @@ export const OrderModalForm: FC<IOrderModalFormProps> = ({
         type="submit"
         className="w-[35vw] mt-[20px] text-center bg-blue-500 text-white hover:bg-blue-300 transition-all rounded-[5px] p-[5px]"
       >
-        Оформить заказ
+        Сохранить изменения
       </button>
     </form>
   );

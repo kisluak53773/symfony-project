@@ -21,7 +21,10 @@ import {
 import { FaHeart } from "react-icons/fa";
 import { FaRegHeart } from "react-icons/fa";
 
-export const ProductItem: FC<IProductItemProps> = ({ product }) => {
+export const ProductItem: FC<IProductItemProps> = ({
+  product,
+  handleProductCahange,
+}) => {
   const isItemInCart = useSelector(getCartProducts).find(
     (item) => item.productId === product.id
   );
@@ -29,6 +32,13 @@ export const ProductItem: FC<IProductItemProps> = ({ product }) => {
     (item) => item.id === product.id
   );
   const dispatch = useAppDispatch();
+
+  const handleQuantityChange = (quantity: number) => {
+    const newProduct = { ...product };
+    newProduct.vendorProducts[0].quantity = quantity;
+
+    return newProduct;
+  };
 
   const handleAdd = () => {
     const newProduct = {
@@ -41,8 +51,44 @@ export const ProductItem: FC<IProductItemProps> = ({ product }) => {
       productTitle: product.title,
       inStock: product.vendorProducts[0].quantity,
     };
-
     dispatch(addProductToCart(newProduct));
+
+    const updatedProduct = handleQuantityChange(
+      product.vendorProducts[0].quantity - 1
+    );
+    handleProductCahange(updatedProduct);
+  };
+
+  const handleIncrease = () => {
+    if (isItemInCart) {
+      dispatch(
+        increaseQuantity({
+          quantity: 1,
+          vendorProductId: isItemInCart.vendorProductId,
+        })
+      );
+
+      const updatedProduct = handleQuantityChange(
+        product.vendorProducts[0].quantity + 1
+      );
+      handleProductCahange(updatedProduct);
+    }
+  };
+
+  const handleDecrease = () => {
+    if (isItemInCart) {
+      dispatch(
+        decreaseQuantity({
+          vendorProductId: isItemInCart.vendorProductId,
+          quantity: 1,
+        })
+      );
+
+      const updatedProduct = handleQuantityChange(
+        product.vendorProducts[0].quantity + 1
+      );
+      handleProductCahange(updatedProduct);
+    }
   };
 
   return (
@@ -81,29 +127,11 @@ export const ProductItem: FC<IProductItemProps> = ({ product }) => {
           <>
             {isItemInCart ? (
               <div className=" flex w-full justify-between h-[34px]">
-                <button
-                  onClick={() =>
-                    dispatch(
-                      decreaseQuantity({
-                        vendorProductId: isItemInCart.vendorProductId,
-                        quantity: 1,
-                      })
-                    )
-                  }
-                >
+                <button onClick={handleDecrease}>
                   <FiMinus size={20} color="black" />
                 </button>
                 <span>{isItemInCart.quantity} шт.</span>
-                <button
-                  onClick={() =>
-                    dispatch(
-                      increaseQuantity({
-                        quantity: 1,
-                        vendorProductId: isItemInCart.vendorProductId,
-                      })
-                    )
-                  }
-                >
+                <button onClick={handleIncrease}>
                   <FiPlus size={20} color="black" />
                 </button>
               </div>

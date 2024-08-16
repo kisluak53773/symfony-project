@@ -4,6 +4,7 @@ export const PRODUCT_FORM_FIELDS = [
     type: "text",
     placeholder: "",
     name: "title",
+    valueType: "string",
     id: "titleId",
     rules: {
       required: "Введите название продукта",
@@ -18,6 +19,7 @@ export const PRODUCT_FORM_FIELDS = [
     type: "text",
     placeholder: "200 г, 1 шт. и т.п.",
     name: "weight",
+    valueType: "string",
     id: "weightId",
     rules: {
       required: "Еденицу измерения  продукта",
@@ -32,6 +34,7 @@ export const PRODUCT_FORM_FIELDS = [
     type: "textarea",
     placeholder: "",
     name: "description",
+    valueType: "string",
     id: "descriptionId",
     rules: {
       required: "Введите описание продукта",
@@ -46,6 +49,7 @@ export const PRODUCT_FORM_FIELDS = [
     type: "textarea",
     placeholder: "",
     name: "compound",
+    valueType: "string",
     id: "compoundId",
     rules: {
       required: "Введите состав продукта",
@@ -60,6 +64,7 @@ export const PRODUCT_FORM_FIELDS = [
     type: "textarea",
     placeholder: "",
     name: "storageConditions",
+    valueType: "string",
     id: "storageConditionsId",
     rules: {
       required: "Введите условия хранения продукта",
@@ -78,6 +83,7 @@ export const PRODUCT_VENDOR_FORM_FIELDS = [
     type: "text",
     placeholder: "",
     name: "price",
+    valueType: "string",
     id: "priceId",
     rules: {
       required: "Введите вашу цену на продукт",
@@ -92,6 +98,7 @@ export const PRODUCT_VENDOR_FORM_FIELDS = [
     type: "text",
     placeholder: "",
     name: "quantity",
+    valueType: "number",
     id: "quantityId",
     rules: {
       maxLength: {

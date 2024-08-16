@@ -3,6 +3,7 @@ import { ROLES } from "@/constants";
 
 export interface IProductItemProps {
   product: IProduct;
+  handleProductCahange: (product: IProduct) => void;
 }
 
 export interface IJwtPayload {

@@ -24,6 +24,14 @@ export const ProductsList: FC = () => {
   const [types, setTypes] = useState<number[]>([]);
   const [producers, setProducers] = useState<number[]>([]);
 
+  const handleProductCahange = (product: IProduct) => {
+    if (products) {
+      setProducts(
+        products.map((item) => (item.id === product.id ? product : item))
+      );
+    }
+  };
+
   useEffect(() => {
     if (debouncedSearch) {
       (async () => {
@@ -68,7 +76,10 @@ export const ProductsList: FC = () => {
           <ul className=" grid grid-cols-3">
             {products.map((item) => (
               <li className=" pr-[10px]" key={item.id}>
-                <ProductItem product={item} />
+                <ProductItem
+                  handleProductCahange={handleProductCahange}
+                  product={item}
+                />
               </li>
             ))}
           </ul>

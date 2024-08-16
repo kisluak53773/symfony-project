@@ -12,6 +12,8 @@ import { useRouter } from "next/navigation";
 import { getErrorStatusCode } from "@/services/axios";
 import { useAppDispatch } from "@/store";
 import { login } from "@/store/slices/user";
+import { getCart } from "@/store/slices/cart";
+import { fetchFavoriteProducts } from "@/store/slices/favorite";
 
 export const LoginForm: FC = () => {
   const { control, handleSubmit, reset } = useForm<ILoginData>({
@@ -33,6 +35,8 @@ export const LoginForm: FC = () => {
       reset();
       await authService.login(data);
       dispatch(login());
+      dispatch(fetchFavoriteProducts());
+      dispatch(getCart());
       setError("");
       router.push("/");
     } catch (error) {
