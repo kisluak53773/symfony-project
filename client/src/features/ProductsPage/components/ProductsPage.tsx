@@ -3,7 +3,7 @@ import { ProductsList } from "./ProductsList";
 
 export const ProductsPage: FC = () => {
   return (
-    <main className=" px-[60px]">
+    <main className=" px-[120px]">
       <ProductsList />
     </main>
   );

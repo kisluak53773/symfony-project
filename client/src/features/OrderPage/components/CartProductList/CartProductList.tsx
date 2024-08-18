@@ -17,8 +17,8 @@ export const CartProductList: FC = () => {
   const dispatch = useAppDispatch();
 
   return (
-    <article className="flex items-center justify-center flex-col">
-      <h1 className=" font-semibold text-[24px]">Корзина</h1>
+    <section className="flex items-center justify-center flex-col">
+      <h2 className=" font-semibold text-[24px]">Корзина</h2>
       {products.length > 0 ? (
         <>
           <div className=" flex justify-end w-full">
@@ -47,6 +47,6 @@ export const CartProductList: FC = () => {
           </p>
         </div>
       )}
-    </article>
+    </section>
   );
 };

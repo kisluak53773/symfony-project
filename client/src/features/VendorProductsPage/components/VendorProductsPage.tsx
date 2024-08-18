@@ -6,7 +6,7 @@ export const VendorProductsPage: FC = () => {
   return (
     <main className="w-full">
       <RoutePageWrapper heading="Все ваши товары">
-      <VendorProductList />
+        <VendorProductList />
       </RoutePageWrapper>
     </main>
   );

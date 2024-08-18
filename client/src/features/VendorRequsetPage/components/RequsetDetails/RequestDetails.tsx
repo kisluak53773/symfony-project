@@ -37,14 +37,14 @@ export const RequestDetails: FC<IRequestDetailsProps> = ({ orderId }) => {
   return (
     <>
       {request && (
-        <>
+        <section>
           <OrderDetails order={request.orderData} />
           <RequestProductList
             products={request.products}
             handleOrderUpdate={handleOrderUpdate}
             order={request.orderData}
           />
-        </>
+        </section>
       )}
     </>
   );

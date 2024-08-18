@@ -25,6 +25,7 @@ export interface IProduct {
   vendorProducts: IListProductVendorProduct[];
   typeId: number;
   producerId: number;
+  averageRating: number;
 }
 
 export interface IProductOfVendor {
@@ -64,4 +65,18 @@ export interface IGetProductsParams {
   producers?: number[];
   limit?: number;
   sort?: ISort;
+}
+
+export interface IVendorProduct {
+  id: number;
+  price: string;
+  quantity: number;
+  vendorId: number;
+  vendorTitle: string;
+}
+
+export interface ISpecificPoduct extends Omit<IProduct, "vendorProducts"> {
+  producer: IProducer;
+  vendorProducts: IVendorProduct[];
+  type: IType;
 }

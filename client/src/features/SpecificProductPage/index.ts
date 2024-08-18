@@ -1,0 +1,1 @@
+export { SpecificProductPage } from "./components";

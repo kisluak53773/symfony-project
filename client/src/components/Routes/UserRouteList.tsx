@@ -22,12 +22,14 @@ export const UserRouteList: FC = () => {
   }, [isAuthorized]);
 
   return (
-    <nav className=" min-h-[87vh] p-[40px]">
-      <ul>
-        {USER_ROUTES.map((item) => (
-          <RouteItem key={item.id} href={item.href} title={item.title} />
-        ))}
-      </ul>
-    </nav>
+    <aside className=" min-h-[87vh] p-[40px]">
+      <nav>
+        <ul>
+          {USER_ROUTES.map((item) => (
+            <RouteItem key={item.id} href={item.href} title={item.title} />
+          ))}
+        </ul>
+      </nav>
+    </aside>
   );
 };

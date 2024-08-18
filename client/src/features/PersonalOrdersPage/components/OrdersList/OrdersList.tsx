@@ -27,7 +27,7 @@ export const OrdersList: FC = () => {
   }, [page]);
 
   return (
-    <article>
+    <section>
       <h1 className=" font-semibold text-[20px]">Ваши заказы</h1>
       {orders && orders.length > 0 ? (
         <>
@@ -57,6 +57,6 @@ export const OrdersList: FC = () => {
           </p>
         </div>
       )}
-    </article>
+    </section>
   );
 };

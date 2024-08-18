@@ -6,6 +6,7 @@ import {
   type IPgainatedProductVendorDoesNotSell,
   type IVendorProductCreate,
   type IGetProductsParams,
+  type ISpecificPoduct,
 } from "./@types";
 import {
   convertArrayToQuerryParams,
@@ -86,6 +87,14 @@ export const productService = {
 
   async setProductFroVendor(data: IVendorProductCreate) {
     const response = await axiosWithAuth.post("/vendorProduct", data);
+
+    return response.data;
+  },
+
+  async getProductById(productId: number) {
+    const response = await axiosWithAuth.get<ISpecificPoduct>(
+      `${BASE_URL}/${productId}`
+    );
 
     return response.data;
   },

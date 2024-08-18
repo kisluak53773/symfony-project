@@ -20,13 +20,14 @@ import {
 } from "@/store/slices/favorite";
 import { FaHeart } from "react-icons/fa";
 import { FaRegHeart } from "react-icons/fa";
+import Link from "next/link";
 
 export const ProductItem: FC<IProductItemProps> = ({
   product,
   handleProductCahange,
 }) => {
   const isItemInCart = useSelector(getCartProducts).find(
-    (item) => item.productId === product.id
+    (item) => item.vendorProductId === product.vendorProducts[0]?.id
   );
   const isInFavorite = useSelector(getFavoriteProducts).find(
     (item) => item.id === product.id
@@ -69,7 +70,7 @@ export const ProductItem: FC<IProductItemProps> = ({
       );
 
       const updatedProduct = handleQuantityChange(
-        product.vendorProducts[0].quantity + 1
+        product.vendorProducts[0].quantity - 1
       );
       handleProductCahange(updatedProduct);
     }
@@ -120,7 +121,9 @@ export const ProductItem: FC<IProductItemProps> = ({
           Товара нет в наличии
         </p>
       )}
-      <p>{product.title}</p>
+      <Link href={`/products/${product.id}`} className=" hover:underline">
+        {product.title}
+      </Link>
       <p className=" text-[13px] text-gray-400 mb-[30px]">{product.weight}</p>
       {product.vendorProducts.length > 0 &&
         product.vendorProducts[0].quantity > 0 && (

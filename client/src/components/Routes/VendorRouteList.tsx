@@ -22,12 +22,14 @@ export const VendorRouteList: FC = () => {
   }, [isAuthorized]);
 
   return (
-    <nav className=" min-h-[87vh] p-[40px]">
-      <ul>
-        {VENDOR_ROUTS.map((item) => (
-          <RouteItem key={item.id} href={item.href} title={item.title} />
-        ))}
-      </ul>
-    </nav>
+    <aside className=" min-h-[87vh] p-[40px]">
+      <nav>
+        <ul>
+          {VENDOR_ROUTS.map((item) => (
+            <RouteItem key={item.id} href={item.href} title={item.title} />
+          ))}
+        </ul>
+      </nav>
+    </aside>
   );
 };

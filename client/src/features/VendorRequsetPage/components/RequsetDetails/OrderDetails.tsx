@@ -6,7 +6,7 @@ import { formatDateString } from "@/services";
 
 export const OrderDetails: FC<IOrderDetailsProps> = ({ order }) => {
   return (
-    <div className=" w-full rounded-[10px] drop-shadow-2xl shadow-2xl">
+    <section className=" w-full rounded-[10px] drop-shadow-2xl shadow-2xl">
       <DeliveryState status={order.orderStatus} />
       <ul className="grid grid-cols-2 px-[10px]">
         <OrderItemSection
@@ -24,6 +24,6 @@ export const OrderDetails: FC<IOrderDetailsProps> = ({ order }) => {
           data={order.totalPrice + " руб."}
         />
       </ul>
-    </div>
+    </section>
   );
 };

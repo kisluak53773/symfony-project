@@ -23,7 +23,7 @@ export const RequestList: FC = () => {
   return (
     <>
       {orders && orders.length > 0 ? (
-        <>
+        <section>
           <ul className=" mt-[20px] grid grid-cols-2">
             {orders.map((item) => (
               <RequestItem key={item.id} order={item} />
@@ -34,13 +34,13 @@ export const RequestList: FC = () => {
             currentPage={page}
             setPage={setPage}
           />
-        </>
+        </section>
       ) : (
-        <div className="w-full h-[80vh] flex flex-col items-center justify-center">
-          <h1 className=" text-[20px] font-medium">
+        <section className="w-full h-[80vh] flex flex-col items-center justify-center">
+          <h2 className=" text-[20px] font-medium">
             К вам еще не поступали заявки
-          </h1>
-        </div>
+          </h2>
+        </section>
       )}
     </>
   );

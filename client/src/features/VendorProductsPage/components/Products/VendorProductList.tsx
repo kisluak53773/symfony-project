@@ -51,7 +51,7 @@ export const VendorProductList: FC = () => {
   return (
     <>
       {products && products.length > 0 ? (
-        <>
+        <section>
           <ul>
             {products.map((item) => (
               <VendorProductItem
@@ -67,11 +67,11 @@ export const VendorProductList: FC = () => {
             currentPage={page}
             setPage={setPage}
           />
-        </>
+        </section>
       ) : (
-        <h1 className="text-[26px] flex items-center justify-center">
-          Вы еще ничего не продаете
-        </h1>
+        <section className=" flex items-center justify-center">
+          <h1 className="text-[26px]">Вы еще ничего не продаете</h1>
+        </section>
       )}
     </>
   );

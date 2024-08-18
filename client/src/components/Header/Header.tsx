@@ -11,14 +11,12 @@ import { removeTokens } from "@/services";
 import { getCart, emptyCart } from "@/store/slices/cart";
 import { emptyFavorite } from "@/store/slices/favorite";
 import { getHeaderLinks } from "@/services";
-import { useSelector } from "react-redux";
-import { getIsAuthorized } from "@/store/slices/user";
 import { fetchFavoriteProducts } from "@/store/slices/favorite";
+import dynamic from "next/dynamic";
 
-export const Header: FC = () => {
+const Header: FC = () => {
   const dispatch = useAppDispatch();
   const links = getHeaderLinks();
-  const isAuthorized = useSelector(getIsAuthorized);
 
   useEffect(() => {
     (async () => {
@@ -34,10 +32,13 @@ export const Header: FC = () => {
         removeTokens();
       }
     })();
-  }, []);
+  }, [dispatch]);
 
   return (
-    <header className=" h-[8vh] bg-white sticky top-0 w-full z-20 flex border-b-[1px] border-b-gray-400 gap-[20px] items-center justify-center ">
+    <header
+      className=" h-[8vh] bg-white sticky top-0 w-full z-20 flex border-b-[1px] border-b-gray-400 gap-[20px] items-center justify-center "
+      suppressHydrationWarning
+    >
       <h1>
         <Link href="/">Logo placeholder</Link>
       </h1>
@@ -46,3 +47,5 @@ export const Header: FC = () => {
     </header>
   );
 };
+
+export default dynamic(() => Promise.resolve(Header), { ssr: false });

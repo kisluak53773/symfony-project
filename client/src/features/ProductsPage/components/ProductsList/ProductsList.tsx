@@ -53,7 +53,7 @@ export const ProductsList: FC = () => {
   }, [debouncedSearch, page, types, producers, sort]);
 
   return (
-    <div className=" flex flex-col py-[20px]">
+    <section className=" flex flex-col py-[20px]">
       <Filter
         producersFilter={producers}
         setProducersFilter={setProducers}
@@ -62,13 +62,13 @@ export const ProductsList: FC = () => {
         sort={sort}
         setSort={setSort}
       />
-      <div className=" rounded-lg p-[10px] bg-gray-100 w-[95%] flex gap-[5px]">
+      <div className=" rounded-lg p-[10px] bg-gray-100 w-full flex gap-[5px]">
         <HeaderImage type="search" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           type="text"
-          className=" bg-gray-100 w-[50vw] focus:outline-none"
+          className=" bg-gray-100 w-full focus:outline-none"
         />
       </div>
       {products ? (
@@ -96,6 +96,6 @@ export const ProductsList: FC = () => {
           </h1>
         </div>
       )}
-    </div>
+    </section>
   );
 };

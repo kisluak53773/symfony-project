@@ -19,13 +19,13 @@ export const ProfileUpdateTop: FC = () => {
   };
 
   return (
-    <div className=" flex justify-end mb-[20px]">
+    <section className=" flex justify-end mb-[20px]">
       <button
         className=" border-[1px] border-red-500 text-red-500 border-solid rounded-lg px-[10px] py-[5px] bg-white hover:bg-red-500 hover:text-white"
         onClick={() => handleExit()}
       >
         Выйти из аккаунта
       </button>
-    </div>
+    </section>
   );
 };

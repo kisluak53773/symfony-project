@@ -28,10 +28,10 @@ export const MostPopularProducts: FC = () => {
   }, []);
 
   return (
-    <article className="felx flex-col mx-[18vw]">
-      <h1 className="text-[24px] font-semibold mb-[10px] mt-[40px]">
-        Самое популярное
-      </h1>
+    <section className="felx flex-col mx-[18vw]">
+      <h2 className="text-[24px] font-semibold mb-[10px] mt-[40px]">
+        Самые популярные товары
+      </h2>
       <Swiper
         modules={[Navigation]}
         spaceBetween={10}
@@ -49,6 +49,6 @@ export const MostPopularProducts: FC = () => {
             </SwiperSlide>
           ))}
       </Swiper>
-    </article>
+    </section>
   );
 };

@@ -41,7 +41,7 @@ export const ExistingProductList: FC = () => {
   return (
     <>
       {products && products.length > 0 ? (
-        <>
+        <section>
           <ul>
             {products.map((item) => (
               <ExistingProductItem
@@ -56,11 +56,11 @@ export const ExistingProductList: FC = () => {
             setPage={setPage}
             totalPageCount={totalPages}
           />
-        </>
+        </section>
       ) : (
-        <h1 className="text-[26px] flex items-center justify-center">
-          Таких продуктов нету
-        </h1>
+        <section className="flex items-center justify-center">
+          <h1 className="text-[26px]">Таких продуктов нету</h1>
+        </section>
       )}
     </>
   );
